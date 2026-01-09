@@ -4,7 +4,18 @@
 
 ## Overview
 
-This repository is part of the ShareBridge project - a platform for dignified charitable giving.
+This repository contains the **web application** for ShareBridge, providing browser-based access for donors and administrative dashboards.
+
+**Key Features:**
+- 💻 Donor web portal: Desktop-friendly order placement and tracking
+- 📊 Admin dashboard: Platform monitoring, analytics, user management
+- 🔍 Advanced search and filtering for order history
+- 📈 Impact metrics and reporting dashboards
+- 🛡️ Moderation tools for safety and compliance
+- 📱 Progressive Web App (PWA) capabilities for mobile browsers
+- ♿ WCAG compliant accessibility
+
+**Technology Stack:** React with Next.js for server-side rendering and SEO
 
 For overall project context, see the [main ShareBridge repository](https://github.com/sharebridge/sharebridge).
 
