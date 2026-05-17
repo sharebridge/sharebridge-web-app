@@ -1,41 +1,28 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchOrderInitiations } from "./api/orderIntents";
+import { AuthHelpPanel } from "./components/AuthHelpPanel";
+import { SiteHeader } from "./components/SiteHeader";
+import { getAppConfig, type AppConfig } from "./config";
 import { formatWhen, primaryRestaurant, statusLabel } from "./format";
-import {
-  clearConnection,
-  loadConnection,
-  saveConnection
-} from "./storage";
-import type { ConnectionSettings, OrderInitiation } from "./types";
+import type { OrderInitiation } from "./types";
 
-const defaultApiBase =
-  import.meta.env.VITE_API_BASE_URL?.trim() ||
-  "https://sharingbridge-integration-service.onrender.com";
-const defaultUserId =
-  import.meta.env.VITE_USER_ID?.trim() || "demo-user";
+const appConfig = getAppConfig();
 
 export function App() {
-  const [connection, setConnection] = useState<ConnectionSettings | null>(
-    () => loadConnection()
-  );
-  const [draft, setDraft] = useState<ConnectionSettings>(() => ({
-    apiBaseUrl: connection?.apiBaseUrl ?? defaultApiBase,
-    authToken: connection?.authToken ?? "",
-    userId: connection?.userId ?? defaultUserId
-  }));
   const [intents, setIntents] = useState<OrderInitiation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authHelpOpen, setAuthHelpOpen] = useState(false);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
 
-  const loadHistory = useCallback(async (active: ConnectionSettings) => {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const rows = await fetchOrderInitiations(active);
+      const rows = await fetchOrderInitiations(appConfig);
       setIntents(rows);
       setSelectedId((prev) =>
         prev && rows.some((row) => row.order_intent_id === prev)
@@ -46,7 +33,7 @@ export function App() {
       setIntents([]);
       setSelectedId(null);
       if (err instanceof ApiError) {
-        setError(`${err.message} (HTTP ${err.status})`);
+        setError(formatApiError(err, appConfig));
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -58,134 +45,64 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (connection) {
-      void loadHistory(connection);
+    void loadHistory();
+  }, [loadHistory]);
+
+  useEffect(() => {
+    if (error?.includes("401")) {
+      setAuthHelpOpen(true);
     }
-  }, [connection, loadHistory]);
-
-  function handleConnect(event: FormEvent) {
-    event.preventDefault();
-    const next: ConnectionSettings = {
-      apiBaseUrl: draft.apiBaseUrl,
-      authToken: draft.authToken,
-      userId: draft.userId
-    };
-    saveConnection(next);
-    setConnection(next);
-  }
-
-  function handleDisconnect() {
-    clearConnection();
-    setConnection(null);
-    setIntents([]);
-    setSelectedId(null);
-    setError(null);
-    setDraft((prev) => ({ ...prev, authToken: "" }));
-  }
+  }, [error]);
 
   return (
-    <div className="app">
-      <header className="header">
-        <div>
-          <p className="eyebrow">SharingBridge</p>
-          <h1>Order initiation history</h1>
-          <p className="lede">
-            View order initiations registered when donors copy delivery
-            instructions from <strong>Help a seeker</strong> (mobile).
-          </p>
-        </div>
-        {connection ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={handleDisconnect}
-          >
-            Clear session
-          </button>
-        ) : null}
-      </header>
+    <div className="site">
+      <SiteHeader config={appConfig} onRefresh={loadHistory} loading={loading} />
 
-      <section className="panel">
-        <h2>Connection</h2>
-        <form className="form" onSubmit={handleConnect}>
-          <label>
-            Integration API URL
-            <input
-              type="url"
-              required
-              value={draft.apiBaseUrl}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, apiBaseUrl: e.target.value }))
-              }
-              placeholder="https://sharingbridge-integration-service.onrender.com"
-            />
-          </label>
-          <label>
-            User ID
-            <input
-              type="text"
-              required
-              value={draft.userId}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, userId: e.target.value }))
-              }
-            />
-          </label>
-          <label>
-            Bearer token (from user-service)
-            <input
-              type="password"
-              required
-              autoComplete="off"
-              value={draft.authToken}
-              onChange={(e) =>
-                setDraft((prev) => ({ ...prev, authToken: e.target.value }))
-              }
-              placeholder="Paste JWT from POST /v1/auth/token"
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              {connection ? "Update & refresh" : "Connect"}
-            </button>
-            {connection ? (
-              <button
-                type="button"
-                className="btn"
-                disabled={loading}
-                onClick={() => void loadHistory(connection)}
-              >
-                Refresh
-              </button>
-            ) : null}
+      <main className="main">
+        <section className="hero">
+          <div className="hero-inner">
+            <p className="hero-eyebrow">Coordinator dashboard</p>
+            <h1>Order initiation history</h1>
+            <p className="hero-lede">
+              Track when donors register delivery intent from{" "}
+              <strong>Help a seeker</strong> on mobile — same records as the
+              in-app history, optimized for desktop review.
+            </p>
           </div>
-        </form>
-        <p className="hint">
-          Mint a token in PowerShell:{" "}
-          <code>POST …/v1/auth/token</code> with{" "}
-          <code>{`{"user_id":"${draft.userId || "demo-user"}"}`}</code>. On
-          Render, set integration <code>WEB_CORS_ORIGINS</code> to this site’s
-          origin (e.g. <code>http://localhost:5173</code>).
-        </p>
-      </section>
+          <div className="hero-metrics" aria-live="polite">
+            <div className="metric">
+              <span className="metric-value">{intents.length}</span>
+              <span className="metric-label">Initiations</span>
+            </div>
+            <div className="metric">
+              <span className="metric-value">{appConfig.userId}</span>
+              <span className="metric-label">Signed-in user</span>
+            </div>
+          </div>
+        </section>
 
-      {error ? (
-        <div className="banner banner-error" role="alert">
-          {error}
-        </div>
-      ) : null}
+        <AuthHelpPanel
+          config={appConfig}
+          open={authHelpOpen}
+          onToggle={() => setAuthHelpOpen((v) => !v)}
+        />
 
-      {connection ? (
-        <div className="layout">
-          <section className="panel list-panel">
+        {error ? (
+          <div className="banner banner-error" role="alert">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="dashboard layout">
+          <section className="panel list-panel" aria-labelledby="list-heading">
             <div className="panel-head">
-              <h2>Initiations</h2>
-              {loading ? <span className="badge">Loading…</span> : null}
+              <h2 id="list-heading">Recent initiations</h2>
+              {loading ? <span className="badge">Syncing…</span> : null}
             </div>
             {intents.length === 0 && !loading ? (
               <p className="empty">
-                No order initiations yet. Register one from the mobile app
-                (Help a seeker → copy instructions).
+                No order initiations yet. After a donor copies instructions in
+                the mobile app, click <strong>Refresh</strong> above.
               </p>
             ) : (
               <ul className="intent-list">
@@ -223,18 +140,32 @@ export function App() {
             )}
           </section>
 
-          <section className="panel detail-panel">
-            <h2>Detail</h2>
+          <section className="panel detail-panel" aria-labelledby="detail-heading">
+            <h2 id="detail-heading">Initiation detail</h2>
             {selected ? (
               <DetailView intent={selected} />
             ) : (
-              <p className="empty">Select an initiation from the list.</p>
+              <p className="empty">Select an initiation to review handover context.</p>
             )}
           </section>
         </div>
-      ) : null}
+      </main>
+
+      <footer className="footer">
+        <p>
+          SharingBridge MVP · API configured at build time · Auth via ModHeader
+          or local <code>.env</code>
+        </p>
+      </footer>
     </div>
   );
+}
+
+function formatApiError(err: ApiError, config: AppConfig): string {
+  if (err.status === 401 && config.authMode === "modheader") {
+    return `${err.message} (HTTP 401). Set Authorization in ModHeader (Bearer JWT), then Refresh. Open “Authentication setup” below for steps.`;
+  }
+  return `${err.message} (HTTP ${err.status})`;
 }
 
 function DetailView({ intent }: { intent: OrderInitiation }) {

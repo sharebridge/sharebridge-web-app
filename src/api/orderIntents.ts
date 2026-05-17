@@ -1,4 +1,5 @@
-import type { ConnectionSettings, OrderInitiation } from "../types";
+import type { AppConfig } from "../config";
+import type { OrderInitiation } from "../types";
 
 export class ApiError extends Error {
   status: number;
@@ -12,19 +13,24 @@ export class ApiError extends Error {
   }
 }
 
+function buildRequestHeaders(config: AppConfig): HeadersInit {
+  const headers: Record<string, string> = {
+    accept: "application/json"
+  };
+  if (config.authMode === "env" && config.authToken) {
+    headers.authorization = `Bearer ${config.authToken}`;
+  }
+  return headers;
+}
+
 export async function fetchOrderInitiations(
-  connection: ConnectionSettings
+  config: AppConfig
 ): Promise<OrderInitiation[]> {
-  const url = new URL(
-    `${connection.apiBaseUrl}/v1/donor-seeker/order-intents`
-  );
-  url.searchParams.set("user_id", connection.userId);
+  const url = new URL(`${config.apiBaseUrl}/v1/donor-seeker/order-intents`);
+  url.searchParams.set("user_id", config.userId);
 
   const response = await fetch(url, {
-    headers: {
-      authorization: `Bearer ${connection.authToken}`,
-      accept: "application/json"
-    }
+    headers: buildRequestHeaders(config)
   });
 
   const text = await response.text();

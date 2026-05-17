@@ -1,55 +1,41 @@
 # sharingbridge-web-app
 
-Browser dashboard for **order initiation history** (MVP).
+Professional **order initiation history** dashboard for SharingBridge (Vite + React).
 
-## Features (shipped)
+## How it works
 
-- Connect with integration-service URL + donor JWT (minted from user-service)
-- List and detail view for `GET /v1/donor-seeker/order-intents`
-- Session-only token storage (`sessionStorage`)
+| What | How |
+|------|-----|
+| API URL & user id | Build-time `.env` / Render env (`VITE_*`) |
+| JWT | **ModHeader** (default) injects `Authorization` — not entered on the page |
+| Data | Auto-loads on open; **Refresh** in the header |
 
-## Prerequisites
-
-- **integration-service** with `GET /v1/donor-seeker/order-intents` deployed
-- **CORS:** set `WEB_CORS_ORIGINS` on integration-service to this app’s origin, e.g. `http://localhost:5173` for local dev
-
-## Local development
+## Quick start
 
 ```powershell
 cd sharingbridge-web-app
-npm install
 copy .env.example .env
+npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Mint a JWT:
+1. Set integration `WEB_CORS_ORIGINS=http://localhost:5173` and redeploy.
+2. Mint JWT from user-service; add to **ModHeader** as `Bearer <token>`.
+3. Open http://localhost:5173 → **Refresh**.
 
-```powershell
-$token = (Invoke-RestMethod -Method POST -Uri "https://sharingbridge-user-service.onrender.com/v1/auth/token" `
-  -ContentType "application/json" -Body '{"user_id":"demo-user"}').token
-```
+Expand **Authentication setup** on the page for step-by-step ModHeader instructions.
 
-Paste the token into the web form with the same user id and integration URL.
+## Scripts
 
-## Build
-
-```powershell
-npm run build
-npm run preview
-```
-
-Static output: `dist/`.
-
-## Tests
-
-```powershell
-npm test
-```
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local dev server (port 5173) |
+| `npm run build` | Production bundle → `dist/` |
+| `npm test` | Unit tests |
 
 ## Docs
 
-- [configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md)
-- [MANUAL_TESTING_GUIDE.md](https://github.com/sharingbridge/sharingbridge/blob/main/testing/MANUAL_TESTING_GUIDE.md) §3h
+[configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md)
 
 ## License
 
