@@ -9,8 +9,10 @@ describe("getAppConfig", () => {
     expect(config.defaultUserId).toBeTruthy();
   });
 
-  it("integrationHost parses API base URL", () => {
+  it("integrationHost parses API base URL host", () => {
     const config = getAppConfig();
-    expect(integrationHost(config)).toContain(".");
+    const host = integrationHost(config);
+    expect(host).toMatch(/^[\w.-]+(:\d+)?$/);
+    expect(host).not.toContain("://");
   });
 });
