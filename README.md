@@ -1,44 +1,56 @@
 # sharingbridge-web-app
 
-> Web application (React/Next.js)
+Browser dashboard for **order initiation history** (MVP).
 
-## Overview
+## Features (shipped)
 
-This repository contains the **web application** for SharingBridge, providing browser-based access for donors and administrative dashboards.
+- Connect with integration-service URL + donor JWT (minted from user-service)
+- List and detail view for `GET /v1/donor-seeker/order-intents`
+- Session-only token storage (`sessionStorage`)
 
-**Key Features:**
-- 💻 Donor web portal: Desktop-friendly order placement and tracking
-- 📊 Admin dashboard: Platform monitoring, analytics, user management
-- 🔍 Advanced search and filtering for order history
-- 📈 Impact metrics and reporting dashboards
-- 🛡️ Moderation tools for safety and compliance
-- 📱 Progressive Web App (PWA) capabilities for mobile browsers
-- ♿ WCAG compliant accessibility
+## Prerequisites
 
-**Technology Stack:** React with Next.js for server-side rendering and SEO
+- **integration-service** with `GET /v1/donor-seeker/order-intents` deployed
+- **CORS:** set `WEB_CORS_ORIGINS` on integration-service to this app’s origin, e.g. `http://localhost:5173` for local dev
 
-For overall project context, see the [main SharingBridge repository](https://github.com/sharingbridge/sharingbridge).
+## Local development
 
-## Repository Status
+```powershell
+cd sharingbridge-web-app
+npm install
+copy .env.example .env
+npm run dev
+```
 
-🚧 **Status:** Initial Setup  
-📅 **Date:** January 9, 2026
+Open http://localhost:5173. Mint a JWT:
 
-## Getting Started
+```powershell
+$token = (Invoke-RestMethod -Method POST -Uri "https://sharingbridge-user-service.onrender.com/v1/auth/token" `
+  -ContentType "application/json" -Body '{"user_id":"demo-user"}').token
+```
 
-> Coming soon - Development setup instructions
+Paste the token into the web form with the same user id and integration URL.
 
-## Contributing
+## Build
 
-See the [main repository's CALL_FOR_CONTRIBUTORS.md](https://github.com/sharingbridge/sharingbridge/blob/main/development/CALL_FOR_CONTRIBUTORS.md) for:
-- How to contribute (technical and non-technical)
-- Joining GitHub Discussions
-- Submitting prompts and feature ideas
+```powershell
+npm run build
+npm run preview
+```
+
+Static output: `dist/`.
+
+## Tests
+
+```powershell
+npm test
+```
+
+## Docs
+
+- [configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md)
+- [MANUAL_TESTING_GUIDE.md](https://github.com/sharingbridge/sharingbridge/blob/main/testing/MANUAL_TESTING_GUIDE.md) §3h
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-Part of the [SharingBridge](https://github.com/sharingbridge/sharingbridge) ecosystem
+MIT — see [LICENSE](LICENSE).
