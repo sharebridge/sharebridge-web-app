@@ -1,4 +1,4 @@
-import type { AppConfig } from "../config";
+import type { AuthSession } from "../authSession";
 import type { OrderInitiation } from "../types";
 
 export class ApiError extends Error {
@@ -13,24 +13,18 @@ export class ApiError extends Error {
   }
 }
 
-function buildRequestHeaders(config: AppConfig): HeadersInit {
-  const headers: Record<string, string> = {
-    accept: "application/json"
-  };
-  if (config.authMode === "env" && config.authToken) {
-    headers.authorization = `Bearer ${config.authToken}`;
-  }
-  return headers;
-}
-
 export async function fetchOrderInitiations(
-  config: AppConfig
+  apiBaseUrl: string,
+  session: AuthSession
 ): Promise<OrderInitiation[]> {
-  const url = new URL(`${config.apiBaseUrl}/v1/donor-seeker/order-intents`);
-  url.searchParams.set("user_id", config.userId);
+  const url = new URL(`${apiBaseUrl}/v1/donor-seeker/order-intents`);
+  url.searchParams.set("user_id", session.userId);
 
   const response = await fetch(url, {
-    headers: buildRequestHeaders(config)
+    headers: {
+      accept: "application/json",
+      authorization: `Bearer ${session.token}`
+    }
   });
 
   const text = await response.text();

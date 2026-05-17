@@ -1,28 +1,44 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, fetchOrderInitiations } from "./api/orderIntents";
-import { AuthHelpPanel } from "./components/AuthHelpPanel";
+import { SignInPage } from "./components/SignInPage";
 import { SiteHeader } from "./components/SiteHeader";
-import { getAppConfig, type AppConfig } from "./config";
+import {
+  clearSession,
+  isSessionExpired,
+  loadSession,
+  saveSession,
+  type AuthSession
+} from "./authSession";
+import { getAppConfig } from "./config";
 import { formatWhen, primaryRestaurant, statusLabel } from "./format";
 import type { OrderInitiation } from "./types";
 
 const appConfig = getAppConfig();
 
 export function App() {
+  const [session, setSession] = useState<AuthSession | null>(() =>
+    loadSession()
+  );
   const [intents, setIntents] = useState<OrderInitiation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authHelpOpen, setAuthHelpOpen] = useState(false);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (active: AuthSession) => {
+    if (isSessionExpired(active)) {
+      clearSession();
+      setSession(null);
+      setError("Your session expired. Please sign in again.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const rows = await fetchOrderInitiations(appConfig);
+      const rows = await fetchOrderInitiations(appConfig.apiBaseUrl, active);
       setIntents(rows);
       setSelectedId((prev) =>
         prev && rows.some((row) => row.order_intent_id === prev)
@@ -32,8 +48,14 @@ export function App() {
     } catch (err) {
       setIntents([]);
       setSelectedId(null);
+      if (err instanceof ApiError && err.status === 401) {
+        clearSession();
+        setSession(null);
+        setError("Session expired or invalid. Please sign in again.");
+        return;
+      }
       if (err instanceof ApiError) {
-        setError(formatApiError(err, appConfig));
+        setError(`${err.message} (HTTP ${err.status})`);
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -45,18 +67,38 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void loadHistory();
-  }, [loadHistory]);
-
-  useEffect(() => {
-    if (error?.includes("401")) {
-      setAuthHelpOpen(true);
+    if (session) {
+      void loadHistory(session);
     }
-  }, [error]);
+  }, [session, loadHistory]);
+
+  function handleSignedIn(next: AuthSession) {
+    saveSession(next);
+    setSession(next);
+    setError(null);
+  }
+
+  function handleSignOut() {
+    clearSession();
+    setSession(null);
+    setIntents([]);
+    setSelectedId(null);
+    setError(null);
+  }
+
+  if (!session) {
+    return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
+  }
 
   return (
     <div className="site">
-      <SiteHeader config={appConfig} onRefresh={loadHistory} loading={loading} />
+      <SiteHeader
+        config={appConfig}
+        session={session}
+        onRefresh={() => void loadHistory(session)}
+        onSignOut={handleSignOut}
+        loading={loading}
+      />
 
       <main className="main">
         <section className="hero">
@@ -75,17 +117,11 @@ export function App() {
               <span className="metric-label">Initiations</span>
             </div>
             <div className="metric">
-              <span className="metric-value">{appConfig.userId}</span>
+              <span className="metric-value">{session.userId}</span>
               <span className="metric-label">Signed-in user</span>
             </div>
           </div>
         </section>
-
-        <AuthHelpPanel
-          config={appConfig}
-          open={authHelpOpen}
-          onToggle={() => setAuthHelpOpen((v) => !v)}
-        />
 
         {error ? (
           <div className="banner banner-error" role="alert">
@@ -140,12 +176,17 @@ export function App() {
             )}
           </section>
 
-          <section className="panel detail-panel" aria-labelledby="detail-heading">
+          <section
+            className="panel detail-panel"
+            aria-labelledby="detail-heading"
+          >
             <h2 id="detail-heading">Initiation detail</h2>
             {selected ? (
               <DetailView intent={selected} />
             ) : (
-              <p className="empty">Select an initiation to review handover context.</p>
+              <p className="empty">
+                Select an initiation to review handover context.
+              </p>
             )}
           </section>
         </div>
@@ -153,19 +194,12 @@ export function App() {
 
       <footer className="footer">
         <p>
-          SharingBridge MVP · API configured at build time · Auth via ModHeader
-          or local <code>.env</code>
+          SharingBridge MVP · Signed in as {session.userId} · Session stored in
+          this browser until sign-out or expiry
         </p>
       </footer>
     </div>
   );
-}
-
-function formatApiError(err: ApiError, config: AppConfig): string {
-  if (err.status === 401 && config.authMode === "modheader") {
-    return `${err.message} (HTTP 401). Set Authorization in ModHeader (Bearer JWT), then Refresh. Open “Authentication setup” below for steps.`;
-  }
-  return `${err.message} (HTTP ${err.status})`;
 }
 
 function DetailView({ intent }: { intent: OrderInitiation }) {

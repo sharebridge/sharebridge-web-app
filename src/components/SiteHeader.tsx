@@ -1,12 +1,21 @@
 import { integrationHost, type AppConfig } from "../config";
+import type { AuthSession } from "../authSession";
 
 type Props = {
   config: AppConfig;
+  session: AuthSession;
   onRefresh: () => void;
+  onSignOut: () => void;
   loading: boolean;
 };
 
-export function SiteHeader({ config, onRefresh, loading }: Props) {
+export function SiteHeader({
+  config,
+  session,
+  onRefresh,
+  onSignOut,
+  loading
+}: Props) {
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -23,13 +32,17 @@ export function SiteHeader({ config, onRefresh, loading }: Props) {
           <span className="env-pill" title={config.apiBaseUrl}>
             {integrationHost(config)}
           </span>
+          <span className="user-pill">{session.userId}</span>
           <button
             type="button"
             className="btn btn-primary"
             disabled={loading}
-            onClick={() => onRefresh()}
+            onClick={onRefresh}
           >
             {loading ? "Refreshing…" : "Refresh"}
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onSignOut}>
+            Sign out
           </button>
         </div>
       </div>

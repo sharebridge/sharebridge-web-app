@@ -97,6 +97,17 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-pill {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-hover);
+  background: var(--accent-soft);
+  border: 1px solid #b8e0ce;
+  padding: 6px 10px;
+  border-radius: 999px;
 }
 
 .env-pill {
@@ -432,6 +443,53 @@ body {
 
 .footer code {
   font-size: 0.78rem;
+}
+
+.sign-in-site {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(160deg, var(--bg) 0%, #e2e8f0 100%);
+}
+
+.sign-in-main {
+  width: 100%;
+  max-width: 440px;
+}
+
+.sign-in-card h1 {
+  margin: 0 0 12px;
+  font-size: 1.65rem;
+}
+
+.sign-in-lede {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.sign-in-hint {
+  margin-top: 16px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form input {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
 a {

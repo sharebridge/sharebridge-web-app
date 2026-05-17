@@ -1,14 +1,14 @@
 # sharingbridge-web-app
 
-Professional **order initiation history** dashboard for SharingBridge (Vite + React).
+**Order initiation history** dashboard for SharingBridge (Vite + React).
 
 ## How it works
 
-| What | How |
-|------|-----|
-| API URL & user id | Build-time `.env` / Render env (`VITE_*`) |
-| JWT | **ModHeader** (default) injects `Authorization` — not entered on the page |
-| Data | Auto-loads on open; **Refresh** in the header |
+| Step | What |
+|------|------|
+| Build | Vite bundles the React UI → static `dist/` |
+| Sign in | Page calls user-service → JWT in sessionStorage |
+| Data | Dashboard calls integration-service with Bearer token |
 
 ## Quick start
 
@@ -19,18 +19,14 @@ npm install
 npm run dev
 ```
 
-1. Set integration `WEB_CORS_ORIGINS=http://localhost:5173` and redeploy.
-2. Mint JWT from user-service; add to **ModHeader** as `Bearer <token>`.
-3. Open http://localhost:5173 → **Refresh**.
-
-Expand **Authentication setup** on the page for step-by-step ModHeader instructions.
+Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service, then open http://localhost:5173 and **Sign in** with `demo-user`.
 
 ## Scripts
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Local dev server (port 5173) |
-| `npm run build` | Production bundle → `dist/` |
+| `npm run dev` | Dev server (port 5173) |
+| `npm run build` | Production `dist/` |
 | `npm test` | Unit tests |
 
 ## Docs
