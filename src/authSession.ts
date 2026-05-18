@@ -1,5 +1,8 @@
 export type AuthSession = {
   userId: string;
+  role: string;
+  email?: string | null;
+  name?: string | null;
   token: string;
   expiresAt: number;
 };
@@ -39,6 +42,9 @@ export function loadSession(): AuthSession | null {
     }
     const session: AuthSession = {
       userId: parsed.userId.trim(),
+      role: typeof parsed.role === "string" ? parsed.role.trim() : "coordinator",
+      email: parsed.email ?? null,
+      name: parsed.name ?? null,
       token: parsed.token.trim(),
       expiresAt: parsed.expiresAt
     };
@@ -60,8 +66,20 @@ export function clearSession(): void {
   sessionStorage.removeItem(STORAGE_KEY);
 }
 
-export function sessionFromToken(userId: string, token: string): AuthSession {
+export function sessionFromSignIn(result: {
+  userId: string;
+  token: string;
+  role: string;
+  user?: { email?: string | null; name?: string | null };
+}): AuthSession {
   const expiresAt =
-    jwtExpiresAtMs(token) ?? Date.now() + 3600 * 1000;
-  return { userId, token, expiresAt };
+    jwtExpiresAtMs(result.token) ?? Date.now() + 3600 * 1000;
+  return {
+    userId: result.userId,
+    role: result.role,
+    email: result.user?.email ?? null,
+    name: result.user?.name ?? null,
+    token: result.token,
+    expiresAt
+  };
 }

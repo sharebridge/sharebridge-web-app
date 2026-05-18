@@ -145,6 +145,7 @@ export function App() {
                 {intents.map((intent) => {
                   const restaurant = primaryRestaurant(intent);
                   const meta = [
+                    intent.user_id ? `Donor ${intent.user_id}` : null,
                     statusLabel(intent.status),
                     restaurant,
                     formatWhen(intent.updated_at || intent.created_at)

@@ -1,7 +1,9 @@
 export type AppConfig = {
   apiBaseUrl: string;
   userServiceBaseUrl: string;
-  /** Optional default on the sign-in form only. */
+  googleClientId: string;
+  allowDevSignIn: boolean;
+  /** Optional default on the dev sign-in form only. */
   defaultUserId: string;
 };
 
@@ -19,6 +21,8 @@ export function getAppConfig(): AppConfig {
       import.meta.env.VITE_USER_SERVICE_BASE_URL?.trim() ||
       DEFAULT_USER_SERVICE
     ).replace(/\/$/, ""),
+    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "",
+    allowDevSignIn: import.meta.env.VITE_ALLOW_DEV_SIGN_IN === "true",
     defaultUserId:
       import.meta.env.VITE_DEFAULT_USER_ID?.trim() || "demo-user"
   };

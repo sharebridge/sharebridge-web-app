@@ -1,5 +1,6 @@
 export type OrderInitiation = {
   order_intent_id: string;
+  user_id?: string | null;
   pack_id: string;
   status: string;
   has_reference_photo: boolean;

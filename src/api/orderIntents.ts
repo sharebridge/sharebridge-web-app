@@ -18,7 +18,7 @@ export async function fetchOrderInitiations(
   session: AuthSession
 ): Promise<OrderInitiation[]> {
   const url = new URL(`${apiBaseUrl}/v1/donor-seeker/order-intents`);
-  url.searchParams.set("user_id", session.userId);
+  // Coordinators list all intents; donors would scope to self (web is coordinator-only).
 
   const response = await fetch(url, {
     headers: {
