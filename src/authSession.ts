@@ -26,6 +26,18 @@ export function jwtExpiresAtMs(token: string): number | null {
   return null;
 }
 
+export function sessionDisplayLabel(session: AuthSession): string {
+  const email = session.email?.trim();
+  if (email) {
+    return email;
+  }
+  const name = session.name?.trim();
+  if (name) {
+    return name;
+  }
+  return session.userId;
+}
+
 export function isSessionExpired(session: AuthSession): boolean {
   return Date.now() >= session.expiresAt;
 }

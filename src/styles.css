@@ -470,6 +470,14 @@ body {
   font-size: 0.95rem;
 }
 
+.sign-in-google-hint {
+  margin: 0 0 0.75rem;
+}
+
+.sign-in-switch-account {
+  margin-top: 0.75rem;
+}
+
 .sign-in-hint {
   margin-top: 16px;
 }

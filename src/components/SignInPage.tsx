@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { clearSession } from "../authSession";
 import { mintDevCoordinatorToken, signInWithGoogle } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
@@ -65,6 +66,14 @@ function SignInCard({ config, onSignedIn }: Props) {
 
       {hasGoogle ? (
         <div className="sign-in-google">
+          <p className="hint sign-in-google-hint">
+            In a normal browser window, your coordinator session is kept until you
+            sign out or the token expires (about one hour), including after you
+            refresh or reopen this site in the same browser. Chrome may pre-select
+            your last Google account on the button—that helps the same person sign
+            back in quickly. Use <strong>Use a different Google account</strong>{" "}
+            only when another coordinator needs to sign in on this device.
+          </p>
           <GoogleLogin
             onSuccess={(credentialResponse) => {
               const idToken = credentialResponse.credential;
@@ -87,6 +96,18 @@ function SignInCard({ config, onSignedIn }: Props) {
             text="signin_with"
             width="320"
           />
+          <button
+            type="button"
+            className="btn btn-ghost btn-block sign-in-switch-account"
+            disabled={submitting}
+            onClick={() => {
+              clearSession();
+              googleLogout();
+              setError(null);
+            }}
+          >
+            Use a different Google account
+          </button>
         </div>
       ) : (
         <div className="banner banner-error" role="alert">
@@ -124,25 +145,18 @@ function SignInCard({ config, onSignedIn }: Props) {
       ) : null}
 
       <p className="hint sign-in-hint">
-        Session tokens expire in about one hour. Sign in again when prompted.
+        Closing every tab for this site clears the stored session; signing in again
+        reuses your Google account when Chrome remembers it.
       </p>
     </section>
   );
 }
 
 export function SignInPage({ config, onSignedIn }: Props) {
-  const card = <SignInCard config={config} onSignedIn={onSignedIn} />;
-
   return (
     <div className="site sign-in-site">
       <main className="sign-in-main">
-        {config.googleClientId ? (
-          <GoogleOAuthProvider clientId={config.googleClientId}>
-            {card}
-          </GoogleOAuthProvider>
-        ) : (
-          card
-        )}
+        <SignInCard config={config} onSignedIn={onSignedIn} />
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 import { integrationHost, type AppConfig } from "../config";
-import type { AuthSession } from "../authSession";
+import { sessionDisplayLabel, type AuthSession } from "../authSession";
 
 type Props = {
   config: AppConfig;
@@ -32,7 +32,9 @@ export function SiteHeader({
           <span className="env-pill" title={config.apiBaseUrl}>
             {integrationHost(config)}
           </span>
-          <span className="user-pill">{session.userId}</span>
+          <span className="user-pill" title={session.userId}>
+            {sessionDisplayLabel(session)}
+          </span>
           <button
             type="button"
             className="btn btn-primary"

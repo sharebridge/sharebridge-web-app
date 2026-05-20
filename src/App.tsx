@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { GoogleOAuthProvider, googleLogout } from "@react-oauth/google";
 import { ApiError, fetchOrderInitiations } from "./api/orderIntents";
 import { SignInPage } from "./components/SignInPage";
 import { SiteHeader } from "./components/SiteHeader";
@@ -7,6 +8,7 @@ import {
   isSessionExpired,
   loadSession,
   saveSession,
+  sessionDisplayLabel,
   type AuthSession
 } from "./authSession";
 import { getAppConfig } from "./config";
@@ -16,6 +18,18 @@ import type { OrderInitiation } from "./types";
 const appConfig = getAppConfig();
 
 export function App() {
+  const app = <AppShell />;
+  if (!appConfig.googleClientId) {
+    return app;
+  }
+  return (
+    <GoogleOAuthProvider clientId={appConfig.googleClientId}>
+      {app}
+    </GoogleOAuthProvider>
+  );
+}
+
+function AppShell() {
   const [session, setSession] = useState<AuthSession | null>(() =>
     loadSession()
   );
@@ -80,6 +94,9 @@ export function App() {
 
   function handleSignOut() {
     clearSession();
+    if (appConfig.googleClientId) {
+      googleLogout();
+    }
     setSession(null);
     setIntents([]);
     setSelectedId(null);
@@ -117,8 +134,8 @@ export function App() {
               <span className="metric-label">Initiations</span>
             </div>
             <div className="metric">
-              <span className="metric-value">{session.userId}</span>
-              <span className="metric-label">Signed-in user</span>
+              <span className="metric-value">{sessionDisplayLabel(session)}</span>
+              <span className="metric-label">Signed-in coordinator</span>
             </div>
           </div>
         </section>
@@ -195,8 +212,8 @@ export function App() {
 
       <footer className="footer">
         <p>
-          SharingBridge MVP · Signed in as {session.userId} · Session stored in
-          this browser until sign-out or expiry
+          SharingBridge MVP · Signed in as {sessionDisplayLabel(session)} ·
+          Session kept in this browser until sign-out or expiry
         </p>
       </footer>
     </div>
