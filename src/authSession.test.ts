@@ -1,5 +1,13 @@
+/** @vitest-environment jsdom */
+
 import { describe, expect, it } from "vitest";
-import { isSessionExpired, sessionFromSignIn } from "./authSession";
+import {
+  clearLastGoogleEmailForGsiRevoke,
+  isSessionExpired,
+  readLastGoogleEmailForGsiRevoke,
+  rememberLastGoogleEmailForGsiRevoke,
+  sessionFromSignIn
+} from "./authSession";
 
 describe("authSession", () => {
   it("marks session expired near exp", () => {
@@ -23,5 +31,13 @@ describe("authSession", () => {
     expect(session.userId).toBe("demo");
     expect(session.role).toBe("coordinator");
     expect(session.expiresAt).toBeGreaterThan(Date.now());
+  });
+
+  it("persists last Google email for GSI revoke helpers", () => {
+    localStorage.clear();
+    rememberLastGoogleEmailForGsiRevoke("  a@b.co  ");
+    expect(readLastGoogleEmailForGsiRevoke()).toBe("a@b.co");
+    clearLastGoogleEmailForGsiRevoke();
+    expect(readLastGoogleEmailForGsiRevoke()).toBeNull();
   });
 });

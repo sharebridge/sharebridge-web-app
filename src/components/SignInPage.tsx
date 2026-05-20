@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { GoogleLogin, googleLogout } from "@react-oauth/google";
-import { clearSession } from "../authSession";
+import {
+  clearLastGoogleEmailForGsiRevoke,
+  clearSession,
+  readLastGoogleEmailForGsiRevoke
+} from "../authSession";
 import { mintDevCoordinatorToken, signInWithGoogle } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
@@ -15,6 +19,8 @@ function SignInCard({ config, onSignedIn }: Props) {
   const [userId, setUserId] = useState(config.defaultUserId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [switchAccountHelp, setSwitchAccountHelp] = useState(false);
+  const [googleButtonNonce, setGoogleButtonNonce] = useState(0);
 
   function mapError(err: unknown) {
     if (err instanceof ApiError) {
@@ -54,6 +60,49 @@ function SignInCard({ config, onSignedIn }: Props) {
 
   const hasGoogle = config.googleClientId.length > 0;
 
+  async function handleUseDifferentGoogleAccount() {
+    setSubmitting(true);
+    setError(null);
+    setSwitchAccountHelp(false);
+    clearSession();
+    googleLogout();
+
+    const gsi = window.google?.accounts?.id;
+    if (!gsi) {
+      setSubmitting(false);
+      setError(
+        "Google sign-in is still loading. Wait a moment, then try this button again."
+      );
+      return;
+    }
+
+    const hint = readLastGoogleEmailForGsiRevoke();
+    const revoke = gsi.revoke;
+    if (hint && typeof revoke === "function") {
+      await new Promise<void>((resolve) => {
+        revoke(hint, (done) => {
+          if (done.successful) {
+            clearLastGoogleEmailForGsiRevoke();
+            googleLogout();
+            window.location.reload();
+          } else {
+            setError(
+              done.error?.trim() ||
+                "Google could not reset that account here. Click Sign in with Google below, then choose \"Use another account\" in Google's window."
+            );
+          }
+          resolve();
+        });
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    setGoogleButtonNonce((n) => n + 1);
+    setSwitchAccountHelp(true);
+    setSubmitting(false);
+  }
+
   return (
     <section className="sign-in-card panel">
       <p className="hero-eyebrow">SharingBridge</p>
@@ -72,9 +121,13 @@ function SignInCard({ config, onSignedIn }: Props) {
             refresh or reopen this site in the same browser. Chrome may pre-select
             your last Google account on the button—that helps the same person sign
             back in quickly. Use <strong>Use a different Google account</strong>{" "}
-            only when another coordinator needs to sign in on this device.
+            only when another coordinator needs to sign in on this device. After you
+            have signed in at least once on this browser, the button below can
+            disconnect that Google account from SharingBridge and reload the page.
           </p>
+          <div key={googleButtonNonce}>
           <GoogleLogin
+            auto_select={false}
             onSuccess={(credentialResponse) => {
               const idToken = credentialResponse.credential;
               if (!idToken) {
@@ -96,18 +149,25 @@ function SignInCard({ config, onSignedIn }: Props) {
             text="signin_with"
             width="320"
           />
+          </div>
           <button
             type="button"
             className="btn btn-ghost btn-block sign-in-switch-account"
             disabled={submitting}
-            onClick={() => {
-              clearSession();
-              googleLogout();
-              setError(null);
-            }}
+            onClick={() => void handleUseDifferentGoogleAccount()}
           >
-            Use a different Google account
+            {submitting ? "Working…" : "Use a different Google account"}
           </button>
+          {switchAccountHelp ? (
+            <div className="banner banner-info sign-in-switch-help" role="status">
+              SharingBridge cannot tell which Google profile Chrome is showing until
+              you have completed a sign-in here once (we then remember only your
+              email in this browser for the disconnect step above).{" "}
+              <strong>Next:</strong> click <strong>Sign in with Google</strong>, then
+              in Google{"'"}s dialog choose <strong>Use another account</strong> (or{" "}
+              <strong>Add account</strong>).
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="banner banner-error" role="alert">

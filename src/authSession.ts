@@ -9,6 +9,40 @@ export type AuthSession = {
 
 const STORAGE_KEY = "sharingbridge_web_session_v1";
 
+/** Last coordinator email from a successful sign-in; used only for GSI `revoke` (switch Google account). */
+const GOOGLE_GSI_LAST_EMAIL_KEY = "sharingbridge_gsi_last_email_v1";
+
+export function rememberLastGoogleEmailForGsiRevoke(
+  email: string | null | undefined
+): void {
+  const trimmed = email?.trim();
+  if (!trimmed) {
+    return;
+  }
+  try {
+    localStorage.setItem(GOOGLE_GSI_LAST_EMAIL_KEY, trimmed);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function readLastGoogleEmailForGsiRevoke(): string | null {
+  try {
+    const raw = localStorage.getItem(GOOGLE_GSI_LAST_EMAIL_KEY);
+    return raw?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastGoogleEmailForGsiRevoke(): void {
+  try {
+    localStorage.removeItem(GOOGLE_GSI_LAST_EMAIL_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function jwtExpiresAtMs(token: string): number | null {
   try {
     const parts = token.split(".");
@@ -72,6 +106,7 @@ export function loadSession(): AuthSession | null {
 
 export function saveSession(session: AuthSession): void {
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  rememberLastGoogleEmailForGsiRevoke(session.email);
 }
 
 export function clearSession(): void {
