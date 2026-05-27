@@ -124,8 +124,7 @@ function AppShell() {
             <h1>Order initiation history</h1>
             <p className="hero-lede">
               Track when donors register delivery intent from{" "}
-              <strong>Help a seeker</strong> on mobile — same records as the
-              in-app history, optimized for desktop review.
+              <strong>Help a seeker</strong> on mobile.
             </p>
           </div>
           <div className="hero-metrics" aria-live="polite">
@@ -153,10 +152,7 @@ function AppShell() {
               {loading ? <span className="badge">Syncing…</span> : null}
             </div>
             {intents.length === 0 && !loading ? (
-              <p className="empty">
-                No order initiations yet. After a donor copies instructions in
-                the mobile app, click <strong>Refresh</strong> above.
-              </p>
+              <p className="empty">No order initiations yet.</p>
             ) : (
               <ul className="intent-list">
                 {intents.map((intent) => {
