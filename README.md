@@ -7,7 +7,7 @@
 | Step | What |
 |------|------|
 | Build | Vite bundles the React UI → static `dist/` |
-| Sign in | Page calls user-service → JWT in sessionStorage |
+| Sign in | Google (GIS) → user-service → JWT in sessionStorage; optional **Use a different Google account** after a prior sign-in on this browser |
 | Data | Dashboard calls integration-service with Bearer token |
 
 ## Quick start
@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service, then open http://localhost:5173 and **Sign in** with `demo-user`.
+Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service. Configure Google + coordinator allowlist per [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md), then open http://localhost:5173 and **Sign in with Google** (allowlisted coordinator email).
 
 ## Scripts
 

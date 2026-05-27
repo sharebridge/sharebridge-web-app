@@ -19,8 +19,10 @@ function SignInCard({ config, onSignedIn }: Props) {
   const [userId, setUserId] = useState(config.defaultUserId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [switchAccountHelp, setSwitchAccountHelp] = useState(false);
   const [googleButtonNonce, setGoogleButtonNonce] = useState(0);
+
+  const previousGoogleEmail = readLastGoogleEmailForGsiRevoke();
+  const returningCoordinator = Boolean(previousGoogleEmail);
 
   function mapError(err: unknown) {
     if (err instanceof ApiError) {
@@ -61,112 +63,94 @@ function SignInCard({ config, onSignedIn }: Props) {
   const hasGoogle = config.googleClientId.length > 0;
 
   async function handleUseDifferentGoogleAccount() {
+    if (!previousGoogleEmail) {
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
-    setSwitchAccountHelp(false);
     clearSession();
     googleLogout();
 
     const gsi = window.google?.accounts?.id;
-    if (!gsi) {
+    const revoke = gsi?.revoke;
+    if (!revoke) {
       setSubmitting(false);
       setError(
-        "Google sign-in is still loading. Wait a moment, then try this button again."
+        "Google sign-in is still loading. Wait a moment, then try again."
       );
       return;
     }
 
-    const hint = readLastGoogleEmailForGsiRevoke();
-    const revoke = gsi.revoke;
-    if (hint && typeof revoke === "function") {
-      await new Promise<void>((resolve) => {
-        revoke(hint, (done) => {
-          if (done.successful) {
-            clearLastGoogleEmailForGsiRevoke();
-            googleLogout();
-            window.location.reload();
-          } else {
-            setError(
-              done.error?.trim() ||
-                "Google could not reset that account here. Click Sign in with Google below, then choose \"Use another account\" in Google's window."
-            );
-          }
-          resolve();
-        });
+    await new Promise<void>((resolve) => {
+      revoke(previousGoogleEmail, (done) => {
+        if (done.successful) {
+          clearLastGoogleEmailForGsiRevoke();
+          googleLogout();
+          window.location.reload();
+        } else {
+          setGoogleButtonNonce((n) => n + 1);
+          setError(
+            done.error?.trim() ||
+              "Could not switch accounts here. Use Sign in with Google, then pick Use another account."
+          );
+        }
+        resolve();
       });
-      setSubmitting(false);
-      return;
-    }
-
-    setGoogleButtonNonce((n) => n + 1);
-    setSwitchAccountHelp(true);
+    });
     setSubmitting(false);
   }
 
   return (
     <section className="sign-in-card panel">
-      <p className="hero-eyebrow">SharingBridge</p>
       <h1>Coordinator sign in</h1>
-      <p className="sign-in-lede">
-        Sign in with a Google account listed in the coordinator allowlist
-        (user-service <code>data/coordinators.json</code>). Donors use the
-        mobile app.
-      </p>
+
+      {returningCoordinator ? (
+        <p className="sign-in-lede">
+          Last signed in as <strong>{previousGoogleEmail}</strong>.
+        </p>
+      ) : (
+        <p className="sign-in-lede">
+          Sign in with a Google account on the coordinator allowlist.
+        </p>
+      )}
 
       {hasGoogle ? (
         <div className="sign-in-google">
-          <p className="hint sign-in-google-hint">
-            In a normal browser window, your coordinator session is kept until you
-            sign out or the token expires (about one hour), including after you
-            refresh or reopen this site in the same browser. Chrome may pre-select
-            your last Google account on the button—that helps the same person sign
-            back in quickly. Use <strong>Use a different Google account</strong>{" "}
-            only when another coordinator needs to sign in on this device. After you
-            have signed in at least once on this browser, the button below can
-            disconnect that Google account from SharingBridge and reload the page.
-          </p>
           <div key={googleButtonNonce}>
-          <GoogleLogin
-            auto_select={false}
-            onSuccess={(credentialResponse) => {
-              const idToken = credentialResponse.credential;
-              if (!idToken) {
-                setError("Google did not return a credential.");
-                return;
-              }
-              setSubmitting(true);
-              setError(null);
-              void signInWithGoogle(config.userServiceBaseUrl, idToken)
-                .then((result) => onSignedIn(sessionFromSignIn(result)))
-                .catch(mapError)
-                .finally(() => setSubmitting(false));
-            }}
-            onError={() => setError("Google sign-in was cancelled or failed.")}
-            useOneTap={false}
-            theme="outline"
-            size="large"
-            shape="rectangular"
-            text="signin_with"
-            width="320"
-          />
+            <GoogleLogin
+              auto_select={false}
+              onSuccess={(credentialResponse) => {
+                const idToken = credentialResponse.credential;
+                if (!idToken) {
+                  setError("Google did not return a credential.");
+                  return;
+                }
+                setSubmitting(true);
+                setError(null);
+                void signInWithGoogle(config.userServiceBaseUrl, idToken)
+                  .then((result) => onSignedIn(sessionFromSignIn(result)))
+                  .catch(mapError)
+                  .finally(() => setSubmitting(false));
+              }}
+              onError={() => setError("Google sign-in was cancelled or failed.")}
+              useOneTap={false}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              text="signin_with"
+              width="320"
+            />
           </div>
-          <button
-            type="button"
-            className="btn btn-ghost btn-block sign-in-switch-account"
-            disabled={submitting}
-            onClick={() => void handleUseDifferentGoogleAccount()}
-          >
-            {submitting ? "Working…" : "Use a different Google account"}
-          </button>
-          {switchAccountHelp ? (
-            <div className="banner banner-info sign-in-switch-help" role="status">
-              SharingBridge cannot tell which Google profile Chrome is showing until
-              you have completed a sign-in here once (we then remember only your
-              email in this browser for the disconnect step above).{" "}
-              <strong>Next:</strong> click <strong>Sign in with Google</strong>, then
-              in Google{"'"}s dialog choose <strong>Use another account</strong> (or{" "}
-              <strong>Add account</strong>).
-            </div>
+          {returningCoordinator ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-block sign-in-switch-account"
+              disabled={submitting}
+              onClick={() => void handleUseDifferentGoogleAccount()}
+            >
+              {submitting ? "Working…" : "Use a different Google account"}
+            </button>
           ) : null}
         </div>
       ) : (
@@ -177,7 +161,10 @@ function SignInCard({ config, onSignedIn }: Props) {
       )}
 
       {config.allowDevSignIn ? (
-        <form className="form dev-sign-in-form" onSubmit={(e) => void handleDevSubmit(e)}>
+        <form
+          className="form dev-sign-in-form"
+          onSubmit={(e) => void handleDevSubmit(e)}
+        >
           <p className="hint">Local dev only (requires ALLOW_DEV_TOKEN_MINT on user-service)</p>
           <label>
             Dev coordinator user id
@@ -203,11 +190,6 @@ function SignInCard({ config, onSignedIn }: Props) {
           {error}
         </div>
       ) : null}
-
-      <p className="hint sign-in-hint">
-        Closing every tab for this site clears the stored session; signing in again
-        reuses your Google account when Chrome remembers it.
-      </p>
     </section>
   );
 }

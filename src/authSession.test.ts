@@ -6,6 +6,7 @@ import {
   isSessionExpired,
   readLastGoogleEmailForGsiRevoke,
   rememberLastGoogleEmailForGsiRevoke,
+  saveSession,
   sessionFromSignIn
 } from "./authSession";
 
@@ -39,5 +40,18 @@ describe("authSession", () => {
     expect(readLastGoogleEmailForGsiRevoke()).toBe("a@b.co");
     clearLastGoogleEmailForGsiRevoke();
     expect(readLastGoogleEmailForGsiRevoke()).toBeNull();
+  });
+
+  it("saveSession stores coordinator email for returning sign-in UI", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    saveSession({
+      userId: "coord-1",
+      role: "coordinator",
+      email: "coord@example.com",
+      token: "t",
+      expiresAt: Date.now() + 3_600_000
+    });
+    expect(readLastGoogleEmailForGsiRevoke()).toBe("coord@example.com");
   });
 });
