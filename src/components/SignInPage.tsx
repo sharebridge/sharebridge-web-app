@@ -165,7 +165,10 @@ function SignInCard({ config, onSignedIn }: Props) {
           className="form dev-sign-in-form"
           onSubmit={(e) => void handleDevSubmit(e)}
         >
-          <p className="hint">Local dev only (requires ALLOW_DEV_TOKEN_MINT on user-service)</p>
+          <p className="hint">
+            Local dev only (ALLOW_DEV_TOKEN_MINT on user-service). Optional pre-fill:
+            VITE_DEFAULT_USER_ID in .env
+          </p>
           <label>
             Dev coordinator user id
             <input
