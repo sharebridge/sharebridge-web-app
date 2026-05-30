@@ -19,6 +19,8 @@ npm install
 npm run dev
 ```
 
+**Env profiles (committed, no secrets):** copy `.env.example` for a minimal Google-only local setup, or swap in `.env_localtest` / `.env_render` when you need dev sign-in or hosted API URLs. Restart `npm run dev` after any `.env` change.
+
 Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service. Configure Google and seed the coordinator role per [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md) and [coordinator-seed.sql](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/coordinator-seed.sql), then open http://localhost:5173 and **Sign in with Google**.
 
 ## Scripts
