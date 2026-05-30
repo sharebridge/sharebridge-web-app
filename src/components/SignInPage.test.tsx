@@ -34,7 +34,7 @@ describe("SignInPage", () => {
 
     expect(screen.getByRole("heading", { name: /coordinator sign in/i })).toBeTruthy();
     expect(
-      screen.getByText(/sign in with a google account on the coordinator allowlist/i)
+      screen.getByText(/google account that has the coordinator role/i)
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: /different google account/i })).toBeNull();
     expect(screen.queryByText(/last signed in as/i)).toBeNull();
@@ -51,7 +51,7 @@ describe("SignInPage", () => {
       screen.getByRole("button", { name: /use a different google account/i })
     ).toBeTruthy();
     expect(
-      screen.queryByText(/sign in with a google account on the coordinator allowlist/i)
+      screen.queryByText(/google account that has the coordinator role/i)
     ).toBeNull();
   });
 });

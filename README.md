@@ -19,7 +19,7 @@ npm install
 npm run dev
 ```
 
-Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service. Configure Google + coordinator allowlist per [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md), then open http://localhost:5173 and **Sign in with Google** (allowlisted coordinator email).
+Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service. Configure Google and seed the coordinator role per [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md) and [coordinator-seed.sql](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/coordinator-seed.sql), then open http://localhost:5173 and **Sign in with Google**.
 
 ## Scripts
 

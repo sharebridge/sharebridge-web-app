@@ -111,7 +111,7 @@ function SignInCard({ config, onSignedIn }: Props) {
         </p>
       ) : (
         <p className="sign-in-lede">
-          Sign in with a Google account on the coordinator allowlist.
+          Sign in with a Google account that has the coordinator role in the database.
         </p>
       )}
 
