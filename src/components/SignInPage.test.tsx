@@ -6,9 +6,12 @@ import { rememberLastGoogleEmailForGsiRevoke } from "../authSession";
 import { SignInPage } from "./SignInPage";
 import type { AppConfig } from "../config";
 
+const pickGoogleAccount = vi.fn();
+
 vi.mock("@react-oauth/google", () => ({
   GoogleLogin: () => <div data-testid="google-login" />,
-  googleLogout: vi.fn()
+  googleLogout: vi.fn(),
+  useGoogleLogin: vi.fn(() => pickGoogleAccount)
 }));
 
 const baseConfig: AppConfig = {
@@ -23,6 +26,7 @@ describe("SignInPage", () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    pickGoogleAccount.mockClear();
   });
 
   afterEach(() => {
@@ -53,5 +57,18 @@ describe("SignInPage", () => {
     expect(
       screen.queryByText(/google account that has the coordinator role/i)
     ).toBeNull();
+  });
+
+  it("opens Google account picker when switching accounts", async () => {
+    rememberLastGoogleEmailForGsiRevoke("coord@example.com");
+
+    render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
+
+    await screen
+      .getByRole("button", { name: /use a different google account/i })
+      .click();
+
+    expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem("sharingbridge_gsi_last_email_v1")).toBeNull();
   });
 });

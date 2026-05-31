@@ -14,23 +14,9 @@ export type SignInResult = {
   user: AuthUser;
 };
 
-export async function signInWithGoogle(
-  userServiceBaseUrl: string,
-  idToken: string
+async function parseSignInResponse(
+  response: Response
 ): Promise<SignInResult> {
-  const base = userServiceBaseUrl.replace(/\/$/, "");
-  const response = await fetch(`${base}/v1/auth/google`, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      id_token: idToken,
-      client_type: "web"
-    })
-  });
-
   const text = await response.text();
   let body: Record<string, unknown> = {};
   if (text) {
@@ -77,6 +63,47 @@ export async function signInWithGoogle(
       role
     }
   };
+}
+
+export async function signInWithGoogle(
+  userServiceBaseUrl: string,
+  idToken: string
+): Promise<SignInResult> {
+  const base = userServiceBaseUrl.replace(/\/$/, "");
+  const response = await fetch(`${base}/v1/auth/google`, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      id_token: idToken,
+      client_type: "web"
+    })
+  });
+
+  return parseSignInResponse(response);
+}
+
+/** Opens Google's account picker (OAuth access token) for switching Gmail accounts. */
+export async function signInWithGoogleAccessToken(
+  userServiceBaseUrl: string,
+  accessToken: string
+): Promise<SignInResult> {
+  const base = userServiceBaseUrl.replace(/\/$/, "");
+  const response = await fetch(`${base}/v1/auth/google`, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      access_token: accessToken,
+      client_type: "web"
+    })
+  });
+
+  return parseSignInResponse(response);
 }
 
 /** Dev-only fallback when VITE_ALLOW_DEV_SIGN_IN=true */

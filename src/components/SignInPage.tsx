@@ -1,11 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { GoogleLogin, googleLogout, useGoogleLogin } from "@react-oauth/google";
 import {
   clearLastGoogleEmailForGsiRevoke,
   clearSession,
   readLastGoogleEmailForGsiRevoke
 } from "../authSession";
-import { mintDevCoordinatorToken, signInWithGoogle } from "../api/auth";
+import {
+  mintDevCoordinatorToken,
+  signInWithGoogle,
+  signInWithGoogleAccessToken
+} from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
 import type { AppConfig } from "../config";
@@ -37,6 +41,37 @@ function SignInCard({ config, onSignedIn }: Props) {
     }
   }
 
+  async function completeAccessTokenSignIn(accessToken: string) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await signInWithGoogleAccessToken(
+        config.userServiceBaseUrl,
+        accessToken
+      );
+      onSignedIn(sessionFromSignIn(result));
+    } catch (err) {
+      mapError(err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const pickGoogleAccount = useGoogleLogin({
+    flow: "implicit",
+    scope: "openid email profile",
+    prompt: "select_account",
+    onSuccess: (tokenResponse) => {
+      const accessToken = tokenResponse.access_token?.trim();
+      if (!accessToken) {
+        setError("Google did not return an access token.");
+        return;
+      }
+      void completeAccessTokenSignIn(accessToken);
+    },
+    onError: () => setError("Google sign-in was cancelled or failed.")
+  });
+
   async function handleDevSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = userId.trim();
@@ -62,11 +97,6 @@ function SignInCard({ config, onSignedIn }: Props) {
   const hasGoogle = config.googleClientId.length > 0;
 
   function handleUseDifferentGoogleAccount() {
-    if (!previousGoogleEmail) {
-      return;
-    }
-
-    setSubmitting(true);
     setError(null);
     clearLastGoogleEmailForGsiRevoke();
     clearSession();
@@ -76,9 +106,8 @@ function SignInCard({ config, onSignedIn }: Props) {
       /* ignore */
     }
     googleLogout();
-    // Skip GIS revoke — Chrome FedCM often returns fedcm_disconnect_failed.
-    // After reload, use Sign in with Google → "Use another account" in Google's dialog.
-    window.location.reload();
+    // OAuth popup with prompt=select_account — clears the locked-in Gmail session.
+    pickGoogleAccount();
   }
 
   return (
@@ -100,6 +129,7 @@ function SignInCard({ config, onSignedIn }: Props) {
           <div>
             <GoogleLogin
               auto_select={false}
+              use_fedcm_for_prompt={false}
               onSuccess={(credentialResponse) => {
                 const idToken = credentialResponse.credential;
                 if (!idToken) {
