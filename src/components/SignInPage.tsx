@@ -62,43 +62,24 @@ function SignInCard({ config, onSignedIn }: Props) {
 
   const hasGoogle = config.googleClientId.length > 0;
 
-  async function handleUseDifferentGoogleAccount() {
+  function handleUseDifferentGoogleAccount() {
     if (!previousGoogleEmail) {
       return;
     }
 
     setSubmitting(true);
     setError(null);
+    clearLastGoogleEmailForGsiRevoke();
     clearSession();
-    googleLogout();
-
-    const gsi = window.google?.accounts?.id;
-    const revoke = gsi?.revoke;
-    if (!revoke) {
-      setSubmitting(false);
-      setError(
-        "Google sign-in is still loading. Wait a moment, then try again."
-      );
-      return;
+    try {
+      window.google?.accounts?.id?.disableAutoSelect?.();
+    } catch {
+      /* ignore */
     }
-
-    await new Promise<void>((resolve) => {
-      revoke(previousGoogleEmail, (done) => {
-        if (done.successful) {
-          clearLastGoogleEmailForGsiRevoke();
-          googleLogout();
-          window.location.reload();
-        } else {
-          setGoogleButtonNonce((n) => n + 1);
-          setError(
-            done.error?.trim() ||
-              "Could not switch accounts here. Use Sign in with Google, then pick Use another account."
-          );
-        }
-        resolve();
-      });
-    });
-    setSubmitting(false);
+    googleLogout();
+    // Skip GIS revoke — Chrome FedCM often returns fedcm_disconnect_failed.
+    // After reload, use Sign in with Google → "Use another account" in Google's dialog.
+    window.location.reload();
   }
 
   return (
@@ -147,7 +128,7 @@ function SignInCard({ config, onSignedIn }: Props) {
               type="button"
               className="btn btn-ghost btn-block sign-in-switch-account"
               disabled={submitting}
-              onClick={() => void handleUseDifferentGoogleAccount()}
+              onClick={handleUseDifferentGoogleAccount}
             >
               {submitting ? "Working…" : "Use a different Google account"}
             </button>
