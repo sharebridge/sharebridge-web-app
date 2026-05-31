@@ -19,7 +19,6 @@ function SignInCard({ config, onSignedIn }: Props) {
   const [userId, setUserId] = useState(config.defaultUserId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [googleButtonNonce, setGoogleButtonNonce] = useState(0);
 
   const previousGoogleEmail = readLastGoogleEmailForGsiRevoke();
   const returningCoordinator = Boolean(previousGoogleEmail);
@@ -98,7 +97,7 @@ function SignInCard({ config, onSignedIn }: Props) {
 
       {hasGoogle ? (
         <div className="sign-in-google">
-          <div key={googleButtonNonce}>
+          <div>
             <GoogleLogin
               auto_select={false}
               onSuccess={(credentialResponse) => {
