@@ -9,7 +9,6 @@ import type { AppConfig } from "../config";
 const pickGoogleAccount = vi.fn();
 
 vi.mock("@react-oauth/google", () => ({
-  GoogleLogin: () => <div data-testid="google-login" />,
   googleLogout: vi.fn(),
   useGoogleLogin: vi.fn(() => pickGoogleAccount)
 }));
@@ -33,42 +32,29 @@ describe("SignInPage", () => {
     cleanup();
   });
 
-  it("shows minimal copy and hides switch account for first-time sign-in", () => {
+  it("shows account-picker sign-in on first visit", async () => {
     render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: /coordinator sign in/i })).toBeTruthy();
     expect(
-      screen.getByText(/google account that has the coordinator role/i)
+      screen.getByText(/choose the gmail account in google/i)
     ).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /different google account/i })).toBeNull();
     expect(screen.queryByText(/last signed in as/i)).toBeNull();
+
+    await screen.getByRole("button", { name: /sign in with google/i }).click();
+    expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
   });
 
-  it("shows last email and switch account after a prior coordinator sign-in", () => {
+  it("shows last email hint after a prior coordinator sign-in", async () => {
     rememberLastGoogleEmailForGsiRevoke("coord@example.com");
 
     render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
 
     expect(screen.getByText(/last signed in as/i)).toBeTruthy();
     expect(screen.getByText("coord@example.com")).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /use a different google account/i })
-    ).toBeTruthy();
-    expect(
-      screen.queryByText(/google account that has the coordinator role/i)
-    ).toBeNull();
-  });
+    expect(screen.getByText(/use another account/i)).toBeTruthy();
 
-  it("opens Google account picker when switching accounts", async () => {
-    rememberLastGoogleEmailForGsiRevoke("coord@example.com");
-
-    render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
-
-    await screen
-      .getByRole("button", { name: /use a different google account/i })
-      .click();
-
+    await screen.getByRole("button", { name: /sign in with google/i }).click();
     expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem("sharingbridge_gsi_last_email_v1")).toBeNull();
   });
 });

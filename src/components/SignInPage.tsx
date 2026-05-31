@@ -1,13 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { GoogleLogin, googleLogout, useGoogleLogin } from "@react-oauth/google";
+import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import {
-  clearLastGoogleEmailForGsiRevoke,
   clearSession,
   readLastGoogleEmailForGsiRevoke
 } from "../authSession";
 import {
   mintDevCoordinatorToken,
-  signInWithGoogle,
   signInWithGoogleAccessToken
 } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
@@ -96,9 +94,8 @@ function SignInCard({ config, onSignedIn }: Props) {
 
   const hasGoogle = config.googleClientId.length > 0;
 
-  function handleUseDifferentGoogleAccount() {
+  function handleGoogleSignIn() {
     setError(null);
-    clearLastGoogleEmailForGsiRevoke();
     clearSession();
     try {
       window.google?.accounts?.id?.disableAutoSelect?.();
@@ -106,7 +103,6 @@ function SignInCard({ config, onSignedIn }: Props) {
       /* ignore */
     }
     googleLogout();
-    // OAuth popup with prompt=select_account — clears the locked-in Gmail session.
     pickGoogleAccount();
   }
 
@@ -116,52 +112,30 @@ function SignInCard({ config, onSignedIn }: Props) {
 
       {returningCoordinator ? (
         <p className="sign-in-lede">
-          Last signed in as <strong>{previousGoogleEmail}</strong>.
+          Last signed in as <strong>{previousGoogleEmail}</strong>. Pick an account
+          in Google&apos;s dialog — use <strong>Use another account</strong> to
+          switch.
         </p>
       ) : (
         <p className="sign-in-lede">
           Sign in with a Google account that has the coordinator role in the database.
+          You will choose the Gmail account in Google&apos;s dialog.
         </p>
       )}
 
       {hasGoogle ? (
         <div className="sign-in-google">
-          <div>
-            <GoogleLogin
-              auto_select={false}
-              use_fedcm_for_prompt={false}
-              onSuccess={(credentialResponse) => {
-                const idToken = credentialResponse.credential;
-                if (!idToken) {
-                  setError("Google did not return a credential.");
-                  return;
-                }
-                setSubmitting(true);
-                setError(null);
-                void signInWithGoogle(config.userServiceBaseUrl, idToken)
-                  .then((result) => onSignedIn(sessionFromSignIn(result)))
-                  .catch(mapError)
-                  .finally(() => setSubmitting(false));
-              }}
-              onError={() => setError("Google sign-in was cancelled or failed.")}
-              useOneTap={false}
-              theme="outline"
-              size="large"
-              shape="rectangular"
-              text="signin_with"
-              width="320"
-            />
-          </div>
-          {returningCoordinator ? (
-            <button
-              type="button"
-              className="btn btn-ghost btn-block sign-in-switch-account"
-              disabled={submitting}
-              onClick={handleUseDifferentGoogleAccount}
-            >
-              {submitting ? "Working…" : "Use a different Google account"}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="btn btn-secondary btn-block sign-in-google-btn"
+            disabled={submitting}
+            onClick={handleGoogleSignIn}
+          >
+            {submitting ? "Signing in…" : "Sign in with Google"}
+          </button>
+          <p className="hint sign-in-google-hint">
+            Opens Google&apos;s account picker (not the Chrome default account only).
+          </p>
         </div>
       ) : (
         <div className="banner banner-error" role="alert">
