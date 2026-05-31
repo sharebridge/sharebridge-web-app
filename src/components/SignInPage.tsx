@@ -1,9 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { googleLogout, useGoogleLogin } from "@react-oauth/google";
-import {
-  clearSession,
-  readLastGoogleEmailForGsiRevoke
-} from "../authSession";
+import { clearSession } from "../authSession";
 import {
   mintDevCoordinatorToken,
   signInWithGoogleAccessToken
@@ -21,9 +18,6 @@ function SignInCard({ config, onSignedIn }: Props) {
   const [userId, setUserId] = useState(config.defaultUserId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const previousGoogleEmail = readLastGoogleEmailForGsiRevoke();
-  const returningCoordinator = Boolean(previousGoogleEmail);
 
   function mapError(err: unknown) {
     if (err instanceof ApiError) {
@@ -110,19 +104,6 @@ function SignInCard({ config, onSignedIn }: Props) {
     <section className="sign-in-card panel">
       <h1>Coordinator sign in</h1>
 
-      {returningCoordinator ? (
-        <p className="sign-in-lede">
-          Last signed in as <strong>{previousGoogleEmail}</strong>. Pick an account
-          in Google&apos;s dialog — use <strong>Use another account</strong> to
-          switch.
-        </p>
-      ) : (
-        <p className="sign-in-lede">
-          Sign in with a Google account that has the coordinator role in the database.
-          You will choose the Gmail account in Google&apos;s dialog.
-        </p>
-      )}
-
       {hasGoogle ? (
         <div className="sign-in-google">
           <button
@@ -133,9 +114,6 @@ function SignInCard({ config, onSignedIn }: Props) {
           >
             {submitting ? "Signing in…" : "Sign in with Google"}
           </button>
-          <p className="hint sign-in-google-hint">
-            Opens Google&apos;s account picker (not the Chrome default account only).
-          </p>
         </div>
       ) : (
         <div className="banner banner-error" role="alert">
@@ -149,10 +127,6 @@ function SignInCard({ config, onSignedIn }: Props) {
           className="form dev-sign-in-form"
           onSubmit={(e) => void handleDevSubmit(e)}
         >
-          <p className="hint">
-            Local dev only (ALLOW_DEV_TOKEN_MINT on user-service). Optional pre-fill:
-            VITE_DEFAULT_USER_ID in .env
-          </p>
           <label>
             Dev coordinator user id
             <input

@@ -2,7 +2,6 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rememberLastGoogleEmailForGsiRevoke } from "../authSession";
 import { SignInPage } from "./SignInPage";
 import type { AppConfig } from "../config";
 
@@ -32,27 +31,13 @@ describe("SignInPage", () => {
     cleanup();
   });
 
-  it("shows account-picker sign-in on first visit", async () => {
+  it("shows title and Google sign-in only", async () => {
     render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: /coordinator sign in/i })).toBeTruthy();
-    expect(
-      screen.getByText(/choose the gmail account in google/i)
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: /sign in with google/i })).toBeTruthy();
     expect(screen.queryByText(/last signed in as/i)).toBeNull();
-
-    await screen.getByRole("button", { name: /sign in with google/i }).click();
-    expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows last email hint after a prior coordinator sign-in", async () => {
-    rememberLastGoogleEmailForGsiRevoke("coord@example.com");
-
-    render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
-
-    expect(screen.getByText(/last signed in as/i)).toBeTruthy();
-    expect(screen.getByText("coord@example.com")).toBeTruthy();
-    expect(screen.getByText(/use another account/i)).toBeTruthy();
+    expect(screen.queryByText(/coordinator role/i)).toBeNull();
 
     await screen.getByRole("button", { name: /sign in with google/i }).click();
     expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
