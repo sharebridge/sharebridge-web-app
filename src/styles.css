@@ -510,3 +510,22 @@ body {
 a {
   color: var(--accent);
 }
+
+.reference-photo-thumb {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.reference-photo-link {
+  display: inline-block;
+}
+
+.reference-photo-caption {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

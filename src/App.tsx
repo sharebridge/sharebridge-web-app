@@ -231,9 +231,41 @@ function DetailView({ intent }: { intent: OrderInitiation }) {
         <dt>Status</dt>
         <dd>{statusLabel(intent.status)}</dd>
       </div>
-      <div>
+      <div className={intent.reference_photo_view_url ? "detail-block" : undefined}>
         <dt>Reference photo</dt>
-        <dd>{intent.has_reference_photo ? "Yes" : "No"}</dd>
+        <dd>
+          {intent.reference_photo_thumbnail_url &&
+          intent.reference_photo_view_url ? (
+            <>
+              <a
+                href={intent.reference_photo_view_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="reference-photo-link"
+              >
+                <img
+                  src={intent.reference_photo_thumbnail_url}
+                  alt="Seeker reference"
+                  className="reference-photo-thumb"
+                />
+              </a>
+              <p className="reference-photo-caption">
+                <a
+                  href={intent.reference_photo_view_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Open full image (Cloudinary)
+                </a>
+                {intent.reference_photo_artifact_id
+                  ? ` · ${intent.reference_photo_artifact_id}`
+                  : ""}
+              </p>
+            </>
+          ) : (
+            <span>{intent.has_reference_photo ? "Yes (no URL on record)" : "No"}</span>
+          )}
+        </dd>
       </div>
       <div>
         <dt>Registered</dt>

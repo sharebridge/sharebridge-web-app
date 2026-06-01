@@ -4,6 +4,9 @@ export type OrderInitiation = {
   pack_id: string;
   status: string;
   has_reference_photo: boolean;
+  reference_photo_artifact_id?: string;
+  reference_photo_view_url?: string;
+  reference_photo_thumbnail_url?: string;
   verbal_handover_notes: string;
   presets_snapshot: Array<{
     restaurant_name?: string;
