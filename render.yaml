@@ -1,0 +1,23 @@
+# Render Blueprint — Static Site (Vite → dist/).
+# VITE_* are baked in at build time; changing them requires a new deploy.
+# Guide: https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md
+#
+# If a static site already exists without auto-deploy: Settings → Build & Deploy →
+# Auto-Deploy = On Commit, branch main — or connect this repo via Blueprint Sync.
+services:
+  - type: web
+    name: sharingbridge-web-app
+    runtime: static
+    branch: main
+    autoDeploy: true
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: VITE_API_BASE_URL
+        value: https://sharingbridge-integration-service.onrender.com
+      - key: VITE_USER_SERVICE_BASE_URL
+        value: https://sharingbridge-user-service.onrender.com
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false

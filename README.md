@@ -31,6 +31,14 @@ Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integr
 | `npm run build` | Production `dist/` |
 | `npm test` | Unit tests |
 
+## Deploy (Render static site)
+
+Root **`render.yaml`** — **New +** → **Blueprint** → this repo → set `VITE_GOOGLE_CLIENT_ID`. **Auto-deploy** on every push to `main` when **Build & Deploy → Auto-Deploy** is **On Commit**.
+
+If the site only updates on **Manual Deploy**, open the static site in Render → **Settings** → **Build & Deploy** → turn **Auto-Deploy** on.
+
+[configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md) · [e2e-deployment-sequence.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/e2e-deployment-sequence.md)
+
 ## Docs
 
 [configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md)
