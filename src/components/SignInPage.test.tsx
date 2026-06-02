@@ -16,7 +16,7 @@ const baseConfig: AppConfig = {
   apiBaseUrl: "http://localhost:3001",
   userServiceBaseUrl: "http://localhost:3000",
   googleClientId: "test-client-id",
-  allowDevSignIn: false,
+  allowGoogleSignInBypass: false,
   allowAnyUserWebDashboard: false,
   defaultUserId: ""
 };

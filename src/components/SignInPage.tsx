@@ -69,11 +69,11 @@ function SignInCard({ config, onSignedIn }: Props) {
     onError: () => setError("Google sign-in was cancelled or failed.")
   });
 
-  async function handleDevSubmit(event: FormEvent) {
+  async function handleBypassSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = userId.trim();
     if (!trimmed) {
-      setError("Enter a coordinator user id for dev sign-in.");
+      setError("Enter a coordinator user id.");
       return;
     }
     setSubmitting(true);
@@ -137,13 +137,16 @@ function SignInCard({ config, onSignedIn }: Props) {
         </div>
       )}
 
-      {config.allowDevSignIn ? (
+      {config.allowGoogleSignInBypass ? (
         <form
-          className="form dev-sign-in-form"
-          onSubmit={(e) => void handleDevSubmit(e)}
+          className="form bypass-sign-in-form"
+          onSubmit={(e) => void handleBypassSubmit(e)}
         >
+          <p className="sign-in-lede">
+            Local only: sign in with a user id instead of Google.
+          </p>
           <label>
-            Dev coordinator user id
+            Coordinator user id
             <input
               type="text"
               value={userId}
@@ -156,7 +159,7 @@ function SignInCard({ config, onSignedIn }: Props) {
             className="btn btn-secondary btn-block"
             disabled={submitting}
           >
-            {submitting ? "Signing in…" : "Dev sign in"}
+            {submitting ? "Signing in…" : "Sign in without Google"}
           </button>
         </form>
       ) : null}

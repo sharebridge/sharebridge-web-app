@@ -1,8 +1,11 @@
+import { googleSignInBypassEnabled } from "./envFlags";
+
 export type AppConfig = {
   apiBaseUrl: string;
   userServiceBaseUrl: string;
   googleClientId: string;
-  allowDevSignIn: boolean;
+  /** Local only: show sign-in with user id instead of Google. */
+  allowGoogleSignInBypass: boolean;
   /**
    * MVP: allow any Google account with donor access to use the web dashboard.
    * Requires user-service `ALLOW_WEB_DASHBOARD_ANY_USER=true`.
@@ -27,7 +30,7 @@ export function getAppConfig(): AppConfig {
       DEFAULT_USER_SERVICE
     ).replace(/\/$/, ""),
     googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "",
-    allowDevSignIn: import.meta.env.VITE_ALLOW_DEV_SIGN_IN === "true",
+    allowGoogleSignInBypass: googleSignInBypassEnabled(),
     allowAnyUserWebDashboard:
       import.meta.env.VITE_ALLOW_ANY_USER_WEB_DASHBOARD === "true",
     defaultUserId: import.meta.env.VITE_DEFAULT_USER_ID?.trim() ?? ""

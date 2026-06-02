@@ -106,7 +106,7 @@ export async function signInWithGoogleAccessToken(
   return parseSignInResponse(response);
 }
 
-/** Dev-only fallback when VITE_ALLOW_DEV_SIGN_IN=true */
+/** Local bypass when VITE_BYPASS_GOOGLE_SIGN_IN=true */
 export async function mintDevCoordinatorToken(
   userServiceBaseUrl: string,
   userId: string
