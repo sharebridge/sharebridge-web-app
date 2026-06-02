@@ -5,7 +5,7 @@ export type AppConfig = {
   allowDevSignIn: boolean;
   /**
    * MVP: allow any Google account with donor access to use the web dashboard.
-   * Requires user-service `ALLOW_WEB_DASHBOARD_ANY_USER=true`. Off in production.
+   * Requires user-service `ALLOW_WEB_DASHBOARD_ANY_USER=true`.
    */
   allowAnyUserWebDashboard: boolean;
   /** Dev sign-in form pre-fill only; set via VITE_DEFAULT_USER_ID (no in-code default). */
