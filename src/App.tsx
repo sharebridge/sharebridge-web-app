@@ -14,6 +14,7 @@ import {
 import { getAppConfig } from "./config";
 import { formatWhen, primaryRestaurant, statusLabel } from "./format";
 import type { OrderInitiation } from "./types";
+import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
 
 const appConfig = getAppConfig();
 
@@ -165,7 +166,12 @@ function AppShell() {
                   ]
                     .filter(Boolean)
                     .join(" · ");
-                  return (
+                      const hasThumb = Boolean(
+                        intent.reference_photo_thumbnail_url?.trim() &&
+                          (intent.reference_photo_view_url?.trim() ||
+                            intent.reference_photo_thumbnail_url?.trim())
+                      );
+                      return (
                     <li key={intent.order_intent_id}>
                       <button
                         type="button"
@@ -178,10 +184,23 @@ function AppShell() {
                           setSelectedId(intent.order_intent_id)
                         }
                       >
-                        <span className="intent-id">
-                          {intent.order_intent_id}
+                        {hasThumb ? (
+                          <ReferencePhotoDisplay
+                            compact
+                            thumbnailUrl={intent.reference_photo_thumbnail_url}
+                            viewUrl={intent.reference_photo_view_url}
+                          />
+                        ) : intent.has_reference_photo ? (
+                          <span className="intent-photo-placeholder" aria-hidden>
+                            📷
+                          </span>
+                        ) : null}
+                        <span className="intent-row-text">
+                          <span className="intent-id">
+                            {intent.order_intent_id}
+                          </span>
+                          <span className="intent-meta">{meta}</span>
                         </span>
-                        <span className="intent-meta">{meta}</span>
                       </button>
                     </li>
                   );
@@ -231,40 +250,22 @@ function DetailView({ intent }: { intent: OrderInitiation }) {
         <dt>Status</dt>
         <dd>{statusLabel(intent.status)}</dd>
       </div>
-      <div className={intent.reference_photo_view_url ? "detail-block" : undefined}>
+      <div
+        className={
+          intent.reference_photo_view_url ||
+          intent.reference_photo_thumbnail_url
+            ? "detail-block"
+            : undefined
+        }
+      >
         <dt>Reference photo</dt>
         <dd>
-          {intent.reference_photo_thumbnail_url &&
-          intent.reference_photo_view_url ? (
-            <>
-              <a
-                href={intent.reference_photo_view_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="reference-photo-link"
-              >
-                <img
-                  src={intent.reference_photo_thumbnail_url}
-                  alt="Seeker reference"
-                  className="reference-photo-thumb"
-                />
-              </a>
-              <p className="reference-photo-caption">
-                <a
-                  href={intent.reference_photo_view_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open full image (Cloudinary)
-                </a>
-                {intent.reference_photo_artifact_id
-                  ? ` · ${intent.reference_photo_artifact_id}`
-                  : ""}
-              </p>
-            </>
-          ) : (
-            <span>{intent.has_reference_photo ? "Yes (no URL on record)" : "No"}</span>
-          )}
+          <ReferencePhotoDisplay
+            thumbnailUrl={intent.reference_photo_thumbnail_url}
+            viewUrl={intent.reference_photo_view_url}
+            artifactId={intent.reference_photo_artifact_id}
+            hasReferencePhoto={intent.has_reference_photo}
+          />
         </dd>
       </div>
       <div>

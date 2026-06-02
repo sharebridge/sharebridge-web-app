@@ -369,6 +369,9 @@ body {
 }
 
 .intent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   text-align: left;
   padding: 14px 16px;
@@ -391,6 +394,14 @@ body {
   background: var(--accent-soft);
 }
 
+.intent-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
 .intent-id {
   display: block;
   font-weight: 600;
@@ -402,7 +413,19 @@ body {
   display: block;
   font-size: 0.84rem;
   color: var(--muted);
-  margin-top: 6px;
+  margin-top: 0;
+}
+
+.intent-photo-placeholder {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  font-size: 1.25rem;
 }
 
 .detail-grid {
@@ -511,13 +534,31 @@ a {
   color: var(--accent);
 }
 
+.reference-photo {
+  margin-top: 4px;
+}
+
 .reference-photo-thumb {
   display: block;
-  max-width: 220px;
-  max-height: 220px;
+  width: 100%;
+  max-width: 320px;
+  max-height: 280px;
   border-radius: 8px;
   border: 1px solid var(--border);
   object-fit: cover;
+  background: var(--surface);
+}
+
+.reference-photo-thumb--compact {
+  width: 48px;
+  height: 48px;
+  max-width: 48px;
+  max-height: 48px;
+  flex-shrink: 0;
+}
+
+.reference-photo--compact {
+  margin: 0;
 }
 
 .reference-photo-link {
