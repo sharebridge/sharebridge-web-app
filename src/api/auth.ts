@@ -31,7 +31,8 @@ async function parseSignInResponse(
     throw new ApiError(
       (body.message as string) || `Sign-in failed (HTTP ${response.status}).`,
       response.status,
-      body.code as string | undefined
+      body.code as string | undefined,
+      body.reason as string | undefined
     );
   }
 

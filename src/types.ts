@@ -1,6 +1,8 @@
 export type OrderInitiation = {
   order_intent_id: string;
   user_id?: string | null;
+  /** Reserved for future city grouping on the coordinator dashboard. */
+  city?: string | null;
   pack_id: string;
   status: string;
   has_reference_photo: boolean;

@@ -12,8 +12,10 @@ import {
   type AuthSession
 } from "./authSession";
 import { getAppConfig } from "./config";
-import { formatWhen, primaryRestaurant, statusLabel } from "./format";
+import { formatWhen, statusLabel } from "./format";
+import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
+import { OrderIntentList } from "./components/OrderIntentList";
 import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
 
 const appConfig = getAppConfig();
@@ -36,6 +38,7 @@ function AppShell() {
   );
   const [intents, setIntents] = useState<OrderInitiation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [groupMode, setGroupMode] = useState<OrderGroupMode>("donor");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -163,60 +166,58 @@ function AppShell() {
               <h2 id="list-heading">Recent initiations</h2>
               {loading ? <span className="badge">Syncing…</span> : null}
             </div>
+            {intents.length > 0 ? (
+              <div
+                className="group-mode-toggle"
+                role="group"
+                aria-label="Group order initiations"
+              >
+                <button
+                  type="button"
+                  className={
+                    groupMode === "donor"
+                      ? "group-mode-btn active"
+                      : "group-mode-btn"
+                  }
+                  onClick={() => setGroupMode("donor")}
+                >
+                  By donor
+                </button>
+                <button
+                  type="button"
+                  className={
+                    groupMode === "day"
+                      ? "group-mode-btn active"
+                      : "group-mode-btn"
+                  }
+                  onClick={() => setGroupMode("day")}
+                >
+                  By day
+                </button>
+                <button
+                  type="button"
+                  className={
+                    groupMode === "city"
+                      ? "group-mode-btn active"
+                      : "group-mode-btn"
+                  }
+                  disabled
+                  title="City grouping will be available when location is stored on order intents"
+                  onClick={() => setGroupMode("city")}
+                >
+                  By city (soon)
+                </button>
+              </div>
+            ) : null}
             {intents.length === 0 && !loading ? (
               <p className="empty">No order initiations yet.</p>
             ) : (
-              <ul className="intent-list">
-                {intents.map((intent) => {
-                  const restaurant = primaryRestaurant(intent);
-                  const meta = [
-                    intent.user_id ? `Donor ${intent.user_id}` : null,
-                    statusLabel(intent.status),
-                    restaurant,
-                    formatWhen(intent.updated_at || intent.created_at)
-                  ]
-                    .filter(Boolean)
-                    .join(" · ");
-                      const hasThumb = Boolean(
-                        intent.reference_photo_thumbnail_url?.trim() &&
-                          (intent.reference_photo_view_url?.trim() ||
-                            intent.reference_photo_thumbnail_url?.trim())
-                      );
-                      return (
-                    <li key={intent.order_intent_id}>
-                      <button
-                        type="button"
-                        className={
-                          selectedId === intent.order_intent_id
-                            ? "intent-row active"
-                            : "intent-row"
-                        }
-                        onClick={() =>
-                          setSelectedId(intent.order_intent_id)
-                        }
-                      >
-                        {hasThumb ? (
-                          <ReferencePhotoDisplay
-                            compact
-                            thumbnailUrl={intent.reference_photo_thumbnail_url}
-                            viewUrl={intent.reference_photo_view_url}
-                          />
-                        ) : intent.has_reference_photo ? (
-                          <span className="intent-photo-placeholder" aria-hidden>
-                            📷
-                          </span>
-                        ) : null}
-                        <span className="intent-row-text">
-                          <span className="intent-id">
-                            {intent.order_intent_id}
-                          </span>
-                          <span className="intent-meta">{meta}</span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              <OrderIntentList
+                intents={intents}
+                groupMode={groupMode}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
             )}
           </section>
 
@@ -252,6 +253,10 @@ function DetailView({ intent }: { intent: OrderInitiation }) {
       <div>
         <dt>Reference</dt>
         <dd>{intent.order_intent_id}</dd>
+      </div>
+      <div>
+        <dt>Donor</dt>
+        <dd>{intent.user_id?.trim() || "—"}</dd>
       </div>
       <div>
         <dt>Instruction pack</dt>

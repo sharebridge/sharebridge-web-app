@@ -8,6 +8,7 @@ import {
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
 import type { AppConfig } from "../config";
+import { formatSignInError } from "./signInErrors";
 
 type Props = {
   config: AppConfig;
@@ -21,16 +22,7 @@ function SignInCard({ config, onSignedIn }: Props) {
 
   function mapError(err: unknown) {
     if (err instanceof ApiError) {
-      const corsHint =
-        err.status === 0 || err.message.includes("Failed to fetch")
-          ? " Check WEB_CORS_ORIGINS on user-service includes this site origin."
-          : "";
-      const mvpHint =
-        config.allowAnyUserWebDashboard &&
-        err.code === "wrong_client_role"
-          ? " Set ALLOW_WEB_DASHBOARD_ANY_USER=true on user-service for MVP mode."
-          : "";
-      setError(`${err.message}${corsHint}${mvpHint}`);
+      setError(formatSignInError(err, config));
     } else if (err instanceof Error) {
       setError(err.message);
     } else {
