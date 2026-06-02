@@ -25,7 +25,12 @@ function SignInCard({ config, onSignedIn }: Props) {
         err.status === 0 || err.message.includes("Failed to fetch")
           ? " Check WEB_CORS_ORIGINS on user-service includes this site origin."
           : "";
-      setError(`${err.message}${corsHint}`);
+      const mvpHint =
+        config.allowAnyUserWebDashboard &&
+        err.code === "wrong_client_role"
+          ? " Set ALLOW_WEB_DASHBOARD_ANY_USER=true on user-service for MVP mode."
+          : "";
+      setError(`${err.message}${corsHint}${mvpHint}`);
     } else if (err instanceof Error) {
       setError(err.message);
     } else {
@@ -100,9 +105,19 @@ function SignInCard({ config, onSignedIn }: Props) {
     pickGoogleAccount();
   }
 
+  const signInTitle = config.allowAnyUserWebDashboard
+    ? "Sign in"
+    : "Coordinator sign in";
+
   return (
     <section className="sign-in-card panel">
-      <h1>Coordinator sign in</h1>
+      <h1>{signInTitle}</h1>
+      {config.allowAnyUserWebDashboard ? (
+        <p className="sign-in-lede">
+          MVP mode: any Google account that can use the mobile app can view the
+          order dashboard here.
+        </p>
+      ) : null}
 
       {hasGoogle ? (
         <div className="sign-in-google">

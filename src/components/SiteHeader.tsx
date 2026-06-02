@@ -5,6 +5,7 @@ type Props = {
   config: AppConfig;
   session: AuthSession;
   onRefresh: () => void;
+  onHome: () => void;
   onSignOut: () => void;
   loading: boolean;
 };
@@ -13,13 +14,14 @@ export function SiteHeader({
   config,
   session,
   onRefresh,
+  onHome,
   onSignOut,
   loading
 }: Props) {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <div className="brand">
+        <button type="button" className="brand brand-button" onClick={onHome}>
           <span className="brand-mark" aria-hidden>
             SB
           </span>
@@ -27,7 +29,7 @@ export function SiteHeader({
             <span className="brand-name">SharingBridge</span>
             <span className="brand-tag">Order operations</span>
           </div>
-        </div>
+        </button>
         <div className="site-header-meta">
           <span className="env-pill" title={config.apiBaseUrl}>
             {integrationHost(config)}
@@ -35,6 +37,9 @@ export function SiteHeader({
           <span className="user-pill" title={session.userId}>
             {sessionDisplayLabel(session)}
           </span>
+          <button type="button" className="btn btn-ghost" onClick={onHome}>
+            Home
+          </button>
           <button
             type="button"
             className="btn btn-primary"

@@ -104,6 +104,12 @@ function AppShell() {
     setError(null);
   }
 
+  function handleHome() {
+    setSelectedId(null);
+    setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (!session) {
     return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
   }
@@ -114,6 +120,7 @@ function AppShell() {
         config={appConfig}
         session={session}
         onRefresh={() => void loadHistory(session)}
+        onHome={handleHome}
         onSignOut={handleSignOut}
         loading={loading}
       />
@@ -121,7 +128,11 @@ function AppShell() {
       <main className="main">
         <section className="hero">
           <div className="hero-inner">
-            <p className="hero-eyebrow">Coordinator dashboard</p>
+            <p className="hero-eyebrow">
+              {appConfig.allowAnyUserWebDashboard
+                ? "Order dashboard (MVP)"
+                : "Coordinator dashboard"}
+            </p>
             <h1>Order initiation history</h1>
             <p className="hero-lede">
               Track when donors register delivery intent from{" "}
