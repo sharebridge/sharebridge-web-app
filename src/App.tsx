@@ -140,29 +140,34 @@ function AppShell() {
 
       <main className="main">
         <section className="hero">
-          <div className="hero-inner">
-            <p className="hero-eyebrow">
-              {coordinatorView ? "Coordinator dashboard" : "Donor dashboard (limited)"}
-            </p>
+          <p className="hero-eyebrow">
+            {coordinatorView ? "Coordinator dashboard" : "Donor dashboard (limited)"}
+          </p>
+          <div className="hero-headline-row">
             <h1>Order initiation history</h1>
-            <p className="hero-lede">
-              {coordinatorView
-                ? "Each row shows the donor’s email and user id when Google sign-in stored it in the database."
-                : "Neighbourhood feed — no other donors’ emails or ids; photos only within the last hour."}
-            </p>
-          </div>
-          <div className="hero-metrics" aria-live="polite">
-            <div className="metric">
-              <span className="metric-value">{intents.length}</span>
-              <span className="metric-label">Initiations</span>
+            <div className="hero-metrics" aria-live="polite">
+              <div className="metric metric-compact">
+                <span className="metric-value">{intents.length}</span>
+                <span className="metric-label">Initiations</span>
+              </div>
+              <div className="metric metric-compact">
+                <span
+                  className="metric-value metric-value-email"
+                  title={sessionHeaderLabel(session)}
+                >
+                  {sessionHeaderLabel(session)}
+                </span>
+                <span className="metric-label">
+                  {coordinatorView ? "Signed-in coordinator" : "Signed-in donor"}
+                </span>
+              </div>
             </div>
-            <div className="metric">
-              <span className="metric-value">{sessionHeaderLabel(session)}</span>
-              <span className="metric-label">
-                {coordinatorView ? "Signed-in coordinator" : "Signed-in donor"}
-              </span>
-            </div>
           </div>
+          <p className="hero-lede">
+            {coordinatorView
+              ? "Each row shows the donor’s email and user id when Google sign-in stored it in the database."
+              : "Neighbourhood feed — no other donors’ emails or ids; photos only within the last hour."}
+          </p>
         </section>
 
         {error ? (

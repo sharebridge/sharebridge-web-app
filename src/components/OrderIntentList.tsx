@@ -24,9 +24,15 @@ export function OrderIntentList({
     <ul className="intent-list">
       {groups.map((group) => (
         <li key={group.key} className="intent-group">
-          <div className="intent-group-head">
+          <div
+            className="intent-group-head"
+            title={group.title}
+          >
             <h3 className="intent-group-title">{group.label}</h3>
-            <span className="intent-group-count">{group.intents.length}</span>
+            <span className="intent-group-count">
+              {group.intents.length}{" "}
+              {group.intents.length === 1 ? "order" : "orders"}
+            </span>
           </div>
           <ul className="intent-group-items">
             {group.intents.map((intent) => (

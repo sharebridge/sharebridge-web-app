@@ -47,7 +47,7 @@ describe("groupOrderIntents", () => {
     expect(groups.find((g) => g.key === "bob")?.intents).toHaveLength(1);
   });
 
-  it("donor group label prefers email when present", () => {
+  it("donor group label is email-only with full line in title", () => {
     const withEmail = groupOrderIntents(
       [
         intent({
@@ -58,7 +58,8 @@ describe("groupOrderIntents", () => {
       ],
       "donor"
     );
-    expect(withEmail[0].label).toBe("alice@example.com (alice)");
+    expect(withEmail[0].label).toBe("alice@example.com");
+    expect(withEmail[0].title).toBe("alice@example.com (alice)");
   });
 
   it("groups by day", () => {

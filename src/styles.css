@@ -148,16 +148,24 @@ body {
 
 .hero {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 24px;
+  flex-direction: column;
+  gap: 10px;
   padding: 28px 28px 24px;
   margin-bottom: 20px;
   border-radius: var(--radius);
   background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
   color: #fff;
   box-shadow: var(--shadow);
+}
+
+.hero-headline-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  width: 100%;
+  min-width: 0;
 }
 
 .hero-eyebrow {
@@ -168,11 +176,14 @@ body {
   opacity: 0.85;
 }
 
-.hero h1 {
-  margin: 0 0 10px;
+.hero-headline-row h1 {
+  margin: 0;
+  flex: 0 1 auto;
   font-size: 1.85rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .hero-lede {
@@ -184,7 +195,8 @@ body {
 
 .hero-metrics {
   display: flex;
-  gap: 12px;
+  flex-shrink: 0;
+  gap: 10px;
 }
 
 .metric {
@@ -193,6 +205,19 @@ body {
   border-radius: 10px;
   background: rgb(255 255 255 / 12%);
   border: 1px solid rgb(255 255 255 / 20%);
+}
+
+.metric-compact {
+  min-width: 0;
+  max-width: 220px;
+  padding: 10px 14px;
+}
+
+.metric-value-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
 }
 
 .metric-value {
@@ -311,6 +336,20 @@ body {
     padding: 22px 20px;
   }
 
+  .hero-headline-row {
+    flex-wrap: wrap;
+  }
+
+  .hero-headline-row h1 {
+    white-space: normal;
+    flex: 1 1 100%;
+  }
+
+  .hero-metrics {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
   .env-pill {
     display: none;
   }
@@ -425,23 +464,32 @@ body {
 
 .intent-group-head {
   display: flex;
-  align-items: baseline;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
   padding: 0 4px;
+  min-width: 0;
 }
 
 .intent-group-title {
   margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .intent-group-count {
+  flex: 0 0 auto;
   font-size: 0.82rem;
   color: var(--muted);
+  white-space: nowrap;
 }
 
 .intent-group-items {

@@ -5,6 +5,8 @@ export type OrderGroupMode = "donor" | "day" | "city";
 export type OrderIntentGroup = {
   key: string;
   label: string;
+  /** Full donor line for tooltip when label is shortened (email only). */
+  title?: string;
   intents: OrderInitiation[];
 };
 
@@ -34,16 +36,23 @@ export function dayGroupLabel(intent: OrderInitiation): string {
   });
 }
 
+/** Short single-line label for group headers (full detail in title tooltip + list rows). */
 export function donorGroupLabel(intent: OrderInitiation): string {
+  const id = intent.user_id?.trim();
+  const email = intent.donor_email?.trim();
+  if (email) {
+    return email;
+  }
+  return id ? `Donor ${id}` : "Unknown donor";
+}
+
+export function donorGroupTitle(intent: OrderInitiation): string {
   const id = intent.user_id?.trim();
   const email = intent.donor_email?.trim();
   if (email && id) {
     return `${email} (${id})`;
   }
-  if (email) {
-    return email;
-  }
-  return id ? `Donor ${id}` : "Unknown donor";
+  return donorGroupLabel(intent);
 }
 
 /** Placeholder until order intents carry a city field from the API. */
@@ -77,6 +86,14 @@ function groupLabel(intent: OrderInitiation, mode: OrderGroupMode): string {
   }
 }
 
+function groupTitle(intent: OrderInitiation, mode: OrderGroupMode): string | undefined {
+  if (mode === "donor") {
+    const full = donorGroupTitle(intent);
+    return full !== donorGroupLabel(intent) ? full : undefined;
+  }
+  return undefined;
+}
+
 export function groupOrderIntents(
   intents: OrderInitiation[],
   mode: OrderGroupMode
@@ -94,6 +111,7 @@ export function groupOrderIntents(
     buckets.set(key, {
       key,
       label: groupLabel(intent, mode),
+      title: groupTitle(intent, mode),
       intents: [intent]
     });
   }
