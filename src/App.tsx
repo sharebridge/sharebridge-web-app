@@ -18,6 +18,13 @@ import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
 import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
+import {
+  donorFeedLede,
+  donorFeedWindowPhrase,
+  feedScopeFromApi,
+  type FeedScope
+} from "./feedScope";
+import { readViewerLocation } from "./viewerLocation";
 
 const appConfig = getAppConfig();
 
@@ -45,10 +52,13 @@ function AppShell() {
   const [apiDashboard, setApiDashboard] = useState<
     "coordinator" | "limited" | null
   >(null);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
   const coordinatorView = apiDashboard === "coordinator";
+  const hasLocality = intents.some((row) => row.locality_key?.trim());
 
   const loadHistory = useCallback(async (active: AuthSession) => {
     if (isSessionExpired(active)) {
@@ -60,13 +70,30 @@ function AppShell() {
 
     setLoading(true);
     setError(null);
+    setLocationNotice(null);
+    setFeedScope(null);
     try {
+      const coordinatorSession = active.role === "coordinator";
+      const coords = coordinatorSession ? null : await readViewerLocation();
       const result = await fetchOrderInitiations(
         appConfig.apiBaseUrl,
-        active
+        active,
+        coords
+          ? { near_lat: coords.lat, near_lng: coords.lng }
+          : null
       );
       setIntents(result.intents);
       setApiDashboard(result.dashboard);
+      const scope =
+        result.dashboard === "limited"
+          ? feedScopeFromApi(result.feedMeta)
+          : null;
+      setFeedScope(scope);
+      if (result.dashboard === "limited" && !coords) {
+        setLocationNotice(
+          `Location unavailable — showing only your initiations in ${donorFeedWindowPhrase(scope)}.`
+        );
+      }
       setSelectedId((prev) =>
         prev &&
         result.intents.some((row) => row.order_intent_id === prev)
@@ -76,6 +103,7 @@ function AppShell() {
     } catch (err) {
       setIntents([]);
       setApiDashboard(null);
+      setFeedScope(null);
       setSelectedId(null);
       if (err instanceof ApiError && err.status === 401) {
         clearSession();
@@ -144,6 +172,9 @@ function AppShell() {
           kind={coordinatorView ? "coordinator" : "donor"}
           session={session}
           initiationCount={intents.length}
+          feedLede={
+            coordinatorView ? undefined : donorFeedLede(feedScope)
+          }
         />
 
         {error ? (
@@ -156,6 +187,12 @@ function AppShell() {
           <div className="banner" role="status">
             You are on the donor dashboard with limited view. Request admin to
             add more roles if you have legitimate reasons.
+          </div>
+        ) : null}
+
+        {locationNotice ? (
+          <div className="banner" role="status">
+            {locationNotice}
           </div>
         ) : null}
 
@@ -206,29 +243,63 @@ function AppShell() {
                 <button
                   type="button"
                   className={
-                    groupMode === "city"
+                    groupMode === "locality"
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  disabled
-                  title="City grouping will be available when location is stored on order intents"
-                  onClick={() => setGroupMode("city")}
+                  disabled={!hasLocality}
+                  title={
+                    hasLocality
+                      ? undefined
+                      : "Area grouping appears when initiations include location"
+                  }
+                  onClick={() => setGroupMode("locality")}
                 >
-                  By city (soon)
+                  By area
                 </button>
               </div>
             ) : intents.length > 0 ? (
-              <p className="sign-in-lede" style={{ marginBottom: "1rem" }}>
-                Grouped by day. Reference photos appear only when the server
-                allows (within the last hour).
-              </p>
+              <div
+                className="group-mode-toggle"
+                role="group"
+                aria-label="Group order initiations"
+              >
+                <button
+                  type="button"
+                  className={
+                    groupMode === "day"
+                      ? "group-mode-btn active"
+                      : "group-mode-btn"
+                  }
+                  onClick={() => setGroupMode("day")}
+                >
+                  By day
+                </button>
+                <button
+                  type="button"
+                  className={
+                    groupMode === "locality"
+                      ? "group-mode-btn active"
+                      : "group-mode-btn"
+                  }
+                  disabled={!hasLocality}
+                  title={
+                    hasLocality
+                      ? undefined
+                      : "Area grouping appears when initiations include location"
+                  }
+                  onClick={() => setGroupMode("locality")}
+                >
+                  By area
+                </button>
+              </div>
             ) : null}
             {intents.length === 0 && !loading ? (
               <p className="empty">No order initiations yet.</p>
             ) : (
               <OrderIntentList
                 intents={intents}
-                groupMode={coordinatorView ? groupMode : "day"}
+                groupMode={groupMode}
                 selectedId={selectedId}
                 showDonorInList={coordinatorView}
                 onSelect={setSelectedId}
@@ -295,6 +366,12 @@ function DetailView({
         <dt>Status</dt>
         <dd>{statusLabel(intent.status)}</dd>
       </div>
+      {intent.location_label?.trim() || intent.locality_key?.trim() ? (
+        <div>
+          <dt>Area</dt>
+          <dd>{intent.location_label?.trim() || intent.locality_key}</dd>
+        </div>
+      ) : null}
       <div
         className={
           intent.reference_photo_view_url ||

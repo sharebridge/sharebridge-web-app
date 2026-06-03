@@ -3,8 +3,10 @@ export type OrderInitiation = {
   user_id?: string | null;
   /** Coordinator dashboard only — email of the donor who registered this intent. */
   donor_email?: string | null;
-  /** Reserved for future city grouping on the coordinator dashboard. */
-  city?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
+  location_label?: string | null;
+  locality_key?: string | null;
   pack_id: string;
   status: string;
   has_reference_photo: boolean;

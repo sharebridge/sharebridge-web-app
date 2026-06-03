@@ -1,6 +1,6 @@
 import type { OrderInitiation } from "./types";
 
-export type OrderGroupMode = "donor" | "day" | "city";
+export type OrderGroupMode = "donor" | "day" | "locality";
 
 export type OrderIntentGroup = {
   key: string;
@@ -55,9 +55,16 @@ export function donorGroupTitle(intent: OrderInitiation): string {
   return donorGroupLabel(intent);
 }
 
-/** Placeholder until order intents carry a city field from the API. */
-export function cityGroupLabel(_intent: OrderInitiation): string {
-  return "City (coming soon)";
+export function localityGroupLabel(intent: OrderInitiation): string {
+  const label = intent.location_label?.trim();
+  if (label) {
+    return label;
+  }
+  const key = intent.locality_key?.trim();
+  if (key) {
+    return `Area ${key}`;
+  }
+  return "Unknown area";
 }
 
 function groupKey(intent: OrderInitiation, mode: OrderGroupMode): string {
@@ -66,8 +73,8 @@ function groupKey(intent: OrderInitiation, mode: OrderGroupMode): string {
       return intent.user_id?.trim() || "__unknown_donor__";
     case "day":
       return dayGroupLabel(intent);
-    case "city":
-      return "__city_pending__";
+    case "locality":
+      return intent.locality_key?.trim() || "__unknown_locality__";
     default:
       return "all";
   }
@@ -79,8 +86,8 @@ function groupLabel(intent: OrderInitiation, mode: OrderGroupMode): string {
       return donorGroupLabel(intent);
     case "day":
       return dayGroupLabel(intent);
-    case "city":
-      return cityGroupLabel(intent);
+    case "locality":
+      return localityGroupLabel(intent);
     default:
       return "All";
   }
@@ -119,7 +126,7 @@ export function groupOrderIntents(
   const groups = [...buckets.values()];
   if (mode === "day") {
     groups.sort((a, b) => sortTime(b.intents[0]) - sortTime(a.intents[0]));
-  } else if (mode === "donor") {
+  } else if (mode === "donor" || mode === "locality") {
     groups.sort((a, b) => a.label.localeCompare(b.label));
   }
   return groups;

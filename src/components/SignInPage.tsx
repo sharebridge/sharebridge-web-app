@@ -76,7 +76,8 @@ function SignInCard({ config, onSignedIn }: Props) {
       <h1>Sign in</h1>
       <p className="sign-in-lede">
         Coordinators see full order details. Donors see a limited neighbourhood
-        view (reference photos only for the last hour).
+        feed (time window and distance are set on the server and shown after
+        sign-in).
       </p>
 
       {hasGoogle ? (

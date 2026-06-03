@@ -3,18 +3,14 @@ import { sessionHeaderLabel } from "../sessionRole";
 
 export type DashboardKind = "coordinator" | "donor";
 
-const COPY: Record<
-  DashboardKind,
-  { eyebrow: string; roleLabel: string; lede?: string }
-> = {
+const COPY: Record<DashboardKind, { eyebrow: string; roleLabel: string }> = {
   coordinator: {
     eyebrow: "Coordinator dashboard",
     roleLabel: "Coordinator"
   },
   donor: {
     eyebrow: "Donor dashboard (limited)",
-    roleLabel: "Donor",
-    lede: "Neighbourhood feed in the last hour."
+    roleLabel: "Donor"
   }
 };
 
@@ -22,11 +18,18 @@ type Props = {
   kind: DashboardKind;
   session: AuthSession;
   initiationCount: number;
+  /** From API after load — describes the applied time/area window. */
+  feedLede?: string;
 };
 
 /** Shared green banner header for coordinator and donor dashboards (same DOM + CSS). */
-export function DashboardHero({ kind, session, initiationCount }: Props) {
-  const { eyebrow, roleLabel, lede } = COPY[kind];
+export function DashboardHero({
+  kind,
+  session,
+  initiationCount,
+  feedLede
+}: Props) {
+  const { eyebrow, roleLabel } = COPY[kind];
   const signedIn = sessionHeaderLabel(session);
   const countLabel =
     initiationCount === 1 ? "initiation" : "initiations";
@@ -47,7 +50,7 @@ export function DashboardHero({ kind, session, initiationCount }: Props) {
           </span>
         </div>
       </div>
-      {lede ? <p className="hero-lede">{lede}</p> : null}
+      {feedLede ? <p className="hero-lede">{feedLede}</p> : null}
     </section>
   );
 }

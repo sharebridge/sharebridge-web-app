@@ -1,4 +1,5 @@
 import type { AuthSession } from "../authSession";
+import type { OrderFeedMeta } from "../feedScope";
 import type { OrderInitiation } from "../types";
 
 export class ApiError extends Error {
@@ -15,18 +16,33 @@ export class ApiError extends Error {
   }
 }
 
-export type OrderIntentsLoadResult = {
-  intents: OrderInitiation[];
-  /** From API — drives coordinator vs limited UI (must match deployed integration-service). */
-  dashboard: "coordinator" | "limited";
-  role: string;
+export type ViewerLocation = {
+  near_lat: number;
+  near_lng: number;
 };
 
+export type OrderIntentsLoadResult = {
+  intents: OrderInitiation[];
+  /** From API — drives coordinator vs limited UI. */
+  dashboard: "coordinator" | "limited";
+  role: string;
+  feedMeta: OrderFeedMeta;
+};
+
+/**
+ * List order intents. Window and radius are enforced server-side for donors;
+ * pass viewer coordinates only when available (limited dashboard).
+ */
 export async function fetchOrderInitiations(
   apiBaseUrl: string,
-  session: AuthSession
+  session: AuthSession,
+  viewerLocation: ViewerLocation | null = null
 ): Promise<OrderIntentsLoadResult> {
   const url = new URL(`${apiBaseUrl}/v1/donor-seeker/order-intents`);
+  if (viewerLocation) {
+    url.searchParams.set("near_lat", String(viewerLocation.near_lat));
+    url.searchParams.set("near_lng", String(viewerLocation.near_lng));
+  }
 
   const response = await fetch(url, {
     headers: {
@@ -61,9 +77,22 @@ export async function fetchOrderInitiations(
   const dashboard =
     body.dashboard === "coordinator" ? "coordinator" : "limited";
 
+  const feedMeta: OrderFeedMeta = {
+    since: typeof body.since === "string" ? body.since : undefined,
+    neighbourhood:
+      body.neighbourhood && typeof body.neighbourhood === "object"
+        ? (body.neighbourhood as Record<string, unknown>)
+        : undefined,
+    feed:
+      body.feed && typeof body.feed === "object"
+        ? (body.feed as OrderFeedMeta["feed"])
+        : undefined
+  };
+
   return {
     intents: list as OrderInitiation[],
     dashboard,
-    role: typeof body.role === "string" ? body.role.trim() : ""
+    role: typeof body.role === "string" ? body.role.trim() : "",
+    feedMeta
   };
 }

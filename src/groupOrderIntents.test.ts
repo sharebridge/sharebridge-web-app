@@ -69,10 +69,26 @@ describe("groupOrderIntents", () => {
     expect(total).toBe(3);
   });
 
-  it("city mode returns a single placeholder bucket", () => {
-    const groups = groupOrderIntents(rows, "city");
-    expect(groups).toHaveLength(1);
-    expect(groups[0].label).toMatch(/coming soon/i);
-    expect(groups[0].intents).toHaveLength(3);
+  it("locality mode groups by locality_key", () => {
+    const located = [
+      intent({
+        order_intent_id: "a",
+        locality_key: "12.97,80.22",
+        location_label: "Adyar"
+      }),
+      intent({
+        order_intent_id: "b",
+        locality_key: "12.97,80.22",
+        location_label: "Adyar"
+      }),
+      intent({
+        order_intent_id: "c",
+        locality_key: "13.00,80.30",
+        location_label: "Other"
+      })
+    ];
+    const groups = groupOrderIntents(located, "locality");
+    expect(groups).toHaveLength(2);
+    expect(groups.find((g) => g.label === "Adyar")?.intents).toHaveLength(2);
   });
 });
