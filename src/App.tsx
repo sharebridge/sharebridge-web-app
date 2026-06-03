@@ -10,8 +10,9 @@ import {
   saveSession,
   type AuthSession
 } from "./authSession";
-import { sessionHeaderLabel } from "./sessionRole";
+import { DashboardHero } from "./components/DashboardHero";
 import { getAppConfig } from "./config";
+import { sessionHeaderLabel } from "./sessionRole";
 import { formatWhen, statusLabel } from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
@@ -139,38 +140,11 @@ function AppShell() {
       />
 
       <main className="main">
-        <section className="hero">
-          <p className="hero-eyebrow">
-            {coordinatorView ? "Coordinator dashboard" : "Donor dashboard (limited)"}
-          </p>
-          <div className="hero-headline-row">
-            <h1>Order initiation history</h1>
-            <div className="hero-stats" aria-live="polite">
-              <span className="hero-stat-pill">
-                <span className="hero-stat-value">{intents.length}</span>
-                <span className="hero-stat-label">
-                  {intents.length === 1 ? "initiation" : "initiations"}
-                </span>
-              </span>
-              {coordinatorView ? (
-                <span
-                  className="hero-stat-pill hero-stat-pill-role"
-                  title={sessionHeaderLabel(session)}
-                >
-                  <span className="hero-stat-label">Coordinator</span>
-                  <span className="hero-stat-value hero-stat-value-sm">
-                    {sessionHeaderLabel(session)}
-                  </span>
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <p className="hero-lede">
-            {coordinatorView
-              ? "Each row shows the donor’s email and user id when Google sign-in stored it in the database."
-              : "Neighbourhood feed — no other donors’ emails or ids; photos only within the last hour."}
-          </p>
-        </section>
+        <DashboardHero
+          kind={coordinatorView ? "coordinator" : "donor"}
+          session={session}
+          initiationCount={intents.length}
+        />
 
         {error ? (
           <div className="banner banner-error" role="alert">
