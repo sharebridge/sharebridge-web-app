@@ -5,19 +5,16 @@ export type DashboardKind = "coordinator" | "donor";
 
 const COPY: Record<
   DashboardKind,
-  { eyebrow: string; roleLabel: string; lede: string }
+  { eyebrow: string; roleLabel: string; lede?: string }
 > = {
   coordinator: {
     eyebrow: "Coordinator dashboard",
-    roleLabel: "Coordinator",
-    lede:
-      "Each row shows the donor’s email and user id when Google sign-in stored it in the database."
+    roleLabel: "Coordinator"
   },
   donor: {
     eyebrow: "Donor dashboard (limited)",
     roleLabel: "Donor",
-    lede:
-      "Neighbourhood feed — no other donors’ emails or ids; photos only within the last hour."
+    lede: "Neighbourhood feed in the last hour."
   }
 };
 
@@ -50,7 +47,7 @@ export function DashboardHero({ kind, session, initiationCount }: Props) {
           </span>
         </div>
       </div>
-      <p className="hero-lede">{lede}</p>
+      {lede ? <p className="hero-lede">{lede}</p> : null}
     </section>
   );
 }

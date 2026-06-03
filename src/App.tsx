@@ -154,9 +154,8 @@ function AppShell() {
 
         {apiDashboard === "limited" ? (
           <div className="banner" role="status">
-            You are on the <strong>limited donor</strong> dashboard. Coordinator
-            accounts see donor emails on each initiation. Ask an admin to add
-            the <code>coordinator</code> role, then sign out and sign in again.
+            You are on the donor dashboard with limited view. Request admin to
+            add more roles if you have legitimate reasons.
           </div>
         ) : null}
 
