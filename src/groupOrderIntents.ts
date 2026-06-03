@@ -36,6 +36,13 @@ export function dayGroupLabel(intent: OrderInitiation): string {
 
 export function donorGroupLabel(intent: OrderInitiation): string {
   const id = intent.user_id?.trim();
+  const email = intent.donor_email?.trim();
+  if (email && id) {
+    return `${email} (${id})`;
+  }
+  if (email) {
+    return email;
+  }
   return id ? `Donor ${id}` : "Unknown donor";
 }
 

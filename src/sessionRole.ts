@@ -4,7 +4,7 @@ export function isCoordinatorSession(session: AuthSession): boolean {
   return session.role === "coordinator";
 }
 
-/** Header label: coordinators see email; limited dashboard shows user id only. */
+/** Header label for the signed-in user (coordinator email when available). */
 export function sessionHeaderLabel(session: AuthSession): string {
   if (isCoordinatorSession(session)) {
     const email = session.email?.trim();

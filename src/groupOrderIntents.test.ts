@@ -47,6 +47,20 @@ describe("groupOrderIntents", () => {
     expect(groups.find((g) => g.key === "bob")?.intents).toHaveLength(1);
   });
 
+  it("donor group label prefers email when present", () => {
+    const withEmail = groupOrderIntents(
+      [
+        intent({
+          order_intent_id: "x",
+          user_id: "alice",
+          donor_email: "alice@example.com"
+        })
+      ],
+      "donor"
+    );
+    expect(withEmail[0].label).toBe("alice@example.com (alice)");
+  });
+
   it("groups by day", () => {
     const groups = groupOrderIntents(rows, "day");
     expect(groups.length).toBeGreaterThanOrEqual(2);

@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { primaryRestaurant, statusLabel } from "./format";
+import { formatDonorMeta, primaryRestaurant, statusLabel } from "./format";
 import type { OrderInitiation } from "./types";
 
 describe("format helpers", () => {
   it("formats status for display", () => {
     expect(statusLabel("instructions_copied")).toBe("instructions copied");
+  });
+
+  it("formats donor meta with email and id", () => {
+    expect(formatDonorMeta("alice", "alice@example.com")).toBe(
+      "alice@example.com · alice"
+    );
+    expect(formatDonorMeta("alice", null)).toBe("Donor alice");
   });
 
   it("picks restaurant from snapshot", () => {

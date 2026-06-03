@@ -12,7 +12,7 @@ import {
 } from "./authSession";
 import { isCoordinatorSession, sessionHeaderLabel } from "./sessionRole";
 import { getAppConfig } from "./config";
-import { formatWhen, statusLabel } from "./format";
+import { formatDonorMeta, formatWhen, statusLabel } from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
@@ -272,7 +272,9 @@ function DetailView({
       {coordinatorView ? (
         <div>
           <dt>Donor</dt>
-          <dd>{intent.user_id?.trim() || "—"}</dd>
+          <dd>
+            {formatDonorMeta(intent.user_id, intent.donor_email) || "—"}
+          </dd>
         </div>
       ) : null}
       <div>

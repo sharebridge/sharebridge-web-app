@@ -15,6 +15,25 @@ export function statusLabel(status: string): string {
   return status.replaceAll("_", " ");
 }
 
+/** Coordinator list/detail: donor who registered the intent (not the signed-in viewer). */
+export function formatDonorMeta(
+  userId: string | null | undefined,
+  donorEmail: string | null | undefined
+): string | null {
+  const id = userId?.trim();
+  const email = donorEmail?.trim();
+  if (email && id) {
+    return `${email} · ${id}`;
+  }
+  if (email) {
+    return email;
+  }
+  if (id) {
+    return `Donor ${id}`;
+  }
+  return null;
+}
+
 export function primaryRestaurant(intent: OrderInitiation): string | null {
   const selected = intent.selected_preset;
   if (selected && typeof selected.restaurant_name === "string") {

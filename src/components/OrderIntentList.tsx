@@ -1,4 +1,4 @@
-import { formatWhen, primaryRestaurant, statusLabel } from "../format";
+import { formatDonorMeta, formatWhen, primaryRestaurant, statusLabel } from "../format";
 import { groupOrderIntents, type OrderGroupMode } from "../groupOrderIntents";
 import type { OrderInitiation } from "../types";
 import { ReferencePhotoDisplay } from "../ReferencePhotoDisplay";
@@ -58,7 +58,9 @@ function IntentRow({
 }) {
   const restaurant = primaryRestaurant(intent);
   const meta = [
-    showDonorInList && intent.user_id ? `Donor ${intent.user_id}` : null,
+    showDonorInList
+      ? formatDonorMeta(intent.user_id, intent.donor_email)
+      : null,
     statusLabel(intent.status),
     restaurant,
     formatWhen(intent.updated_at || intent.created_at)
