@@ -42,12 +42,21 @@ async function parseSignInResponse(
   }
 
   const user = body.user as AuthUser | undefined;
+  const rawUser = user as { id?: string; email?: string | null; name?: string | null } | undefined;
   const resolvedUserId =
     (typeof user?.user_id === "string" && user.user_id.trim()) ||
-    ((user as { id?: string } | undefined)?.id?.trim()) ||
+    (typeof rawUser?.id === "string" && rawUser.id.trim()) ||
     "";
   const role =
     (typeof user?.role === "string" && user.role.trim()) || "coordinator";
+  const email =
+    (typeof user?.email === "string" && user.email.trim()) ||
+    (typeof rawUser?.email === "string" && rawUser.email.trim()) ||
+    null;
+  const name =
+    (typeof user?.name === "string" && user.name.trim()) ||
+    (typeof rawUser?.name === "string" && rawUser.name.trim()) ||
+    null;
 
   if (!resolvedUserId) {
     throw new ApiError("Sign-in response missing user id.", response.status);
@@ -59,8 +68,8 @@ async function parseSignInResponse(
     role,
     user: {
       user_id: resolvedUserId,
-      email: user?.email ?? null,
-      name: user?.name ?? null,
+      email,
+      name,
       role
     }
   };

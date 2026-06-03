@@ -15,12 +15,18 @@ export class ApiError extends Error {
   }
 }
 
+export type OrderIntentsLoadResult = {
+  intents: OrderInitiation[];
+  /** From API — drives coordinator vs limited UI (must match deployed integration-service). */
+  dashboard: "coordinator" | "limited";
+  role: string;
+};
+
 export async function fetchOrderInitiations(
   apiBaseUrl: string,
   session: AuthSession
-): Promise<OrderInitiation[]> {
+): Promise<OrderIntentsLoadResult> {
   const url = new URL(`${apiBaseUrl}/v1/donor-seeker/order-intents`);
-  // Coordinators list all intents; donors would scope to self (web is coordinator-only).
 
   const response = await fetch(url, {
     headers: {
@@ -52,5 +58,12 @@ export async function fetchOrderInitiations(
     throw new ApiError("order_intents must be an array.", response.status);
   }
 
-  return list as OrderInitiation[];
+  const dashboard =
+    body.dashboard === "coordinator" ? "coordinator" : "limited";
+
+  return {
+    intents: list as OrderInitiation[],
+    dashboard,
+    role: typeof body.role === "string" ? body.role.trim() : ""
+  };
 }

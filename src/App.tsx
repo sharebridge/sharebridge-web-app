@@ -10,9 +10,9 @@ import {
   saveSession,
   type AuthSession
 } from "./authSession";
-import { isCoordinatorSession, sessionHeaderLabel } from "./sessionRole";
+import { sessionHeaderLabel } from "./sessionRole";
 import { getAppConfig } from "./config";
-import { formatDonorMeta, formatWhen, statusLabel } from "./format";
+import { formatWhen, statusLabel } from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
@@ -41,9 +41,13 @@ function AppShell() {
   const [groupMode, setGroupMode] = useState<OrderGroupMode>("day");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiDashboard, setApiDashboard] = useState<
+    "coordinator" | "limited" | null
+  >(null);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
+  const coordinatorView = apiDashboard === "coordinator";
 
   const loadHistory = useCallback(async (active: AuthSession) => {
     if (isSessionExpired(active)) {
@@ -56,15 +60,21 @@ function AppShell() {
     setLoading(true);
     setError(null);
     try {
-      const rows = await fetchOrderInitiations(appConfig.apiBaseUrl, active);
-      setIntents(rows);
+      const result = await fetchOrderInitiations(
+        appConfig.apiBaseUrl,
+        active
+      );
+      setIntents(result.intents);
+      setApiDashboard(result.dashboard);
       setSelectedId((prev) =>
-        prev && rows.some((row) => row.order_intent_id === prev)
+        prev &&
+        result.intents.some((row) => row.order_intent_id === prev)
           ? prev
-          : rows[0]?.order_intent_id ?? null
+          : result.intents[0]?.order_intent_id ?? null
       );
     } catch (err) {
       setIntents([]);
+      setApiDashboard(null);
       setSelectedId(null);
       if (err instanceof ApiError && err.status === 401) {
         clearSession();
@@ -117,8 +127,6 @@ function AppShell() {
     return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
   }
 
-  const coordinatorView = isCoordinatorSession(session);
-
   return (
     <div className="site">
       <SiteHeader
@@ -139,8 +147,8 @@ function AppShell() {
             <h1>Order initiation history</h1>
             <p className="hero-lede">
               {coordinatorView
-                ? "All donors’ initiations with full reference photos and donor ids."
-                : "Recent neighbourhood activity from Help a seeker — photos only when registered within the last hour."}
+                ? "Each row shows the donor’s email and user id when Google sign-in stored it in the database."
+                : "Neighbourhood feed — no other donors’ emails or ids; photos only within the last hour."}
             </p>
           </div>
           <div className="hero-metrics" aria-live="polite">
@@ -160,6 +168,24 @@ function AppShell() {
         {error ? (
           <div className="banner banner-error" role="alert">
             {error}
+          </div>
+        ) : null}
+
+        {apiDashboard === "limited" ? (
+          <div className="banner" role="status">
+            You are on the <strong>limited donor</strong> dashboard. Coordinator
+            accounts see donor emails on each initiation. Ask an admin to add
+            the <code>coordinator</code> role, then sign out and sign in again.
+          </div>
+        ) : null}
+
+        {coordinatorView &&
+        intents.length > 0 &&
+        !intents.some((row) => row.donor_email?.trim()) ? (
+          <div className="banner" role="status">
+            No donor emails on these rows yet — usually because those donors
+            never signed in with Google (only user ids in the database), or
+            integration-service needs the latest deploy with email lookup.
           </div>
         ) : null}
 
@@ -270,12 +296,16 @@ function DetailView({
         <dd>{intent.order_intent_id}</dd>
       </div>
       {coordinatorView ? (
-        <div>
-          <dt>Donor</dt>
-          <dd>
-            {formatDonorMeta(intent.user_id, intent.donor_email) || "—"}
-          </dd>
-        </div>
+        <>
+          <div>
+            <dt>Donor email</dt>
+            <dd>{intent.donor_email?.trim() || "—"}</dd>
+          </div>
+          <div>
+            <dt>Donor user id</dt>
+            <dd>{intent.user_id?.trim() || "—"}</dd>
+          </div>
+        </>
       ) : null}
       <div>
         <dt>Instruction pack</dt>
