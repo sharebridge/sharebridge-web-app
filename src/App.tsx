@@ -145,22 +145,24 @@ function AppShell() {
           </p>
           <div className="hero-headline-row">
             <h1>Order initiation history</h1>
-            <div className="hero-metrics" aria-live="polite">
-              <div className="metric metric-compact">
-                <span className="metric-value">{intents.length}</span>
-                <span className="metric-label">Initiations</span>
-              </div>
-              <div className="metric metric-compact">
+            <div className="hero-stats" aria-live="polite">
+              <span className="hero-stat-pill">
+                <span className="hero-stat-value">{intents.length}</span>
+                <span className="hero-stat-label">
+                  {intents.length === 1 ? "initiation" : "initiations"}
+                </span>
+              </span>
+              {coordinatorView ? (
                 <span
-                  className="metric-value metric-value-email"
+                  className="hero-stat-pill hero-stat-pill-role"
                   title={sessionHeaderLabel(session)}
                 >
-                  {sessionHeaderLabel(session)}
+                  <span className="hero-stat-label">Coordinator</span>
+                  <span className="hero-stat-value hero-stat-value-sm">
+                    {sessionHeaderLabel(session)}
+                  </span>
                 </span>
-                <span className="metric-label">
-                  {coordinatorView ? "Signed-in coordinator" : "Signed-in donor"}
-                </span>
-              </div>
+              ) : null}
             </div>
           </div>
           <p className="hero-lede">

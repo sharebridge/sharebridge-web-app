@@ -123,6 +123,10 @@ body {
   border: 1px solid #b8e0ce;
   padding: 6px 10px;
   border-radius: 999px;
+  max-width: min(240px, 28vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .env-pill {
@@ -163,7 +167,7 @@ body {
   flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px 24px;
+  gap: 12px 20px;
   width: 100%;
   min-width: 0;
 }
@@ -178,12 +182,12 @@ body {
 
 .hero-headline-row h1 {
   margin: 0;
-  flex: 0 1 auto;
-  font-size: 1.85rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  white-space: nowrap;
 }
 
 .hero-lede {
@@ -193,45 +197,48 @@ body {
   font-size: 1rem;
 }
 
-.hero-metrics {
+.hero-stats {
   display: flex;
   flex-shrink: 0;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 }
 
-.metric {
-  min-width: 120px;
-  padding: 14px 18px;
-  border-radius: 10px;
+.hero-stat-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
   background: rgb(255 255 255 / 12%);
-  border: 1px solid rgb(255 255 255 / 20%);
-}
-
-.metric-compact {
-  min-width: 0;
-  max-width: 220px;
-  padding: 10px 14px;
-}
-
-.metric-value-email {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  border: 1px solid rgb(255 255 255 / 22%);
   white-space: nowrap;
-  font-size: 1rem;
-}
-
-.metric-value {
-  display: block;
-  font-size: 1.35rem;
-  font-weight: 700;
   line-height: 1.2;
 }
 
-.metric-label {
-  display: block;
-  font-size: 0.75rem;
-  opacity: 0.85;
-  margin-top: 4px;
+.hero-stat-pill-role {
+  align-items: center;
+  gap: 8px;
+  max-width: min(280px, 42vw);
+}
+
+.hero-stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.hero-stat-value-sm {
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.hero-stat-label {
+  font-size: 0.88rem;
+  opacity: 0.9;
 }
 
 .auth-help {
@@ -345,9 +352,8 @@ body {
     flex: 1 1 100%;
   }
 
-  .hero-metrics {
-    flex: 1 1 100%;
-    justify-content: flex-start;
+  .hero-stats {
+    flex: 0 0 auto;
   }
 
   .env-pill {
