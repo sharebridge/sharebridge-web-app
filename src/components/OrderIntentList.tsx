@@ -7,6 +7,7 @@ type Props = {
   intents: OrderInitiation[];
   groupMode: OrderGroupMode;
   selectedId: string | null;
+  showDonorInList: boolean;
   onSelect: (orderIntentId: string) => void;
 };
 
@@ -14,6 +15,7 @@ export function OrderIntentList({
   intents,
   groupMode,
   selectedId,
+  showDonorInList,
   onSelect
 }: Props) {
   const groups = groupOrderIntents(intents, groupMode);
@@ -31,6 +33,7 @@ export function OrderIntentList({
               <IntentRow
                 key={intent.order_intent_id}
                 intent={intent}
+                showDonorInList={showDonorInList}
                 selected={selectedId === intent.order_intent_id}
                 onSelect={() => onSelect(intent.order_intent_id)}
               />
@@ -44,16 +47,18 @@ export function OrderIntentList({
 
 function IntentRow({
   intent,
+  showDonorInList,
   selected,
   onSelect
 }: {
   intent: OrderInitiation;
+  showDonorInList: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
   const restaurant = primaryRestaurant(intent);
   const meta = [
-    intent.user_id ? `Donor ${intent.user_id}` : null,
+    showDonorInList && intent.user_id ? `Donor ${intent.user_id}` : null,
     statusLabel(intent.status),
     restaurant,
     formatWhen(intent.updated_at || intent.created_at)

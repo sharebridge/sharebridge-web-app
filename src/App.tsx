@@ -8,9 +8,9 @@ import {
   isSessionExpired,
   loadSession,
   saveSession,
-  sessionDisplayLabel,
   type AuthSession
 } from "./authSession";
+import { isCoordinatorSession, sessionHeaderLabel } from "./sessionRole";
 import { getAppConfig } from "./config";
 import { formatWhen, statusLabel } from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
@@ -38,7 +38,7 @@ function AppShell() {
   );
   const [intents, setIntents] = useState<OrderInitiation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [groupMode, setGroupMode] = useState<OrderGroupMode>("donor");
+  const [groupMode, setGroupMode] = useState<OrderGroupMode>("day");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +117,8 @@ function AppShell() {
     return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
   }
 
+  const coordinatorView = isCoordinatorSession(session);
+
   return (
     <div className="site">
       <SiteHeader
@@ -132,14 +134,13 @@ function AppShell() {
         <section className="hero">
           <div className="hero-inner">
             <p className="hero-eyebrow">
-              {appConfig.allowAnyUserWebDashboard
-                ? "Order dashboard (MVP)"
-                : "Coordinator dashboard"}
+              {coordinatorView ? "Coordinator dashboard" : "Donor dashboard (limited)"}
             </p>
             <h1>Order initiation history</h1>
             <p className="hero-lede">
-              Track when donors register delivery intent from{" "}
-              <strong>Help a seeker</strong> on mobile.
+              {coordinatorView
+                ? "All donors’ initiations with full reference photos and donor ids."
+                : "Recent neighbourhood activity from Help a seeker — photos only when registered within the last hour."}
             </p>
           </div>
           <div className="hero-metrics" aria-live="polite">
@@ -148,8 +149,10 @@ function AppShell() {
               <span className="metric-label">Initiations</span>
             </div>
             <div className="metric">
-              <span className="metric-value">{sessionDisplayLabel(session)}</span>
-              <span className="metric-label">Signed-in coordinator</span>
+              <span className="metric-value">{sessionHeaderLabel(session)}</span>
+              <span className="metric-label">
+                {coordinatorView ? "Signed-in coordinator" : "Signed-in donor"}
+              </span>
             </div>
           </div>
         </section>
@@ -166,7 +169,7 @@ function AppShell() {
               <h2 id="list-heading">Recent initiations</h2>
               {loading ? <span className="badge">Syncing…</span> : null}
             </div>
-            {intents.length > 0 ? (
+            {intents.length > 0 && coordinatorView ? (
               <div
                 className="group-mode-toggle"
                 role="group"
@@ -208,14 +211,20 @@ function AppShell() {
                   By city (soon)
                 </button>
               </div>
+            ) : intents.length > 0 ? (
+              <p className="sign-in-lede" style={{ marginBottom: "1rem" }}>
+                Grouped by day. Reference photos appear only when the server
+                allows (within the last hour).
+              </p>
             ) : null}
             {intents.length === 0 && !loading ? (
               <p className="empty">No order initiations yet.</p>
             ) : (
               <OrderIntentList
                 intents={intents}
-                groupMode={groupMode}
+                groupMode={coordinatorView ? groupMode : "day"}
                 selectedId={selectedId}
+                showDonorInList={coordinatorView}
                 onSelect={setSelectedId}
               />
             )}
@@ -227,7 +236,7 @@ function AppShell() {
           >
             <h2 id="detail-heading">Initiation detail</h2>
             {selected ? (
-              <DetailView intent={selected} />
+              <DetailView intent={selected} coordinatorView={coordinatorView} />
             ) : (
               <p className="empty">
                 Select an initiation to review handover context.
@@ -239,7 +248,7 @@ function AppShell() {
 
       <footer className="footer">
         <p>
-          SharingBridge MVP · Signed in as {sessionDisplayLabel(session)} ·
+          SharingBridge · Signed in as {sessionHeaderLabel(session)} ·
           Session kept in this browser until sign-out or expiry
         </p>
       </footer>
@@ -247,17 +256,25 @@ function AppShell() {
   );
 }
 
-function DetailView({ intent }: { intent: OrderInitiation }) {
+function DetailView({
+  intent,
+  coordinatorView
+}: {
+  intent: OrderInitiation;
+  coordinatorView: boolean;
+}) {
   return (
     <dl className="detail-grid">
       <div>
         <dt>Reference</dt>
         <dd>{intent.order_intent_id}</dd>
       </div>
-      <div>
-        <dt>Donor</dt>
-        <dd>{intent.user_id?.trim() || "—"}</dd>
-      </div>
+      {coordinatorView ? (
+        <div>
+          <dt>Donor</dt>
+          <dd>{intent.user_id?.trim() || "—"}</dd>
+        </div>
+      ) : null}
       <div>
         <dt>Instruction pack</dt>
         <dd>{intent.pack_id}</dd>

@@ -6,7 +6,7 @@ describe("getAppConfig", () => {
     const config = getAppConfig();
     expect(config.apiBaseUrl).toMatch(/^https?:\/\//);
     expect(config.userServiceBaseUrl).toMatch(/^https?:\/\//);
-    expect(typeof config.defaultUserId).toBe("string");
+    expect(typeof config.googleClientId).toBe("string");
   });
 
   it("integrationHost parses API base URL host", () => {

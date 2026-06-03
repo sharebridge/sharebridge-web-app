@@ -1,10 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import { clearSession } from "../authSession";
-import {
-  mintDevCoordinatorToken,
-  signInWithGoogleAccessToken
-} from "../api/auth";
+import { signInWithGoogleAccessToken } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
 import type { AppConfig } from "../config";
@@ -16,7 +13,6 @@ type Props = {
 };
 
 function SignInCard({ config, onSignedIn }: Props) {
-  const [userId, setUserId] = useState(config.defaultUserId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,28 +57,6 @@ function SignInCard({ config, onSignedIn }: Props) {
     onError: () => setError("Google sign-in was cancelled or failed.")
   });
 
-  async function handleBypassSubmit(event: FormEvent) {
-    event.preventDefault();
-    const trimmed = userId.trim();
-    if (!trimmed) {
-      setError("Enter a coordinator user id.");
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const result = await mintDevCoordinatorToken(
-        config.userServiceBaseUrl,
-        trimmed
-      );
-      onSignedIn(sessionFromSignIn(result));
-    } catch (err) {
-      mapError(err);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   const hasGoogle = config.googleClientId.length > 0;
 
   function handleGoogleSignIn() {
@@ -97,19 +71,13 @@ function SignInCard({ config, onSignedIn }: Props) {
     pickGoogleAccount();
   }
 
-  const signInTitle = config.allowAnyUserWebDashboard
-    ? "Sign in"
-    : "Coordinator sign in";
-
   return (
     <section className="sign-in-card panel">
-      <h1>{signInTitle}</h1>
-      {config.allowAnyUserWebDashboard ? (
-        <p className="sign-in-lede">
-          MVP mode: any Google account that can use the mobile app can view the
-          order dashboard here.
-        </p>
-      ) : null}
+      <h1>Sign in</h1>
+      <p className="sign-in-lede">
+        Coordinators see full order details. Donors see a limited neighbourhood
+        view (reference photos only for the last hour).
+      </p>
 
       {hasGoogle ? (
         <div className="sign-in-google">
@@ -128,33 +96,6 @@ function SignInCard({ config, onSignedIn }: Props) {
           sign-in.
         </div>
       )}
-
-      {config.allowGoogleSignInBypass ? (
-        <form
-          className="form bypass-sign-in-form"
-          onSubmit={(e) => void handleBypassSubmit(e)}
-        >
-          <p className="sign-in-lede">
-            Local only: sign in with a user id instead of Google.
-          </p>
-          <label>
-            Coordinator user id
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="demo-coordinator"
-            />
-          </label>
-          <button
-            type="submit"
-            className="btn btn-secondary btn-block"
-            disabled={submitting}
-          >
-            {submitting ? "Signing in…" : "Sign in without Google"}
-          </button>
-        </form>
-      ) : null}
 
       {error ? (
         <div className="banner banner-error" role="alert">

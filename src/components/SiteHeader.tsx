@@ -1,5 +1,6 @@
 import { integrationHost, type AppConfig } from "../config";
-import { sessionDisplayLabel, type AuthSession } from "../authSession";
+import type { AuthSession } from "../authSession";
+import { sessionHeaderLabel } from "../sessionRole";
 
 type Props = {
   config: AppConfig;
@@ -35,7 +36,7 @@ export function SiteHeader({
             {integrationHost(config)}
           </span>
           <span className="user-pill" title={session.userId}>
-            {sessionDisplayLabel(session)}
+            {sessionHeaderLabel(session)}
           </span>
           <button type="button" className="btn btn-ghost" onClick={onHome}>
             Home

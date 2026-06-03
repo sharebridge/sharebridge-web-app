@@ -6,30 +6,31 @@ import { formatSignInError } from "./signInErrors";
 const baseConfig: AppConfig = {
   apiBaseUrl: "http://localhost:8080",
   userServiceBaseUrl: "https://sharingbridge-user-service.onrender.com",
-  googleClientId: "x",
-  allowGoogleSignInBypass: false,
-  allowAnyUserWebDashboard: true,
-  defaultUserId: ""
+  googleClientId: "x"
 };
 
 describe("formatSignInError", () => {
-  it("passes through user-service message with reason", () => {
+  it("passes through user-service message", () => {
     const err = new ApiError(
-      "Donor web dashboard is disabled on production.",
+      "This account cannot use the mobile donor app.",
       403,
       "wrong_client_role",
-      "mvp_disabled_production"
+      "no_donor_role"
     );
     expect(formatSignInError(err, baseConfig)).toBe(
-      "Donor web dashboard is disabled on production."
+      "This account cannot use the mobile donor app."
     );
   });
 
-  it("explains web/API MVP mismatch when message empty", () => {
+  it("falls back when message empty", () => {
     const err = new ApiError("", 403, "wrong_client_role");
+    expect(formatSignInError(err, baseConfig)).toBe("Could not sign in.");
+  });
+
+  it("adds CORS hint on network failure", () => {
+    const err = new ApiError("Failed to fetch", 0);
     const text = formatSignInError(err, baseConfig);
-    expect(text).toMatch(/VITE_ALLOW_ANY_USER_WEB_DASHBOARD/);
-    expect(text).toMatch(/ALLOW_WEB_DASHBOARD_ANY_USER/);
+    expect(text).toMatch(/WEB_CORS_ORIGINS/);
     expect(text).toMatch(/onrender\.com/);
   });
 });

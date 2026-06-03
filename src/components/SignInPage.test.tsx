@@ -15,10 +15,7 @@ vi.mock("@react-oauth/google", () => ({
 const baseConfig: AppConfig = {
   apiBaseUrl: "http://localhost:3001",
   userServiceBaseUrl: "http://localhost:3000",
-  googleClientId: "test-client-id",
-  allowGoogleSignInBypass: false,
-  allowAnyUserWebDashboard: false,
-  defaultUserId: ""
+  googleClientId: "test-client-id"
 };
 
 describe("SignInPage", () => {
@@ -35,7 +32,7 @@ describe("SignInPage", () => {
   it("shows title and Google sign-in only", async () => {
     render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { name: /coordinator sign in/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /^sign in$/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /sign in with google/i })).toBeTruthy();
     expect(screen.queryByText(/last signed in as/i)).toBeNull();
     expect(screen.queryByText(/coordinator role/i)).toBeNull();
