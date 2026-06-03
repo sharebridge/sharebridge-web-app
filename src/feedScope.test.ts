@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { donorFeedLede, feedScopeFromApi } from "./feedScope";
+import {
+  donorEmptyListMessage,
+  donorFeedLede,
+  donorLocationUnavailableNotice,
+  feedScopeFromApi
+} from "./feedScope";
 
 describe("feedScopeFromApi", () => {
   it("parses feed object from API", () => {
@@ -33,5 +38,29 @@ describe("feedScopeFromApi", () => {
       }
     });
     expect(donorFeedLede(scope)).toBe("Your initiations in the last 2 hours.");
+  });
+
+  it("location notice explains permission not empty neighbourhood", () => {
+    const scope = feedScopeFromApi({
+      since: "2h",
+      feed: { window_hours: 2, radius_km: 5, location_mode: "own_only" }
+    });
+    expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
+      "permission"
+    );
+    expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
+      "only your initiations"
+    );
+  });
+
+  it("empty list message distinguishes neighbourhood vs own-only", () => {
+    const scope = feedScopeFromApi({
+      since: "2h",
+      feed: { window_hours: 2, radius_km: 5, location_mode: "near" }
+    });
+    expect(donorEmptyListMessage(scope, true)).toContain("any donor");
+    expect(donorEmptyListMessage(scope, false)).toContain(
+      "You have no order initiations"
+    );
   });
 });

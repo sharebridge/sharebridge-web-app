@@ -84,3 +84,36 @@ export function donorFeedLede(scope: FeedScope | null): string | undefined {
 export function donorFeedWindowPhrase(scope: FeedScope | null): string {
   return scope ? hoursPhrase(scope.windowHours) : "the configured time window";
 }
+
+/** Why the neighbourhood feed could not be loaded (browser location, not missing orders). */
+export function donorLocationUnavailableNotice(
+  scope: FeedScope | null,
+  reason: "unsupported" | "denied" | "timeout" | "error"
+): string {
+  const time = donorFeedWindowPhrase(scope);
+  const reasonText =
+    reason === "denied"
+      ? "This page does not have permission to use your location."
+      : reason === "timeout"
+        ? "Your location took too long to respond."
+        : reason === "unsupported"
+          ? "This browser cannot provide location."
+          : "Your location could not be read.";
+  return `${reasonText} Other donors nearby are hidden until location is available — only your initiations from ${time} are listed below. Allow location for this site and click Refresh for the full neighbourhood feed.`;
+}
+
+/** Empty list — separate from location errors. */
+export function donorEmptyListMessage(
+  scope: FeedScope | null,
+  viewerLocationShared: boolean
+): string {
+  const time = donorFeedWindowPhrase(scope);
+  if (viewerLocationShared && scope?.radiusKm) {
+    const radius = radiusPhrase(scope.radiusKm);
+    return `No order initiations from any donor ${time} ${radius}.`;
+  }
+  if (viewerLocationShared) {
+    return `No order initiations from any donor ${time} near you.`;
+  }
+  return `You have no order initiations ${time}.`;
+}

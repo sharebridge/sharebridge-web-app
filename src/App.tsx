@@ -19,8 +19,9 @@ import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
 import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
 import {
+  donorEmptyListMessage,
   donorFeedLede,
-  donorFeedWindowPhrase,
+  donorLocationUnavailableNotice,
   feedScopeFromApi,
   type FeedScope
 } from "./feedScope";
@@ -54,6 +55,7 @@ function AppShell() {
   >(null);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
+  const [viewerLocationShared, setViewerLocationShared] = useState(false);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
@@ -72,15 +74,32 @@ function AppShell() {
     setError(null);
     setLocationNotice(null);
     setFeedScope(null);
+    setViewerLocationShared(false);
     try {
       const coordinatorSession = active.role === "coordinator";
-      const coords = coordinatorSession ? null : await readViewerLocation();
+      let viewerCoords: { near_lat: number; near_lng: number } | null = null;
+      let locationDeniedReason:
+        | "unsupported"
+        | "denied"
+        | "timeout"
+        | "error"
+        | null = null;
+      if (!coordinatorSession) {
+        const location = await readViewerLocation();
+        if (location.status === "granted") {
+          viewerCoords = {
+            near_lat: location.coords.lat,
+            near_lng: location.coords.lng
+          };
+          setViewerLocationShared(true);
+        } else {
+          locationDeniedReason = location.reason;
+        }
+      }
       const result = await fetchOrderInitiations(
         appConfig.apiBaseUrl,
         active,
-        coords
-          ? { near_lat: coords.lat, near_lng: coords.lng }
-          : null
+        viewerCoords
       );
       setIntents(result.intents);
       setApiDashboard(result.dashboard);
@@ -89,9 +108,9 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
-      if (result.dashboard === "limited" && !coords) {
+      if (result.dashboard === "limited" && locationDeniedReason) {
         setLocationNotice(
-          `Location unavailable — showing only your initiations in ${donorFeedWindowPhrase(scope)}.`
+          donorLocationUnavailableNotice(scope, locationDeniedReason)
         );
       }
       setSelectedId((prev) =>
@@ -295,7 +314,11 @@ function AppShell() {
               </div>
             ) : null}
             {intents.length === 0 && !loading ? (
-              <p className="empty">No order initiations yet.</p>
+              <p className="empty">
+                {apiDashboard === "limited"
+                  ? donorEmptyListMessage(feedScope, viewerLocationShared)
+                  : "No order initiations yet."}
+              </p>
             ) : (
               <OrderIntentList
                 intents={intents}
