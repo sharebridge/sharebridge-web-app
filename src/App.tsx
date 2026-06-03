@@ -60,8 +60,6 @@ function AppShell() {
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
   const coordinatorView = apiDashboard === "coordinator";
-  const hasLocality = intents.some((row) => row.locality_key?.trim());
-
   const loadHistory = useCallback(async (active: AuthSession) => {
     if (isSessionExpired(active)) {
       clearSession();
@@ -266,12 +264,6 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  disabled={!hasLocality}
-                  title={
-                    hasLocality
-                      ? undefined
-                      : "Area grouping appears when initiations include location"
-                  }
                   onClick={() => setGroupMode("locality")}
                 >
                   By area
@@ -300,12 +292,6 @@ function AppShell() {
                     groupMode === "locality"
                       ? "group-mode-btn active"
                       : "group-mode-btn"
-                  }
-                  disabled={!hasLocality}
-                  title={
-                    hasLocality
-                      ? undefined
-                      : "Area grouping appears when initiations include location"
                   }
                   onClick={() => setGroupMode("locality")}
                 >

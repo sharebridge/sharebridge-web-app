@@ -55,6 +55,8 @@ export function donorGroupTitle(intent: OrderInitiation): string {
   return donorGroupLabel(intent);
 }
 
+export const NO_LOCATION_GROUP_KEY = "__no_location__";
+
 export function localityGroupLabel(intent: OrderInitiation): string {
   const label = intent.location_label?.trim();
   if (label) {
@@ -64,7 +66,7 @@ export function localityGroupLabel(intent: OrderInitiation): string {
   if (key) {
     return `Area ${key}`;
   }
-  return "Unknown area";
+  return "No location on record";
 }
 
 function groupKey(intent: OrderInitiation, mode: OrderGroupMode): string {
@@ -74,7 +76,7 @@ function groupKey(intent: OrderInitiation, mode: OrderGroupMode): string {
     case "day":
       return dayGroupLabel(intent);
     case "locality":
-      return intent.locality_key?.trim() || "__unknown_locality__";
+      return intent.locality_key?.trim() || NO_LOCATION_GROUP_KEY;
     default:
       return "all";
   }

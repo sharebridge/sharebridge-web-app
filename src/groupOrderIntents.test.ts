@@ -69,6 +69,21 @@ describe("groupOrderIntents", () => {
     expect(total).toBe(3);
   });
 
+  it("locality mode buckets rows without locality_key", () => {
+    const groups = groupOrderIntents(
+      [
+        intent({
+          order_intent_id: "oi-1",
+          pack_id: "p1",
+          created_at: "2026-05-28T10:00:00Z"
+        })
+      ],
+      "locality"
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].label).toBe("No location on record");
+  });
+
   it("locality mode groups by locality_key", () => {
     const located = [
       intent({
