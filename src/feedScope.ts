@@ -127,5 +127,5 @@ export function donorEmptyListMessage(
   if (viewerLocationShared) {
     return `No order initiations from any donor ${time} near you.`;
   }
-  return `You have no order initiations ${time}.`;
+  return `No initiations you registered ${time}. Tap By area and allow location to see neighbourhood orders from other donors.`;
 }

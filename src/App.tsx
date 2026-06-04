@@ -29,6 +29,7 @@ import {
   feedScopeFromApi,
   type FeedScope
 } from "./feedScope";
+import { GroupModeToolbar } from "./components/GroupModeToolbar";
 import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
 import {
   locationRequiredMessage,
@@ -72,6 +73,10 @@ function AppShell() {
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
   const coordinatorView = apiDashboard === "coordinator";
+  const showGroupToolbar =
+    coordinatorView && intents.length > 0
+      ? true
+      : apiDashboard === "limited" || (apiDashboard == null && !coordinatorView);
   const loadHistory = useCallback(
     async (
       active: AuthSession,
@@ -263,6 +268,15 @@ function AppShell() {
           </div>
         ) : null}
 
+        {apiDashboard === "limited" &&
+        groupMode !== "locality" &&
+        !viewerLocationShared ? (
+          <div className="banner banner-info" role="status">
+            Showing only initiations you registered. Tap <strong>By area</strong>{" "}
+            and allow location to load neighbourhood orders from other donors.
+          </div>
+        ) : null}
+
         {locationNotice ? (
           <div className="banner" role="status">
             {locationNotice}
@@ -279,84 +293,21 @@ function AppShell() {
           </div>
         ) : null}
 
+        {showGroupToolbar ? (
+          <GroupModeToolbar
+            coordinatorView={coordinatorView}
+            groupMode={groupMode}
+            areaLoading={areaLoading}
+            onSelect={(mode) => void handleGroupModeClick(mode)}
+          />
+        ) : null}
+
         <div className="dashboard layout">
           <section className="panel list-panel" aria-labelledby="list-heading">
             <div className="panel-head">
               <h2 id="list-heading">Recent initiations</h2>
               {loading ? <span className="badge">Syncing…</span> : null}
             </div>
-            {intents.length > 0 && coordinatorView ? (
-              <div
-                className="group-mode-toggle"
-                role="group"
-                aria-label="Group order initiations"
-              >
-                <button
-                  type="button"
-                  className={
-                    groupMode === "donor"
-                      ? "group-mode-btn active"
-                      : "group-mode-btn"
-                  }
-                  onClick={() => void handleGroupModeClick("donor")}
-                >
-                  By donor
-                </button>
-                <button
-                  type="button"
-                  className={
-                    groupMode === "day"
-                      ? "group-mode-btn active"
-                      : "group-mode-btn"
-                  }
-                  onClick={() => void handleGroupModeClick("day")}
-                >
-                  By day
-                </button>
-                <button
-                  type="button"
-                  className={
-                    groupMode === "locality"
-                      ? "group-mode-btn active"
-                      : "group-mode-btn"
-                  }
-                  disabled={areaLoading}
-                  onClick={() => void handleGroupModeClick("locality")}
-                >
-                  {areaLoading ? "By area…" : "By area"}
-                </button>
-              </div>
-            ) : intents.length > 0 ? (
-              <div
-                className="group-mode-toggle"
-                role="group"
-                aria-label="Group order initiations"
-              >
-                <button
-                  type="button"
-                  className={
-                    groupMode === "day"
-                      ? "group-mode-btn active"
-                      : "group-mode-btn"
-                  }
-                  onClick={() => void handleGroupModeClick("day")}
-                >
-                  By day
-                </button>
-                <button
-                  type="button"
-                  className={
-                    groupMode === "locality"
-                      ? "group-mode-btn active"
-                      : "group-mode-btn"
-                  }
-                  disabled={areaLoading}
-                  onClick={() => void handleGroupModeClick("locality")}
-                >
-                  {areaLoading ? "By area…" : "By area"}
-                </button>
-              </div>
-            ) : null}
             {intents.length === 0 && !loading ? (
               <p className="empty">
                 {apiDashboard === "limited"

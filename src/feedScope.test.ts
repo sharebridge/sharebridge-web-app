@@ -59,8 +59,6 @@ describe("feedScopeFromApi", () => {
       feed: { window_hours: 2, radius_m: 5000, location_mode: "near" }
     });
     expect(donorEmptyListMessage(scope, true)).toContain("any donor");
-    expect(donorEmptyListMessage(scope, false)).toContain(
-      "You have no order initiations"
-    );
+    expect(donorEmptyListMessage(scope, false)).toContain("By area");
   });
 });
