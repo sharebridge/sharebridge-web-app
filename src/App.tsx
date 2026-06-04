@@ -26,6 +26,7 @@ import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
 import {
   donorEmptyListMessage,
   donorFeedLede,
+  donorNoHandoverLocationNotice,
   feedScopeFromApi,
   type FeedScope
 } from "./feedScope";
@@ -280,6 +281,18 @@ function AppShell() {
         {locationNotice ? (
           <div className="banner" role="status">
             {locationNotice}
+          </div>
+        ) : null}
+
+        {apiDashboard === "limited" &&
+        viewerLocationShared &&
+        intents.some(
+          (row) =>
+            row.distance_m == null &&
+            row.user_id !== session.userId
+        ) ? (
+          <div className="banner banner-info" role="status">
+            {donorNoHandoverLocationNotice()}
           </div>
         ) : null}
 
