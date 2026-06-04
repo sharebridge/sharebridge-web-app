@@ -719,3 +719,41 @@ a {
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dialog-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.2);
+}
+
+.dialog-card h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+
+.dialog-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}

@@ -26,15 +26,13 @@ import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
 import {
   donorEmptyListMessage,
   donorFeedLede,
-  donorLocationUnavailableNotice,
   feedScopeFromApi,
   type FeedScope
 } from "./feedScope";
+import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
 import {
-  cacheViewerCoords,
-  loadCachedViewerCoords,
-  readViewerLocation,
-  type ViewerLocationFailureReason
+  locationRequiredMessage,
+  readViewerLocation
 } from "./viewerLocation";
 
 const appConfig = getAppConfig();
@@ -66,7 +64,10 @@ function AppShell() {
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
   const [viewerLocationShared, setViewerLocationShared] = useState(false);
-  const [shareLocationBusy, setShareLocationBusy] = useState(false);
+  const [areaLoading, setAreaLoading] = useState(false);
+  const [locationDialogMessage, setLocationDialogMessage] = useState<
+    string | null
+  >(null);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
@@ -74,7 +75,7 @@ function AppShell() {
   const loadHistory = useCallback(
     async (
       active: AuthSession,
-      options: { forceFreshLocation?: boolean } = {}
+      viewerCoords: { near_lat: number; near_lng: number } | null = null
     ) => {
     if (isSessionExpired(active)) {
       clearSession();
@@ -87,33 +88,8 @@ function AppShell() {
     setError(null);
     setLocationNotice(null);
     setFeedScope(null);
-    setViewerLocationShared(false);
+    setViewerLocationShared(viewerCoords != null);
     try {
-      let viewerCoords: { near_lat: number; near_lng: number } | null = null;
-      let locationDeniedReason: ViewerLocationFailureReason | null = null;
-
-      if (!options.forceFreshLocation) {
-        const cached = loadCachedViewerCoords();
-        if (cached) {
-          viewerCoords = { near_lat: cached.lat, near_lng: cached.lng };
-          setViewerLocationShared(true);
-        }
-      }
-
-      if (!viewerCoords) {
-        const location = await readViewerLocation();
-        if (location.status === "granted") {
-          cacheViewerCoords(location.coords);
-          viewerCoords = {
-            near_lat: location.coords.lat,
-            near_lng: location.coords.lng
-          };
-          setViewerLocationShared(true);
-        } else {
-          locationDeniedReason = location.reason;
-        }
-      }
-
       const result = await fetchOrderInitiations(
         appConfig.apiBaseUrl,
         active,
@@ -126,20 +102,6 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
-      if (locationDeniedReason) {
-        setLocationNotice(
-          result.dashboard === "limited"
-            ? donorLocationUnavailableNotice(scope, locationDeniedReason)
-            : `Distance (m) needs browser location (${locationDeniedReason}). Click Use my location in the header, allow the site in browser settings, then Refresh.`
-        );
-      } else if (
-        !viewerCoords &&
-        result.intents.some((row) => row.location_lat != null)
-      ) {
-        setLocationNotice(
-          "Distance (m) needs your browser location. Click Use my location in the header, then Refresh."
-        );
-      }
       setSelectedId((prev) =>
         prev &&
         result.intents.some((row) => row.order_intent_id === prev)
@@ -171,21 +133,65 @@ function AppShell() {
     []
   );
 
-  const handleShareLocation = useCallback(async () => {
+  const loadByAreaWithFreshLocation = useCallback(
+    async (active: AuthSession): Promise<boolean> => {
+      const location = await readViewerLocation();
+      if (location.status !== "granted") {
+        setLocationDialogMessage(
+          locationRequiredMessage(location.reason)
+        );
+        return false;
+      }
+      try {
+        await loadHistory(active, {
+          near_lat: location.coords.lat,
+          near_lng: location.coords.lng
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [loadHistory]
+  );
+
+  const handleGroupModeClick = useCallback(
+    async (nextMode: OrderGroupMode) => {
+      if (!session) {
+        return;
+      }
+      if (nextMode !== "locality") {
+        setGroupMode(nextMode);
+        await loadHistory(session, null);
+        return;
+      }
+
+      setAreaLoading(true);
+      const ok = await loadByAreaWithFreshLocation(session);
+      setAreaLoading(false);
+      if (ok) {
+        setGroupMode("locality");
+      }
+    },
+    [session, loadHistory, loadByAreaWithFreshLocation]
+  );
+
+  const handleRefresh = useCallback(async () => {
     if (!session) {
       return;
     }
-    setShareLocationBusy(true);
-    try {
-      await loadHistory(session, { forceFreshLocation: true });
-    } finally {
-      setShareLocationBusy(false);
+    if (groupMode === "locality") {
+      setAreaLoading(true);
+      await loadByAreaWithFreshLocation(session);
+      setAreaLoading(false);
+    } else {
+      await loadHistory(session, null);
     }
-  }, [session, loadHistory]);
+  }, [session, groupMode, loadHistory, loadByAreaWithFreshLocation]);
 
   useEffect(() => {
     if (session) {
-      void loadHistory(session);
+      void loadHistory(session, null);
     }
   }, [session, loadHistory]);
 
@@ -221,13 +227,18 @@ function AppShell() {
       <SiteHeader
         config={appConfig}
         session={session}
-        onRefresh={() => void loadHistory(session)}
-        onShareLocation={() => void handleShareLocation()}
-        shareLocationBusy={shareLocationBusy}
+        onRefresh={() => void handleRefresh()}
         onHome={handleHome}
         onSignOut={handleSignOut}
-        loading={loading}
+        loading={loading || areaLoading}
       />
+
+      {locationDialogMessage ? (
+        <LocationRequiredDialog
+          message={locationDialogMessage}
+          onClose={() => setLocationDialogMessage(null)}
+        />
+      ) : null}
 
       <main className="main">
         <DashboardHero
@@ -287,7 +298,7 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  onClick={() => setGroupMode("donor")}
+                  onClick={() => void handleGroupModeClick("donor")}
                 >
                   By donor
                 </button>
@@ -298,7 +309,7 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  onClick={() => setGroupMode("day")}
+                  onClick={() => void handleGroupModeClick("day")}
                 >
                   By day
                 </button>
@@ -309,9 +320,10 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  onClick={() => setGroupMode("locality")}
+                  disabled={areaLoading}
+                  onClick={() => void handleGroupModeClick("locality")}
                 >
-                  By area
+                  {areaLoading ? "By area…" : "By area"}
                 </button>
               </div>
             ) : intents.length > 0 ? (
@@ -327,7 +339,7 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  onClick={() => setGroupMode("day")}
+                  onClick={() => void handleGroupModeClick("day")}
                 >
                   By day
                 </button>
@@ -338,9 +350,10 @@ function AppShell() {
                       ? "group-mode-btn active"
                       : "group-mode-btn"
                   }
-                  onClick={() => setGroupMode("locality")}
+                  disabled={areaLoading}
+                  onClick={() => void handleGroupModeClick("locality")}
                 >
-                  By area
+                  {areaLoading ? "By area…" : "By area"}
                 </button>
               </div>
             ) : null}
