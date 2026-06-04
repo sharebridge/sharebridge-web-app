@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatDonorMeta, primaryRestaurant, statusLabel } from "./format";
+import {
+  formatDistanceM,
+  formatDonorMeta,
+  formatElapsedSince,
+  primaryRestaurant,
+  statusLabel
+} from "./format";
 import type { OrderInitiation } from "./types";
 
 describe("format helpers", () => {
@@ -12,6 +18,16 @@ describe("format helpers", () => {
       "alice@example.com · alice"
     );
     expect(formatDonorMeta("alice", null)).toBe("Donor alice");
+  });
+
+  it("formats distance in metres", () => {
+    expect(formatDistanceM(1250)).toBe("1250 m");
+    expect(formatDistanceM(null)).toBe("—");
+  });
+
+  it("formats elapsed since intent created", () => {
+    const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    expect(formatElapsedSince(hourAgo)).toBe("1h ago");
   });
 
   it("picks restaurant from snapshot", () => {

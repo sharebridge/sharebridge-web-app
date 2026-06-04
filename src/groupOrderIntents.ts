@@ -20,6 +20,21 @@ function compareNewestFirst(a: OrderInitiation, b: OrderInitiation): number {
   return sortTime(b) - sortTime(a);
 }
 
+function compareListOrder(a: OrderInitiation, b: OrderInitiation): number {
+  const da = a.distance_m;
+  const db = b.distance_m;
+  if (typeof da === "number" && typeof db === "number" && da !== db) {
+    return da - db;
+  }
+  if (typeof da === "number" && typeof db !== "number") {
+    return -1;
+  }
+  if (typeof da !== "number" && typeof db === "number") {
+    return 1;
+  }
+  return compareNewestFirst(a, b);
+}
+
 export function dayGroupLabel(intent: OrderInitiation): string {
   const raw = intent.updated_at || intent.created_at;
   if (!raw) {
@@ -107,7 +122,7 @@ export function groupOrderIntents(
   intents: OrderInitiation[],
   mode: OrderGroupMode
 ): OrderIntentGroup[] {
-  const sorted = [...intents].sort(compareNewestFirst);
+  const sorted = [...intents].sort(compareListOrder);
   const buckets = new Map<string, OrderIntentGroup>();
 
   for (const intent of sorted) {

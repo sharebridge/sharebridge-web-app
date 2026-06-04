@@ -13,7 +13,12 @@ import {
 import { DashboardHero } from "./components/DashboardHero";
 import { getAppConfig } from "./config";
 import { sessionHeaderLabel } from "./sessionRole";
-import { formatWhen, statusLabel } from "./format";
+import {
+  formatDistanceM,
+  formatElapsedSince,
+  formatWhen,
+  statusLabel
+} from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
@@ -400,8 +405,26 @@ function DetailView({
         </dd>
       </div>
       <div>
-        <dt>Registered</dt>
-        <dd>{formatWhen(intent.created_at)}</dd>
+        <dt>Order intent taken</dt>
+        <dd>
+          {formatWhen(intent.created_at)}
+          <span className="detail-sub">
+            {" "}
+            ({formatElapsedSince(intent.created_at)})
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt>Delivered at</dt>
+        <dd>
+          {intent.delivered_at?.trim()
+            ? formatWhen(intent.delivered_at)
+            : "—"}
+        </dd>
+      </div>
+      <div>
+        <dt>Distance</dt>
+        <dd>{formatDistanceM(intent.distance_m)}</dd>
       </div>
       <div>
         <dt>Last updated</dt>

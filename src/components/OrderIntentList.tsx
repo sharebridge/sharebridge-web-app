@@ -1,4 +1,11 @@
-import { formatDonorMeta, formatWhen, primaryRestaurant, statusLabel } from "../format";
+import {
+  formatDistanceM,
+  formatDonorMeta,
+  formatElapsedSince,
+  formatWhen,
+  primaryRestaurant,
+  statusLabel
+} from "../format";
 import { groupOrderIntents, type OrderGroupMode } from "../groupOrderIntents";
 import type { OrderInitiation } from "../types";
 import { ReferencePhotoDisplay } from "../ReferencePhotoDisplay";
@@ -68,11 +75,15 @@ function IntentRow({
       ? formatDonorMeta(intent.user_id, intent.donor_email)
       : null,
     statusLabel(intent.status),
-    restaurant,
-    formatWhen(intent.updated_at || intent.created_at)
+    restaurant
   ]
     .filter(Boolean)
     .join(" · ");
+  const metrics = [
+    `Intent taken ${formatWhen(intent.created_at)} (${formatElapsedSince(intent.created_at)})`,
+    `Delivered ${intent.delivered_at ? formatWhen(intent.delivered_at) : "—"}`,
+    `Distance ${formatDistanceM(intent.distance_m)}`
+  ].join(" · ");
   const hasThumb = Boolean(
     intent.reference_photo_thumbnail_url?.trim() &&
       (intent.reference_photo_view_url?.trim() ||
@@ -100,6 +111,7 @@ function IntentRow({
         <span className="intent-row-text">
           <span className="intent-id">{intent.order_intent_id}</span>
           <span className="intent-meta">{meta}</span>
+          <span className="intent-metrics">{metrics}</span>
         </span>
       </button>
     </li>

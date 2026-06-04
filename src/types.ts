@@ -23,6 +23,10 @@ export type OrderInitiation = {
   selected_preset: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  /** Handover completion time when set (often null until delivery-partner flow). */
+  delivered_at?: string | null;
+  /** Metres from viewer when neighbourhood `near_lat` / `near_lng` were sent. */
+  distance_m?: number | null;
 };
 
 export type ConnectionSettings = {

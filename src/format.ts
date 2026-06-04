@@ -1,5 +1,41 @@
 import type { OrderInitiation } from "./types";
 
+export function formatElapsedSince(
+  iso: string | undefined,
+  nowMs: number = Date.now()
+): string {
+  if (!iso?.trim()) {
+    return "—";
+  }
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) {
+    return "—";
+  }
+  const diff = Math.max(0, nowMs - ms);
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) {
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+export function formatDistanceM(
+  distance_m: number | null | undefined
+): string {
+  if (typeof distance_m !== "number" || !Number.isFinite(distance_m)) {
+    return "—";
+  }
+  return `${Math.round(distance_m)} m`;
+}
+
 export function formatWhen(iso: string | undefined): string {
   if (!iso) {
     return "—";
