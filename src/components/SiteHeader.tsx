@@ -9,6 +9,9 @@ type Props = {
   onHome: () => void;
   onSignOut: () => void;
   loading: boolean;
+  /** When set, shows a control to send browser location for distance (m) on the list. */
+  onShareLocation?: () => void;
+  shareLocationBusy?: boolean;
 };
 
 export function SiteHeader({
@@ -17,7 +20,9 @@ export function SiteHeader({
   onRefresh,
   onHome,
   onSignOut,
-  loading
+  loading,
+  onShareLocation,
+  shareLocationBusy = false
 }: Props) {
   return (
     <header className="site-header">
@@ -41,6 +46,16 @@ export function SiteHeader({
           <button type="button" className="btn btn-ghost" onClick={onHome}>
             Home
           </button>
+          {onShareLocation ? (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={loading || shareLocationBusy}
+              onClick={onShareLocation}
+            >
+              {shareLocationBusy ? "Locating…" : "Use my location"}
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn btn-primary"

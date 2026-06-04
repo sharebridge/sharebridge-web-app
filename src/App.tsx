@@ -30,7 +30,12 @@ import {
   feedScopeFromApi,
   type FeedScope
 } from "./feedScope";
-import { readViewerLocation } from "./viewerLocation";
+import {
+  cacheViewerCoords,
+  loadCachedViewerCoords,
+  readViewerLocation,
+  type ViewerLocationFailureReason
+} from "./viewerLocation";
 
 const appConfig = getAppConfig();
 
@@ -61,11 +66,16 @@ function AppShell() {
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [feedScope, setFeedScope] = useState<FeedScope | null>(null);
   const [viewerLocationShared, setViewerLocationShared] = useState(false);
+  const [shareLocationBusy, setShareLocationBusy] = useState(false);
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
   const coordinatorView = apiDashboard === "coordinator";
-  const loadHistory = useCallback(async (active: AuthSession) => {
+  const loadHistory = useCallback(
+    async (
+      active: AuthSession,
+      options: { forceFreshLocation?: boolean } = {}
+    ) => {
     if (isSessionExpired(active)) {
       clearSession();
       setSession(null);
@@ -79,17 +89,21 @@ function AppShell() {
     setFeedScope(null);
     setViewerLocationShared(false);
     try {
-      const coordinatorSession = active.role === "coordinator";
       let viewerCoords: { near_lat: number; near_lng: number } | null = null;
-      let locationDeniedReason:
-        | "unsupported"
-        | "denied"
-        | "timeout"
-        | "error"
-        | null = null;
-      if (!coordinatorSession) {
+      let locationDeniedReason: ViewerLocationFailureReason | null = null;
+
+      if (!options.forceFreshLocation) {
+        const cached = loadCachedViewerCoords();
+        if (cached) {
+          viewerCoords = { near_lat: cached.lat, near_lng: cached.lng };
+          setViewerLocationShared(true);
+        }
+      }
+
+      if (!viewerCoords) {
         const location = await readViewerLocation();
         if (location.status === "granted") {
+          cacheViewerCoords(location.coords);
           viewerCoords = {
             near_lat: location.coords.lat,
             near_lng: location.coords.lng
@@ -99,6 +113,7 @@ function AppShell() {
           locationDeniedReason = location.reason;
         }
       }
+
       const result = await fetchOrderInitiations(
         appConfig.apiBaseUrl,
         active,
@@ -111,9 +126,18 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
-      if (result.dashboard === "limited" && locationDeniedReason) {
+      if (locationDeniedReason) {
         setLocationNotice(
-          donorLocationUnavailableNotice(scope, locationDeniedReason)
+          result.dashboard === "limited"
+            ? donorLocationUnavailableNotice(scope, locationDeniedReason)
+            : `Distance (m) needs browser location (${locationDeniedReason}). Click Use my location in the header, allow the site in browser settings, then Refresh.`
+        );
+      } else if (
+        !viewerCoords &&
+        result.intents.some((row) => row.location_lat != null)
+      ) {
+        setLocationNotice(
+          "Distance (m) needs your browser location. Click Use my location in the header, then Refresh."
         );
       }
       setSelectedId((prev) =>
@@ -143,7 +167,21 @@ function AppShell() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  },
+    []
+  );
+
+  const handleShareLocation = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+    setShareLocationBusy(true);
+    try {
+      await loadHistory(session, { forceFreshLocation: true });
+    } finally {
+      setShareLocationBusy(false);
+    }
+  }, [session, loadHistory]);
 
   useEffect(() => {
     if (session) {
@@ -184,6 +222,8 @@ function AppShell() {
         config={appConfig}
         session={session}
         onRefresh={() => void loadHistory(session)}
+        onShareLocation={() => void handleShareLocation()}
+        shareLocationBusy={shareLocationBusy}
         onHome={handleHome}
         onSignOut={handleSignOut}
         loading={loading}
