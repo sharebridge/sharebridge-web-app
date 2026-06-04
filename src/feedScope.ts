@@ -1,7 +1,7 @@
 /** Parsed from integration-service list response (`feed` or `since` + `neighbourhood`). */
 export type FeedScope = {
   windowHours: number;
-  radiusKm: number;
+  radiusM: number;
   locationMode: "near" | "locality" | "own_only";
 };
 
@@ -11,6 +11,8 @@ export type OrderFeedMeta = {
   feed?: {
     since?: string;
     window_hours?: number;
+    radius_m?: number;
+    /** @deprecated API may still send during transition; prefer radius_m */
     radius_km?: number;
     location_mode?: string;
   };
@@ -32,8 +34,35 @@ function hoursPhrase(hours: number): string {
   return hours === 1 ? "the last hour" : `the last ${hours} hours`;
 }
 
-function radiusPhrase(km: number): string {
+function radiusPhraseMetres(m: number): string {
+  if (m < 1000) {
+    return m === 1 ? "within 1 m" : `within ${m} m`;
+  }
+  const km = m / 1000;
   return km === 1 ? "within 1 km" : `within ${km} km`;
+}
+
+function resolveRadiusM(meta: OrderFeedMeta): number {
+  const feed = meta.feed;
+  if (typeof feed?.radius_m === "number" && feed.radius_m > 0) {
+    return Math.round(feed.radius_m);
+  }
+  if (typeof meta.neighbourhood?.radius_m === "number") {
+    const n = meta.neighbourhood.radius_m as number;
+    if (n > 0) {
+      return Math.round(n);
+    }
+  }
+  if (typeof feed?.radius_km === "number" && feed.radius_km > 0) {
+    return Math.round(feed.radius_km * 1000);
+  }
+  if (typeof meta.neighbourhood?.radius_km === "number") {
+    const km = meta.neighbourhood.radius_km as number;
+    if (km > 0) {
+      return Math.round(km * 1000);
+    }
+  }
+  return 0;
 }
 
 export function feedScopeFromApi(meta: OrderFeedMeta): FeedScope | null {
@@ -47,12 +76,6 @@ export function feedScopeFromApi(meta: OrderFeedMeta): FeedScope | null {
   if (hours == null) {
     return null;
   }
-  const radiusKm =
-    typeof feed?.radius_km === "number" && feed.radius_km > 0
-      ? feed.radius_km
-      : typeof meta.neighbourhood?.radius_km === "number"
-        ? (meta.neighbourhood.radius_km as number)
-        : 0;
   const modeRaw =
     (typeof feed?.location_mode === "string" && feed.location_mode) ||
     (typeof meta.neighbourhood?.mode === "string" && meta.neighbourhood.mode) ||
@@ -62,7 +85,7 @@ export function feedScopeFromApi(meta: OrderFeedMeta): FeedScope | null {
 
   return {
     windowHours: hours,
-    radiusKm,
+    radiusM: resolveRadiusM(meta),
     locationMode
   };
 }
@@ -72,8 +95,8 @@ export function donorFeedLede(scope: FeedScope | null): string | undefined {
     return undefined;
   }
   const time = hoursPhrase(scope.windowHours);
-  if (scope.locationMode === "near" && scope.radiusKm > 0) {
-    return `Neighbourhood feed in ${time}, ${radiusPhrase(scope.radiusKm)}.`;
+  if (scope.locationMode === "near" && scope.radiusM > 0) {
+    return `Neighbourhood feed in ${time}, ${radiusPhraseMetres(scope.radiusM)}.`;
   }
   if (scope.locationMode === "locality") {
     return `Neighbourhood feed in ${time} (same area grid).`;
@@ -108,8 +131,8 @@ export function donorEmptyListMessage(
   viewerLocationShared: boolean
 ): string {
   const time = donorFeedWindowPhrase(scope);
-  if (viewerLocationShared && scope?.radiusKm) {
-    const radius = radiusPhrase(scope.radiusKm);
+  if (viewerLocationShared && scope?.radiusM) {
+    const radius = radiusPhraseMetres(scope.radiusM);
     return `No order initiations from any donor ${time} ${radius}.`;
   }
   if (viewerLocationShared) {

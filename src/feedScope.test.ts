@@ -7,20 +7,20 @@ import {
 } from "./feedScope";
 
 describe("feedScopeFromApi", () => {
-  it("parses feed object from API", () => {
+  it("parses feed object from API (radius_m)", () => {
     const scope = feedScopeFromApi({
       since: "2h",
       feed: {
         since: "2h",
         window_hours: 2,
-        radius_km: 5,
+        radius_m: 5000,
         location_mode: "near"
       },
-      neighbourhood: { mode: "near", radius_km: 5 }
+      neighbourhood: { mode: "near", radius_m: 5000 }
     });
     expect(scope).toEqual({
       windowHours: 2,
-      radiusKm: 5,
+      radiusM: 5000,
       locationMode: "near"
     });
     expect(donorFeedLede(scope)).toBe(
@@ -28,12 +28,20 @@ describe("feedScopeFromApi", () => {
     );
   });
 
+  it("accepts legacy radius_km from API", () => {
+    const scope = feedScopeFromApi({
+      since: "2h",
+      feed: { window_hours: 2, radius_km: 5, location_mode: "near" }
+    });
+    expect(scope?.radiusM).toBe(5000);
+  });
+
   it("handles own_only mode without radius in lede", () => {
     const scope = feedScopeFromApi({
       since: "2h",
       feed: {
         window_hours: 2,
-        radius_km: 5,
+        radius_m: 5000,
         location_mode: "own_only"
       }
     });
@@ -43,7 +51,7 @@ describe("feedScopeFromApi", () => {
   it("location notice explains permission not empty neighbourhood", () => {
     const scope = feedScopeFromApi({
       since: "2h",
-      feed: { window_hours: 2, radius_km: 5, location_mode: "own_only" }
+      feed: { window_hours: 2, radius_m: 5000, location_mode: "own_only" }
     });
     expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
       "permission"
@@ -56,7 +64,7 @@ describe("feedScopeFromApi", () => {
   it("empty list message distinguishes neighbourhood vs own-only", () => {
     const scope = feedScopeFromApi({
       since: "2h",
-      feed: { window_hours: 2, radius_km: 5, location_mode: "near" }
+      feed: { window_hours: 2, radius_m: 5000, location_mode: "near" }
     });
     expect(donorEmptyListMessage(scope, true)).toContain("any donor");
     expect(donorEmptyListMessage(scope, false)).toContain(
