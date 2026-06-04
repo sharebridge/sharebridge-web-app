@@ -28,14 +28,6 @@ describe("feedScopeFromApi", () => {
     );
   });
 
-  it("accepts legacy radius_km from API", () => {
-    const scope = feedScopeFromApi({
-      since: "2h",
-      feed: { window_hours: 2, radius_km: 5, location_mode: "near" }
-    });
-    expect(scope?.radiusM).toBe(5000);
-  });
-
   it("handles own_only mode without radius in lede", () => {
     const scope = feedScopeFromApi({
       since: "2h",

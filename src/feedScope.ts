@@ -12,8 +12,6 @@ export type OrderFeedMeta = {
     since?: string;
     window_hours?: number;
     radius_m?: number;
-    /** @deprecated API may still send during transition; prefer radius_m */
-    radius_km?: number;
     location_mode?: string;
   };
 };
@@ -51,15 +49,6 @@ function resolveRadiusM(meta: OrderFeedMeta): number {
     const n = meta.neighbourhood.radius_m as number;
     if (n > 0) {
       return Math.round(n);
-    }
-  }
-  if (typeof feed?.radius_km === "number" && feed.radius_km > 0) {
-    return Math.round(feed.radius_km * 1000);
-  }
-  if (typeof meta.neighbourhood?.radius_km === "number") {
-    const km = meta.neighbourhood.radius_km as number;
-    if (km > 0) {
-      return Math.round(km * 1000);
     }
   }
   return 0;
