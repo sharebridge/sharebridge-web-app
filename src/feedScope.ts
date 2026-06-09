@@ -132,5 +132,5 @@ export function donorEmptyListMessage(
 
 /** Shown when neighbourhood rows lack handover GPS (distance unknown). */
 export function donorNoHandoverLocationNotice(): string {
-  return "Orders without handover GPS from the mobile app appear here without distance; they are not filtered by the 5 km radius. Enable location on Help a seeker so new orders sort by distance.";
+  return "Orders without handover GPS from the mobile app appear here without distance; they are not filtered by the neighbourhood radius. Enable location on Help a seeker so new orders sort by distance.";
 }

@@ -13,16 +13,13 @@ import {
 import { DashboardHero } from "./components/DashboardHero";
 import { getAppConfig } from "./config";
 import { sessionHeaderLabel } from "./sessionRole";
-import {
-  formatDistanceM,
-  formatElapsedSince,
-  formatWhen,
-  statusLabel
-} from "./format";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
-import { ReferencePhotoDisplay } from "./ReferencePhotoDisplay";
+import { OrderIntentDetail } from "./components/OrderIntentDetail";
+import { OrderIntentsMap } from "./components/OrderIntentsMap";
+import { DemandBoardPanel } from "./components/DemandBoardPanel";
+import { useMobileLayout } from "./hooks/useMobileLayout";
 import {
   donorEmptyListMessage,
   donorFeedLede,
@@ -70,6 +67,10 @@ function AppShell() {
   const [locationDialogMessage, setLocationDialogMessage] = useState<
     string | null
   >(null);
+  const [dashboardMode, setDashboardMode] = useState<
+    "list" | "map" | "demand"
+  >("list");
+  const isMobileLayout = useMobileLayout();
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
@@ -306,7 +307,7 @@ function AppShell() {
           </div>
         ) : null}
 
-        {showGroupToolbar ? (
+        {showGroupToolbar && dashboardMode === "list" ? (
           <GroupModeToolbar
             coordinatorView={coordinatorView}
             groupMode={groupMode}
@@ -315,43 +316,102 @@ function AppShell() {
           />
         ) : null}
 
-        <div className="dashboard layout">
-          <section className="panel list-panel" aria-labelledby="list-heading">
-            <div className="panel-head">
-              <h2 id="list-heading">Recent initiations</h2>
-              {loading ? <span className="badge">Syncing…</span> : null}
-            </div>
-            {intents.length === 0 && !loading ? (
-              <p className="empty">
-                {apiDashboard === "limited"
-                  ? donorEmptyListMessage(feedScope, viewerLocationShared)
-                  : "No order initiations yet."}
-              </p>
-            ) : (
-              <OrderIntentList
-                intents={intents}
-                groupMode={groupMode}
-                selectedId={selectedId}
-                showDonorInList={coordinatorView}
-                onSelect={setSelectedId}
-              />
-            )}
-          </section>
-
-          <section
-            className="panel detail-panel"
-            aria-labelledby="detail-heading"
+        <div className="view-mode-toolbar" role="tablist" aria-label="Dashboard view">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={dashboardMode === "list"}
+            className={
+              dashboardMode === "list" ? "view-mode-btn active" : "view-mode-btn"
+            }
+            onClick={() => setDashboardMode("list")}
           >
-            <h2 id="detail-heading">Initiation detail</h2>
-            {selected ? (
-              <DetailView intent={selected} coordinatorView={coordinatorView} />
-            ) : (
-              <p className="empty">
-                Select an initiation to review handover context.
-              </p>
-            )}
-          </section>
+            List
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={dashboardMode === "map"}
+            className={
+              dashboardMode === "map" ? "view-mode-btn active" : "view-mode-btn"
+            }
+            onClick={() => setDashboardMode("map")}
+          >
+            Map
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={dashboardMode === "demand"}
+            className={
+              dashboardMode === "demand"
+                ? "view-mode-btn active"
+                : "view-mode-btn"
+            }
+            onClick={() => setDashboardMode("demand")}
+          >
+            Demand
+          </button>
         </div>
+
+        {dashboardMode === "demand" ? (
+          <DemandBoardPanel session={session} />
+        ) : dashboardMode === "map" ? (
+          <OrderIntentsMap
+            intents={intents}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        ) : (
+          <div
+            className={
+              isMobileLayout
+                ? "dashboard layout layout-mobile-inline"
+                : "dashboard layout"
+            }
+          >
+            <section className="panel list-panel" aria-labelledby="list-heading">
+              <div className="panel-head">
+                <h2 id="list-heading">Recent initiations</h2>
+                {loading ? <span className="badge">Syncing…</span> : null}
+              </div>
+              {intents.length === 0 && !loading ? (
+                <p className="empty">
+                  {apiDashboard === "limited"
+                    ? donorEmptyListMessage(feedScope, viewerLocationShared)
+                    : "No order initiations yet."}
+                </p>
+              ) : (
+                <OrderIntentList
+                  intents={intents}
+                  groupMode={groupMode}
+                  selectedId={selectedId}
+                  showDonorInList={coordinatorView}
+                  coordinatorView={coordinatorView}
+                  showInlineDetail={isMobileLayout}
+                  onSelect={setSelectedId}
+                />
+              )}
+            </section>
+
+            <section
+              className="panel detail-panel detail-panel-desktop"
+              aria-labelledby="detail-heading"
+            >
+              <h2 id="detail-heading">Initiation detail</h2>
+              {selected ? (
+                <OrderIntentDetail
+                  intent={selected}
+                  coordinatorView={coordinatorView}
+                />
+              ) : (
+                <p className="empty">
+                  Select an initiation to review handover context.
+                </p>
+              )}
+            </section>
+          </div>
+        )}
       </main>
 
       <footer className="footer">
@@ -361,115 +421,5 @@ function AppShell() {
         </p>
       </footer>
     </div>
-  );
-}
-
-function DetailView({
-  intent,
-  coordinatorView
-}: {
-  intent: OrderInitiation;
-  coordinatorView: boolean;
-}) {
-  return (
-    <dl className="detail-grid">
-      <div>
-        <dt>Reference</dt>
-        <dd>{intent.order_intent_id}</dd>
-      </div>
-      {coordinatorView ? (
-        <>
-          <div>
-            <dt>Donor email</dt>
-            <dd>{intent.donor_email?.trim() || "—"}</dd>
-          </div>
-          <div>
-            <dt>Donor user id</dt>
-            <dd>{intent.user_id?.trim() || "—"}</dd>
-          </div>
-        </>
-      ) : null}
-      <div>
-        <dt>Instruction pack</dt>
-        <dd>{intent.pack_id}</dd>
-      </div>
-      <div>
-        <dt>Status</dt>
-        <dd>{statusLabel(intent.status)}</dd>
-      </div>
-      {intent.location_label?.trim() || intent.locality_key?.trim() ? (
-        <div>
-          <dt>Area</dt>
-          <dd>{intent.location_label?.trim() || intent.locality_key}</dd>
-        </div>
-      ) : null}
-      <div
-        className={
-          intent.reference_photo_view_url ||
-          intent.reference_photo_thumbnail_url
-            ? "detail-block"
-            : undefined
-        }
-      >
-        <dt>Reference photo</dt>
-        <dd>
-          <ReferencePhotoDisplay
-            thumbnailUrl={intent.reference_photo_thumbnail_url}
-            viewUrl={intent.reference_photo_view_url}
-            artifactId={intent.reference_photo_artifact_id}
-            hasReferencePhoto={intent.has_reference_photo}
-          />
-        </dd>
-      </div>
-      <div>
-        <dt>Order intent taken</dt>
-        <dd>
-          {formatWhen(intent.created_at)}
-          <span className="detail-sub">
-            {" "}
-            ({formatElapsedSince(intent.created_at)})
-          </span>
-        </dd>
-      </div>
-      <div>
-        <dt>Delivered at</dt>
-        <dd>
-          {intent.delivered_at?.trim()
-            ? formatWhen(intent.delivered_at)
-            : "—"}
-        </dd>
-      </div>
-      <div>
-        <dt>Distance</dt>
-        <dd>{formatDistanceM(intent.distance_m)}</dd>
-      </div>
-      <div>
-        <dt>Last updated</dt>
-        <dd>{formatWhen(intent.updated_at)}</dd>
-      </div>
-      {intent.verbal_handover_notes.trim() ? (
-        <div className="detail-block">
-          <dt>Handover notes</dt>
-          <dd>{intent.verbal_handover_notes}</dd>
-        </div>
-      ) : null}
-      {intent.presets_snapshot.length > 0 ? (
-        <div className="detail-block">
-          <dt>
-            Presets at registration ({intent.presets_snapshot.length})
-          </dt>
-          <dd>
-            <ul className="preset-list">
-              {intent.presets_snapshot.map((row, index) => (
-                <li key={`${row.restaurant_name}-${index}`}>
-                  <strong>{row.restaurant_name || "Vendor"}</strong>
-                  {row.app_name ? ` · ${row.app_name}` : ""}
-                </li>
-              ))}
-            </ul>
-          </dd>
-        </div>
-      ) : null}
-    </dl>
   );
 }

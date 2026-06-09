@@ -2,6 +2,8 @@ export type AppConfig = {
   apiBaseUrl: string;
   userServiceBaseUrl: string;
   googleClientId: string;
+  /** Maps JavaScript API — optional; list view works without it. */
+  googleMapsApiKey: string;
 };
 
 const DEFAULT_INTEGRATION =
@@ -18,7 +20,8 @@ export function getAppConfig(): AppConfig {
       import.meta.env.VITE_USER_SERVICE_BASE_URL?.trim() ||
       DEFAULT_USER_SERVICE
     ).replace(/\/$/, ""),
-    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ""
+    googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || "",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() || ""
   };
 }
 

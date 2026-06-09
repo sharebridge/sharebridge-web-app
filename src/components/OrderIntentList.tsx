@@ -9,12 +9,15 @@ import {
 import { groupOrderIntents, type OrderGroupMode } from "../groupOrderIntents";
 import type { OrderInitiation } from "../types";
 import { ReferencePhotoDisplay } from "../ReferencePhotoDisplay";
+import { OrderIntentDetail } from "./OrderIntentDetail";
 
 type Props = {
   intents: OrderInitiation[];
   groupMode: OrderGroupMode;
   selectedId: string | null;
   showDonorInList: boolean;
+  coordinatorView: boolean;
+  showInlineDetail: boolean;
   onSelect: (orderIntentId: string) => void;
 };
 
@@ -23,6 +26,8 @@ export function OrderIntentList({
   groupMode,
   selectedId,
   showDonorInList,
+  coordinatorView,
+  showInlineDetail,
   onSelect
 }: Props) {
   const groups = groupOrderIntents(intents, groupMode);
@@ -42,15 +47,31 @@ export function OrderIntentList({
             </span>
           </div>
           <ul className="intent-group-items">
-            {group.intents.map((intent) => (
-              <IntentRow
-                key={intent.order_intent_id}
-                intent={intent}
-                showDonorInList={showDonorInList}
-                selected={selectedId === intent.order_intent_id}
-                onSelect={() => onSelect(intent.order_intent_id)}
-              />
-            ))}
+            {group.intents.map((intent) => {
+              const selected = selectedId === intent.order_intent_id;
+              return (
+                <li key={intent.order_intent_id} className="intent-row-wrap">
+                  <IntentRow
+                    intent={intent}
+                    showDonorInList={showDonorInList}
+                    selected={selected}
+                    onSelect={() => onSelect(intent.order_intent_id)}
+                  />
+                  {showInlineDetail && selected ? (
+                    <div className="intent-inline-detail">
+                      <h3 className="intent-inline-detail-title">
+                        Initiation detail
+                      </h3>
+                      <OrderIntentDetail
+                        intent={intent}
+                        coordinatorView={coordinatorView}
+                        compact
+                      />
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </li>
       ))}
@@ -91,7 +112,7 @@ function IntentRow({
   );
 
   return (
-    <li>
+    <>
       <button
         type="button"
         className={selected ? "intent-row active" : "intent-row"}
@@ -114,6 +135,6 @@ function IntentRow({
           <span className="intent-metrics">{metrics}</span>
         </span>
       </button>
-    </li>
+    </>
   );
 }

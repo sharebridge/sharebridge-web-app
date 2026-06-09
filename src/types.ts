@@ -7,6 +7,10 @@ export type OrderInitiation = {
   location_lng?: number | null;
   location_label?: string | null;
   locality_key?: string | null;
+  location_description?: string | null;
+  image_description?: string | null;
+  seeker_appearance_hints?: string | null;
+  seeker_handover_hints?: string | null;
   pack_id: string;
   status: string;
   has_reference_photo: boolean;

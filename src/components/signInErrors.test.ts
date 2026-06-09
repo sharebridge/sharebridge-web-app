@@ -6,7 +6,8 @@ import { formatSignInError } from "./signInErrors";
 const baseConfig: AppConfig = {
   apiBaseUrl: "http://localhost:8080",
   userServiceBaseUrl: "https://sharingbridge-user-service.onrender.com",
-  googleClientId: "x"
+  googleClientId: "x",
+  googleMapsApiKey: ""
 };
 
 describe("formatSignInError", () => {

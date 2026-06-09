@@ -15,7 +15,8 @@ vi.mock("@react-oauth/google", () => ({
 const baseConfig: AppConfig = {
   apiBaseUrl: "http://localhost:3001",
   userServiceBaseUrl: "http://localhost:3000",
-  googleClientId: "test-client-id"
+  googleClientId: "test-client-id",
+  googleMapsApiKey: ""
 };
 
 describe("SignInPage", () => {
