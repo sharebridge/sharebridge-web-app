@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { mapCaption, mapEmptyMessage } from "../mapEmptyMessage";
 import type { OrderInitiation } from "../types";
 import { getAppConfig } from "../config";
 
@@ -6,6 +7,8 @@ type Props = {
   intents: OrderInitiation[];
   selectedId: string | null;
   onSelect: (orderIntentId: string) => void;
+  coordinatorView: boolean;
+  viewerUserId: string;
 };
 
 type GeoIntent = OrderInitiation & {
@@ -23,7 +26,13 @@ function intentsWithGeo(intents: OrderInitiation[]): GeoIntent[] {
   );
 }
 
-export function OrderIntentsMap({ intents, selectedId, onSelect }: Props) {
+export function OrderIntentsMap({
+  intents,
+  selectedId,
+  onSelect,
+  coordinatorView,
+  viewerUserId
+}: Props) {
   const mapKey = getAppConfig().googleMapsApiKey;
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
@@ -159,7 +168,9 @@ export function OrderIntentsMap({ intents, selectedId, onSelect }: Props) {
   if (geoRows.length === 0) {
     return (
       <div className="map-panel map-panel-empty" role="status">
-        <p>No initiations with GPS coordinates yet. Register an intent from the mobile app with location enabled.</p>
+        <p>
+          {mapEmptyMessage(intents, coordinatorView, viewerUserId)}
+        </p>
       </div>
     );
   }
@@ -173,8 +184,7 @@ export function OrderIntentsMap({ intents, selectedId, onSelect }: Props) {
       ) : null}
       <div ref={mapRef} className="order-intents-map" aria-label="Order intents map" />
       <p className="map-caption">
-        {geoRows.length} of {intents.length} initiations with coordinates. Tap a
-        pin to select.
+        {mapCaption(geoRows.length, intents.length, coordinatorView)}
       </p>
     </div>
   );

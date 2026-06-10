@@ -361,6 +361,8 @@ function AppShell() {
             intents={intents}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            coordinatorView={coordinatorView}
+            viewerUserId={session.userId}
           />
         ) : (
           <div
