@@ -487,12 +487,16 @@ function AppShell() {
                     selected.payment_status !== "paid_externally"
                   }
                   markingPayment={opsSaving}
-                  onMarkPaymentDone={() => void handleMarkPaymentDone(selectedId)}
+                  onMarkPaymentDone={() =>
+                    void handleMarkPaymentDone(selected.order_intent_id)
+                  }
                   canMarkDelivered={
                     coordinatorView && selected.delivery_status !== "delivered"
                   }
                   markingDelivered={opsSaving}
-                  onMarkDelivered={() => void handleMarkDelivered(selectedId)}
+                  onMarkDelivered={() =>
+                    void handleMarkDelivered(selected.order_intent_id)
+                  }
                 />
               ) : (
                 <p className="empty">
