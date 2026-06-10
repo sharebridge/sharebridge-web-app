@@ -407,6 +407,11 @@ body {
   color: var(--muted);
 }
 
+.demand-gap {
+  color: var(--warn, #b45309);
+  font-weight: 500;
+}
+
 .map-panel-empty,
 .demand-panel {
   margin-bottom: 16px;

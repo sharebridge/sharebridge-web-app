@@ -6,6 +6,10 @@ export type DemandWindowRow = {
   demand_count: number;
   meal_units_total: number;
   latest_at: string;
+  pledged_units_total?: number;
+  bid_portions_total?: number;
+  unmet_demand_units?: number;
+  supply_gap_units?: number;
 };
 
 export type SeekerDemandRow = {

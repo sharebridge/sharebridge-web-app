@@ -80,13 +80,40 @@ export function DemandBoardPanel({ session }: Props) {
 
           {snapshot.demand_windows.length > 0 ? (
             <>
-              <h3 className="intent-group-title">Aggregated by area</h3>
+              <h3 className="intent-group-title">
+                Aggregated by area (demand vs pledge vs bid)
+              </h3>
+              <p className="demand-lede">
+                Pledge and bid forms must use the same locality key as a row
+                below so totals line up. Auto-assignment to vendors is not live
+                yet — gaps are for coordinator planning only.
+              </p>
               <ul className="preset-list">
                 {snapshot.demand_windows.map((row) => (
                   <li key={row.locality_key}>
-                    <strong>{row.locality_key}</strong> — {row.meal_units_total}{" "}
-                    meal units · {row.demand_count} demand
-                    {row.demand_count === 1 ? "" : "s"}
+                    <strong>{row.locality_key}</strong> — demand{" "}
+                    {row.meal_units_total} units ({row.demand_count} record
+                    {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
+                    {row.pledged_units_total ?? 0} · vendor capacity{" "}
+                    {row.bid_portions_total ?? 0}
+                    {(row.unmet_demand_units ?? 0) > 0 ? (
+                      <>
+                        {" "}
+                        · <span className="demand-gap">
+                          {row.unmet_demand_units} units still unpledged
+                        </span>
+                      </>
+                    ) : (
+                      " · pledges cover demand"
+                    )}
+                    {(row.supply_gap_units ?? 0) > 0 ? (
+                      <>
+                        {" "}
+                        · <span className="demand-gap">
+                          {row.supply_gap_units} units short on vendor bids
+                        </span>
+                      </>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -143,9 +170,10 @@ export function DemandBoardPanel({ session }: Props) {
               Locality key
               <input
                 className="sign-in-google-btn"
+                list="demand-locality-keys"
                 value={pledgeLocality}
                 onChange={(e) => setPledgeLocality(e.target.value)}
-                placeholder="e.g. 12.94,80.24"
+                placeholder="Pick from aggregated list above"
               />
             </label>
             <label>
@@ -186,13 +214,18 @@ export function DemandBoardPanel({ session }: Props) {
           {coordinator ? (
             <>
               <h3 className="intent-group-title">Vendor bid (coordinator)</h3>
+              <p className="demand-lede">
+                Temporary MVP entry until fulfiller accounts bid on their own.
+              </p>
               <div className="detail-grid">
                 <label>
                   Locality key
                   <input
                     className="sign-in-google-btn"
+                    list="demand-locality-keys"
                     value={bidLocality}
                     onChange={(e) => setBidLocality(e.target.value)}
+                    placeholder="Pick from aggregated list above"
                   />
                 </label>
                 <label>
@@ -244,6 +277,11 @@ export function DemandBoardPanel({ session }: Props) {
               </button>
             </>
           ) : null}
+          <datalist id="demand-locality-keys">
+            {snapshot.demand_windows.map((row) => (
+              <option key={row.locality_key} value={row.locality_key} />
+            ))}
+          </datalist>
         </>
       ) : null}
     </section>
