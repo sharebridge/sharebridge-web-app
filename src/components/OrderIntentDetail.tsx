@@ -2,6 +2,7 @@ import {
   formatDistanceM,
   formatElapsedSince,
   formatWhen,
+  paymentStatusLabel,
   statusLabel
 } from "../format";
 import type { OrderInitiation } from "../types";
@@ -12,12 +13,24 @@ type Props = {
   coordinatorView: boolean;
   /** Shorter layout when expanded under a list row on mobile. */
   compact?: boolean;
+  canMarkPaymentDone?: boolean;
+  markingPayment?: boolean;
+  onMarkPaymentDone?: () => void;
+  canMarkDelivered?: boolean;
+  markingDelivered?: boolean;
+  onMarkDelivered?: () => void;
 };
 
 export function OrderIntentDetail({
   intent,
   coordinatorView,
-  compact = false
+  compact = false,
+  canMarkPaymentDone = false,
+  markingPayment = false,
+  onMarkPaymentDone,
+  canMarkDelivered = false,
+  markingDelivered = false,
+  onMarkDelivered
 }: Props) {
   const locationText =
     intent.location_description?.trim() ||
@@ -56,6 +69,42 @@ export function OrderIntentDetail({
           <div>
             <dt>Status</dt>
             <dd>{statusLabel(intent.status)}</dd>
+          </div>
+          <div>
+            <dt>Payment</dt>
+            <dd>
+              {paymentStatusLabel(intent.payment_status)}
+              {canMarkPaymentDone &&
+              intent.payment_status !== "paid_externally" ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ marginLeft: 8 }}
+                  disabled={markingPayment}
+                  onClick={onMarkPaymentDone}
+                >
+                  {markingPayment ? "Saving…" : "Mark payment done"}
+                </button>
+              ) : null}
+            </dd>
+          </div>
+          <div>
+            <dt>Delivery</dt>
+            <dd>
+              {paymentStatusLabel(intent.delivery_status)}
+              {canMarkDelivered &&
+              intent.delivery_status !== "delivered" ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ marginLeft: 8 }}
+                  disabled={markingDelivered}
+                  onClick={onMarkDelivered}
+                >
+                  {markingDelivered ? "Saving…" : "Mark delivered"}
+                </button>
+              ) : null}
+            </dd>
           </div>
         </>
       ) : null}
@@ -131,13 +180,15 @@ export function OrderIntentDetail({
         <dt>Distance</dt>
         <dd>{formatDistanceM(intent.distance_m)}</dd>
       </div>
-      {intent.verbal_handover_notes.trim() ? (
+      {intent.verbal_handover_notes?.trim() ? (
         <div className="detail-block">
           <dt>Handover notes</dt>
           <dd>{intent.verbal_handover_notes}</dd>
         </div>
       ) : null}
-      {intent.presets_snapshot.length > 0 && !compact ? (
+      {Array.isArray(intent.presets_snapshot) &&
+      intent.presets_snapshot.length > 0 &&
+      !compact ? (
         <div className="detail-block">
           <dt>
             Presets at registration ({intent.presets_snapshot.length})

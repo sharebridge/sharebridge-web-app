@@ -3,10 +3,13 @@ import type { AuthSession } from "../authSession";
 import { getAppConfig } from "../config";
 import { formatWhen } from "../format";
 import {
+  createPledge,
+  createVendorBid,
   fetchDemandBoard,
   type DemandBoardSnapshot,
   type SeekerDemandRow
 } from "../api/demandBoard";
+import { isCoordinatorSession } from "../sessionRole";
 
 type Props = {
   session: AuthSession;
@@ -16,6 +19,13 @@ export function DemandBoardPanel({ session }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pledgeLocality, setPledgeLocality] = useState("");
+  const [pledgeUnits, setPledgeUnits] = useState("1");
+  const [bidLocality, setBidLocality] = useState("");
+  const [bidVendor, setBidVendor] = useState("");
+  const [bidPortions, setBidPortions] = useState("10");
+  const [submitting, setSubmitting] = useState(false);
+  const coordinator = isCoordinatorSession(session);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,6 +108,142 @@ export function DemandBoardPanel({ session }: Props) {
               mobile app hub → Record seeker demand.
             </p>
           )}
+
+          {snapshot.pledges.length > 0 ? (
+            <>
+              <h3 className="intent-group-title">Meal pledges</h3>
+              <ul className="preset-list">
+                {snapshot.pledges.map((row) => (
+                  <li key={row.pledge_id}>
+                    <strong>{row.locality_key}</strong> — {row.meal_units} units ·{" "}
+                    {row.status} · {formatWhen(row.created_at)}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+
+          {snapshot.vendor_bids.length > 0 ? (
+            <>
+              <h3 className="intent-group-title">Vendor capacity bids</h3>
+              <ul className="preset-list">
+                {snapshot.vendor_bids.map((row) => (
+                  <li key={row.vendor_bid_id}>
+                    <strong>{row.vendor_name}</strong> ({row.locality_key}) —{" "}
+                    {row.portions} portions · {row.status}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+
+          <h3 className="intent-group-title">Pledge meals (donor)</h3>
+          <div className="detail-grid">
+            <label>
+              Locality key
+              <input
+                className="sign-in-google-btn"
+                value={pledgeLocality}
+                onChange={(e) => setPledgeLocality(e.target.value)}
+                placeholder="e.g. 12.94,80.24"
+              />
+            </label>
+            <label>
+              Meal units
+              <input
+                className="sign-in-google-btn"
+                value={pledgeUnits}
+                onChange={(e) => setPledgeUnits(e.target.value)}
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={submitting || !pledgeLocality.trim()}
+            onClick={() => {
+              void (async () => {
+                setSubmitting(true);
+                try {
+                  await createPledge(getAppConfig().apiBaseUrl, session, {
+                    locality_key: pledgeLocality.trim(),
+                    meal_units: Number(pledgeUnits) || 1
+                  });
+                  await load();
+                } catch (err) {
+                  setError(
+                    err instanceof Error ? err.message : "Could not pledge."
+                  );
+                } finally {
+                  setSubmitting(false);
+                }
+              })();
+            }}
+          >
+            Submit pledge
+          </button>
+
+          {coordinator ? (
+            <>
+              <h3 className="intent-group-title">Vendor bid (coordinator)</h3>
+              <div className="detail-grid">
+                <label>
+                  Locality key
+                  <input
+                    className="sign-in-google-btn"
+                    value={bidLocality}
+                    onChange={(e) => setBidLocality(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Vendor name
+                  <input
+                    className="sign-in-google-btn"
+                    value={bidVendor}
+                    onChange={(e) => setBidVendor(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Portions
+                  <input
+                    className="sign-in-google-btn"
+                    value={bidPortions}
+                    onChange={(e) => setBidPortions(e.target.value)}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={
+                  submitting || !bidLocality.trim() || !bidVendor.trim()
+                }
+                onClick={() => {
+                  void (async () => {
+                    setSubmitting(true);
+                    try {
+                      await createVendorBid(getAppConfig().apiBaseUrl, session, {
+                        locality_key: bidLocality.trim(),
+                        vendor_name: bidVendor.trim(),
+                        portions: Number(bidPortions) || 1
+                      });
+                      await load();
+                    } catch (err) {
+                      setError(
+                        err instanceof Error
+                          ? err.message
+                          : "Could not submit vendor bid."
+                      );
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  })();
+                }}
+              >
+                Submit vendor bid
+              </button>
+            </>
+          ) : null}
         </>
       ) : null}
     </section>

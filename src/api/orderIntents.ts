@@ -96,3 +96,44 @@ export async function fetchOrderInitiations(
     feedMeta
   };
 }
+
+export async function patchOrderIntent(
+  apiBaseUrl: string,
+  session: AuthSession,
+  orderIntentId: string,
+  patch: { payment_status?: string; delivery_status?: string }
+): Promise<OrderInitiation> {
+  const response = await fetch(
+    `${apiBaseUrl}/v1/donor-seeker/order-intents/${encodeURIComponent(orderIntentId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${session.token}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(patch)
+    }
+  );
+  const text = await response.text();
+  let body: Record<string, unknown> = {};
+  if (text) {
+    try {
+      body = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      throw new ApiError("Response was not valid JSON.", response.status);
+    }
+  }
+  if (!response.ok) {
+    throw new ApiError(
+      (body.message as string) || `HTTP ${response.status}`,
+      response.status,
+      body.code as string | undefined
+    );
+  }
+  const intent = body.order_intent;
+  if (!intent || typeof intent !== "object") {
+    throw new ApiError("order_intent missing from response.", response.status);
+  }
+  return intent as OrderInitiation;
+}

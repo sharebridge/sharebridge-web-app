@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { subscribeMediaQuery } from "./mediaQuery";
 
 const MOBILE_LAYOUT_QUERY = "(max-width: 900px)";
 
@@ -13,8 +14,7 @@ export function useMobileLayout(): boolean {
   useEffect(() => {
     const media = window.matchMedia(MOBILE_LAYOUT_QUERY);
     const onChange = () => setMobile(media.matches);
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
+    return subscribeMediaQuery(media, onChange);
   }, []);
 
   return mobile;

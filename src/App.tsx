@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { GoogleOAuthProvider, googleLogout } from "@react-oauth/google";
-import { ApiError, fetchOrderInitiations } from "./api/orderIntents";
+import {
+  ApiError,
+  fetchOrderInitiations,
+  patchOrderIntent
+} from "./api/orderIntents";
+import {
+  fetchDemandBoard,
+  type SeekerDemandRow
+} from "./api/demandBoard";
 import { SignInPage } from "./components/SignInPage";
 import { SiteHeader } from "./components/SiteHeader";
 import {
@@ -70,6 +78,8 @@ function AppShell() {
   const [dashboardMode, setDashboardMode] = useState<
     "list" | "map" | "demand"
   >("list");
+  const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
+  const [opsSaving, setOpsSaving] = useState(false);
   const isMobileLayout = useMobileLayout();
 
   const selected =
@@ -201,6 +211,67 @@ function AppShell() {
       void loadHistory(session, null);
     }
   }, [session, loadHistory]);
+
+  useEffect(() => {
+    if (!session || dashboardMode !== "map") {
+      return;
+    }
+    void fetchDemandBoard(appConfig.apiBaseUrl, session)
+      .then((board) => setSeekerDemands(board.seeker_demands))
+      .catch(() => setSeekerDemands([]));
+  }, [session, dashboardMode]);
+
+  const handleMarkPaymentDone = useCallback(async (intentId?: string) => {
+    const targetId = intentId ?? selectedId;
+    if (!session || !targetId) {
+      return;
+    }
+    setOpsSaving(true);
+    try {
+      const updated = await patchOrderIntent(
+        appConfig.apiBaseUrl,
+        session,
+        targetId,
+        { payment_status: "paid_externally" }
+      );
+      setIntents((rows) =>
+        rows.map((row) =>
+          row.order_intent_id === updated.order_intent_id ? updated : row
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update payment.");
+    } finally {
+      setOpsSaving(false);
+    }
+  }, [session, selectedId]);
+
+  const handleMarkDelivered = useCallback(async (intentId?: string) => {
+    const targetId = intentId ?? selectedId;
+    if (!session || !targetId || !coordinatorView) {
+      return;
+    }
+    setOpsSaving(true);
+    try {
+      const updated = await patchOrderIntent(
+        appConfig.apiBaseUrl,
+        session,
+        targetId,
+        { delivery_status: "delivered" }
+      );
+      setIntents((rows) =>
+        rows.map((row) =>
+          row.order_intent_id === updated.order_intent_id ? updated : row
+        )
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not update delivery."
+      );
+    } finally {
+      setOpsSaving(false);
+    }
+  }, [session, selectedId, coordinatorView]);
 
   function handleSignedIn(next: AuthSession) {
     saveSession(next);
@@ -359,6 +430,7 @@ function AppShell() {
         ) : dashboardMode === "map" ? (
           <OrderIntentsMap
             intents={intents}
+            seekerDemands={seekerDemands}
             selectedId={selectedId}
             onSelect={setSelectedId}
             coordinatorView={coordinatorView}
@@ -391,7 +463,11 @@ function AppShell() {
                   showDonorInList={coordinatorView}
                   coordinatorView={coordinatorView}
                   showInlineDetail={isMobileLayout}
+                  viewerUserId={session.userId}
+                  opsSaving={opsSaving}
                   onSelect={setSelectedId}
+                  onMarkPaymentDone={(id) => void handleMarkPaymentDone(id)}
+                  onMarkDelivered={(id) => void handleMarkDelivered(id)}
                 />
               )}
             </section>
@@ -405,6 +481,18 @@ function AppShell() {
                 <OrderIntentDetail
                   intent={selected}
                   coordinatorView={coordinatorView}
+                  canMarkPaymentDone={
+                    !coordinatorView &&
+                    selected.user_id === session.userId &&
+                    selected.payment_status !== "paid_externally"
+                  }
+                  markingPayment={opsSaving}
+                  onMarkPaymentDone={() => void handleMarkPaymentDone(selectedId)}
+                  canMarkDelivered={
+                    coordinatorView && selected.delivery_status !== "delivered"
+                  }
+                  markingDelivered={opsSaving}
+                  onMarkDelivered={() => void handleMarkDelivered(selectedId)}
                 />
               ) : (
                 <p className="empty">

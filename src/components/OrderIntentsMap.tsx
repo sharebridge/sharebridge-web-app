@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import type { SeekerDemandRow } from "../api/demandBoard";
 import { mapCaption, mapEmptyMessage } from "../mapEmptyMessage";
 import type { OrderInitiation } from "../types";
 import { getAppConfig } from "../config";
 
 type Props = {
   intents: OrderInitiation[];
+  seekerDemands?: SeekerDemandRow[];
   selectedId: string | null;
   onSelect: (orderIntentId: string) => void;
   coordinatorView: boolean;
@@ -26,8 +28,24 @@ function intentsWithGeo(intents: OrderInitiation[]): GeoIntent[] {
   );
 }
 
+type GeoDemand = SeekerDemandRow & {
+  location_lat: number;
+  location_lng: number;
+};
+
+function demandsWithGeo(rows: SeekerDemandRow[]): GeoDemand[] {
+  return rows.filter(
+    (row): row is GeoDemand =>
+      typeof row.location_lat === "number" &&
+      Number.isFinite(row.location_lat) &&
+      typeof row.location_lng === "number" &&
+      Number.isFinite(row.location_lng)
+  );
+}
+
 export function OrderIntentsMap({
   intents,
+  seekerDemands = [],
   selectedId,
   onSelect,
   coordinatorView,
@@ -39,6 +57,7 @@ export function OrderIntentsMap({
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
   const geoRows = intentsWithGeo(intents);
+  const geoDemands = demandsWithGeo(seekerDemands);
 
   useEffect(() => {
     if (!mapKey) {
@@ -54,10 +73,13 @@ export function OrderIntentsMap({
       if (cancelled || !mapRef.current || !window.google?.maps) {
         return;
       }
-      const center =
-        geoRows.length > 0
-          ? { lat: geoRows[0].location_lat, lng: geoRows[0].location_lng }
-          : { lat: 12.94, lng: 80.24 };
+      const centerSource = geoRows[0] ?? geoDemands[0];
+      const center = centerSource
+        ? {
+            lat: centerSource.location_lat,
+            lng: centerSource.location_lng
+          }
+        : { lat: 12.94, lng: 80.24 };
       mapInstance.current = new google.maps.Map(mapRef.current, {
         center,
         zoom: geoRows.length > 1 ? 12 : 14,
@@ -102,7 +124,7 @@ export function OrderIntentsMap({
     return () => {
       cancelled = true;
     };
-  }, [mapKey, geoRows]);
+  }, [mapKey, geoRows, geoDemands]);
 
   useEffect(() => {
     const map = mapInstance.current;
@@ -115,7 +137,7 @@ export function OrderIntentsMap({
     }
     markersRef.current = [];
 
-    if (geoRows.length === 0) {
+    if (geoRows.length === 0 && geoDemands.length === 0) {
       return;
     }
 
@@ -143,16 +165,37 @@ export function OrderIntentsMap({
       markersRef.current.push(marker);
     }
 
-    if (geoRows.length === 1) {
+    for (const row of geoDemands) {
+      const position = { lat: row.location_lat, lng: row.location_lng };
+      bounds.extend(position);
+      const marker = new google.maps.Marker({
+        map,
+        position,
+        title: row.need_description,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: "#ea580c",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2
+        }
+      });
+      markersRef.current.push(marker);
+    }
+
+    const pinCount = geoRows.length + geoDemands.length;
+    if (pinCount === 1) {
+      const only = geoRows[0] ?? geoDemands[0];
       map.setCenter({
-        lat: geoRows[0].location_lat,
-        lng: geoRows[0].location_lng
+        lat: only.location_lat,
+        lng: only.location_lng
       });
       map.setZoom(14);
-    } else {
+    } else if (pinCount > 1) {
       map.fitBounds(bounds, 48);
     }
-  }, [geoRows, selectedId, onSelect]);
+  }, [geoRows, geoDemands, selectedId, onSelect]);
 
   if (!mapKey) {
     return (
@@ -165,11 +208,13 @@ export function OrderIntentsMap({
     );
   }
 
-  if (geoRows.length === 0) {
+  if (geoRows.length === 0 && geoDemands.length === 0) {
     return (
       <div className="map-panel map-panel-empty" role="status">
         <p>
           {mapEmptyMessage(intents, coordinatorView, viewerUserId)}
+          {" "}
+          Seeker demands with GPS appear as orange pins when recorded from mobile.
         </p>
       </div>
     );
@@ -185,6 +230,9 @@ export function OrderIntentsMap({
       <div ref={mapRef} className="order-intents-map" aria-label="Order intents map" />
       <p className="map-caption">
         {mapCaption(geoRows.length, intents.length, coordinatorView)}
+        {geoDemands.length > 0
+          ? ` · ${geoDemands.length} seeker demand pin${geoDemands.length === 1 ? "" : "s"} (orange)`
+          : ""}
       </p>
     </div>
   );

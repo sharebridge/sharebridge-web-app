@@ -13,6 +13,10 @@ describe("format helpers", () => {
     expect(statusLabel("instructions_copied")).toBe("instructions copied");
   });
 
+  it("handles missing status without replaceAll", () => {
+    expect(statusLabel(undefined)).toBe("unknown");
+  });
+
   it("formats donor meta with email and id", () => {
     expect(formatDonorMeta("alice", "alice@example.com")).toBe(
       "alice@example.com · alice"

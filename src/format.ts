@@ -47,8 +47,18 @@ export function formatWhen(iso: string | undefined): string {
   return date.toLocaleString();
 }
 
-export function statusLabel(status: string): string {
-  return status.replaceAll("_", " ");
+export function paymentStatusLabel(status: string | null | undefined): string {
+  if (!status?.trim()) {
+    return "pending";
+  }
+  return status.replace(/_/g, " ");
+}
+
+export function statusLabel(status: string | null | undefined): string {
+  if (!status?.trim()) {
+    return "unknown";
+  }
+  return status.replace(/_/g, " ");
 }
 
 /** Coordinator list/detail: donor who registered the intent (not the signed-in viewer). */
@@ -78,7 +88,10 @@ export function primaryRestaurant(intent: OrderInitiation): string | null {
       return name;
     }
   }
-  for (const row of intent.presets_snapshot) {
+  const snapshot = Array.isArray(intent.presets_snapshot)
+    ? intent.presets_snapshot
+    : [];
+  for (const row of snapshot) {
     const name = row.restaurant_name?.trim();
     if (name) {
       return name;

@@ -22,6 +22,24 @@ export type SeekerDemandRow = {
   updated_at: string;
 };
 
+export type PledgeRow = {
+  pledge_id: string;
+  locality_key: string;
+  meal_units: number;
+  status: string;
+  created_at: string;
+};
+
+export type VendorBidRow = {
+  vendor_bid_id: string;
+  locality_key: string;
+  vendor_name: string;
+  portions: number;
+  status: string;
+  notes?: string;
+  created_at: string;
+};
+
 export type DemandBoardSnapshot = {
   status: string;
   role?: string | null;
@@ -29,10 +47,55 @@ export type DemandBoardSnapshot = {
   standard_offers: unknown[];
   demand_windows: DemandWindowRow[];
   seeker_demands: SeekerDemandRow[];
-  pledges: unknown[];
-  vendor_bids: unknown[];
+  pledges: PledgeRow[];
+  vendor_bids: VendorBidRow[];
   generated_at: string;
 };
+
+export async function createPledge(
+  apiBaseUrl: string,
+  session: AuthSession,
+  body: { locality_key: string; meal_units: number }
+): Promise<PledgeRow> {
+  const response = await fetch(`${apiBaseUrl}/v1/pledges`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${session.token}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new ApiError("Pledge request failed.", response.status);
+  }
+  const data = (await response.json()) as { pledge: PledgeRow };
+  return data.pledge;
+}
+
+export async function createVendorBid(
+  apiBaseUrl: string,
+  session: AuthSession,
+  body: {
+    locality_key: string;
+    vendor_name: string;
+    portions: number;
+    notes?: string;
+  }
+): Promise<VendorBidRow> {
+  const response = await fetch(`${apiBaseUrl}/v1/vendor-bids`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${session.token}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new ApiError("Vendor bid request failed.", response.status);
+  }
+  const data = (await response.json()) as { vendor_bid: VendorBidRow };
+  return data.vendor_bid;
+}
 
 export async function fetchDemandBoard(
   apiBaseUrl: string,

@@ -18,7 +18,11 @@ type Props = {
   showDonorInList: boolean;
   coordinatorView: boolean;
   showInlineDetail: boolean;
+  viewerUserId: string;
   onSelect: (orderIntentId: string) => void;
+  onMarkPaymentDone?: (orderIntentId: string) => void;
+  onMarkDelivered?: (orderIntentId: string) => void;
+  opsSaving?: boolean;
 };
 
 export function OrderIntentList({
@@ -28,7 +32,11 @@ export function OrderIntentList({
   showDonorInList,
   coordinatorView,
   showInlineDetail,
-  onSelect
+  viewerUserId,
+  onSelect,
+  onMarkPaymentDone,
+  onMarkDelivered,
+  opsSaving = false
 }: Props) {
   const groups = groupOrderIntents(intents, groupMode);
 
@@ -66,6 +74,23 @@ export function OrderIntentList({
                         intent={intent}
                         coordinatorView={coordinatorView}
                         compact
+                        canMarkPaymentDone={
+                          !coordinatorView &&
+                          intent.user_id === viewerUserId &&
+                          intent.payment_status !== "paid_externally"
+                        }
+                        markingPayment={opsSaving}
+                        onMarkPaymentDone={() =>
+                          onMarkPaymentDone?.(intent.order_intent_id)
+                        }
+                        canMarkDelivered={
+                          coordinatorView &&
+                          intent.delivery_status !== "delivered"
+                        }
+                        markingDelivered={opsSaving}
+                        onMarkDelivered={() =>
+                          onMarkDelivered?.(intent.order_intent_id)
+                        }
                       />
                     </div>
                   ) : null}

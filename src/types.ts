@@ -31,6 +31,9 @@ export type OrderInitiation = {
   delivered_at?: string | null;
   /** Metres from viewer when neighbourhood `near_lat` / `near_lng` were sent. */
   distance_m?: number | null;
+  payment_status?: string;
+  delivery_status?: string;
+  delivery_photo_url?: string | null;
 };
 
 export type ConnectionSettings = {
