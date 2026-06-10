@@ -12,6 +12,18 @@ services:
     autoDeploy: true
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    # index.html revalidates on each full page load (new tab / refresh) so deploys
+    # pick up new hashed JS; /assets/* stays long-cached (Vite content-hashed names).
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, must-revalidate
+      - path: /
+        name: Cache-Control
+        value: no-cache, must-revalidate
     envVars:
       - key: NODE_VERSION
         value: "20"
