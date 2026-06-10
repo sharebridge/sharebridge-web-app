@@ -13,9 +13,11 @@ import { isCoordinatorSession } from "../sessionRole";
 
 type Props = {
   session: AuthSession;
+  /** Bumped by header Refresh while Demand tab is active. */
+  refreshKey?: number;
 };
 
-export function DemandBoardPanel({ session }: Props) {
+export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,13 +45,23 @@ export function DemandBoardPanel({ session }: Props) {
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, refreshKey]);
 
   return (
     <section className="panel demand-panel" aria-labelledby="demand-heading">
       <div className="panel-head">
         <h2 id="demand-heading">Demand &amp; vendor bids</h2>
-        {loading ? <span className="badge">Loading…</span> : null}
+        <div className="panel-head-actions">
+          {loading ? <span className="badge">Loading…</span> : null}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            Refresh demand
+          </button>
+        </div>
       </div>
       {error ? (
         <div className="banner banner-error" role="alert">

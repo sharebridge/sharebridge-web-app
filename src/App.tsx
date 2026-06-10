@@ -80,6 +80,7 @@ function AppShell() {
   >("list");
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
+  const [demandRefreshKey, setDemandRefreshKey] = useState(0);
   const isMobileLayout = useMobileLayout();
 
   const selected =
@@ -197,6 +198,10 @@ function AppShell() {
     if (!session) {
       return;
     }
+    if (dashboardMode === "demand") {
+      setDemandRefreshKey((key) => key + 1);
+      return;
+    }
     if (groupMode === "locality") {
       setAreaLoading(true);
       await loadByAreaWithFreshLocation(session);
@@ -204,7 +209,7 @@ function AppShell() {
     } else {
       await loadHistory(session, null);
     }
-  }, [session, groupMode, loadHistory, loadByAreaWithFreshLocation]);
+  }, [session, dashboardMode, groupMode, loadHistory, loadByAreaWithFreshLocation]);
 
   useEffect(() => {
     if (session) {
@@ -426,7 +431,7 @@ function AppShell() {
         </div>
 
         {dashboardMode === "demand" ? (
-          <DemandBoardPanel session={session} />
+          <DemandBoardPanel session={session} refreshKey={demandRefreshKey} />
         ) : dashboardMode === "map" ? (
           <OrderIntentsMap
             intents={intents}

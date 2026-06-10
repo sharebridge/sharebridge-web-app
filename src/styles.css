@@ -511,6 +511,12 @@ body {
   margin-bottom: 14px;
 }
 
+.panel-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .badge {
   font-size: 0.78rem;
   color: var(--accent);
