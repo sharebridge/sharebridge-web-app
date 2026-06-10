@@ -84,9 +84,9 @@ export function DemandBoardPanel({ session }: Props) {
                 Aggregated by area (demand vs pledge vs bid)
               </h3>
               <p className="demand-lede">
-                Pledge and bid forms must use the same locality key as a row
-                below so totals line up. Auto-assignment to vendors is not live
-                yet — gaps are for coordinator planning only.
+                Locality keys come from GPS buckets (configurable km grid on the
+                server). Pledge and bid forms must use the same key as a row
+                below so totals line up.
               </p>
               <ul className="preset-list">
                 {snapshot.demand_windows.map((row) => (
