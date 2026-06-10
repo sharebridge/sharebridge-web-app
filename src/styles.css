@@ -431,6 +431,22 @@ body {
   max-width: 100%;
 }
 
+.allocation-hint {
+  font-weight: 500;
+}
+
+.allocation-hint-needs_pledges {
+  color: var(--warn, #b45309);
+}
+
+.allocation-hint-needs_vendor_bids {
+  color: var(--warn, #b45309);
+}
+
+.allocation-hint-balanced {
+  color: var(--ok, #15803d);
+}
+
 .map-panel-empty,
 .demand-panel {
   margin-bottom: 16px;

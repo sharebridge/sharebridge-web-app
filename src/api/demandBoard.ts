@@ -1,6 +1,11 @@
 import { ApiError } from "./orderIntents";
 import type { AuthSession } from "../authSession";
 
+export type AllocationHint =
+  | "needs_pledges"
+  | "needs_vendor_bids"
+  | "balanced";
+
 export type DemandWindowRow = {
   locality_key: string;
   demand_count: number;
@@ -10,6 +15,7 @@ export type DemandWindowRow = {
   bid_portions_total?: number;
   unmet_demand_units?: number;
   supply_gap_units?: number;
+  allocation_hint?: AllocationHint;
 };
 
 export type SeekerDemandRow = {
@@ -28,20 +34,24 @@ export type SeekerDemandRow = {
 
 export type PledgeRow = {
   pledge_id: string;
+  pledged_by_user_id?: string;
   locality_key: string;
   meal_units: number;
   status: string;
   created_at: string;
+  matches_demand_bucket?: boolean;
 };
 
 export type VendorBidRow = {
   vendor_bid_id: string;
+  submitted_by_user_id?: string;
   locality_key: string;
   vendor_name: string;
   portions: number;
   status: string;
   notes?: string;
   created_at: string;
+  matches_demand_bucket?: boolean;
 };
 
 export type DemandBoardSnapshot = {
@@ -50,11 +60,29 @@ export type DemandBoardSnapshot = {
   message: string;
   standard_offers: unknown[];
   demand_windows: DemandWindowRow[];
+  active_locality_keys?: string[];
   seeker_demands: SeekerDemandRow[];
   pledges: PledgeRow[];
   vendor_bids: VendorBidRow[];
+  orphan_pledges?: PledgeRow[];
+  orphan_vendor_bids?: VendorBidRow[];
   generated_at: string;
 };
+
+async function readApiErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: string };
+    if (body.message?.trim()) {
+      return body.message;
+    }
+  } catch {
+    // ignore
+  }
+  return fallback;
+}
 
 export async function createPledge(
   apiBaseUrl: string,
@@ -70,7 +98,10 @@ export async function createPledge(
     body: JSON.stringify(body)
   });
   if (!response.ok) {
-    throw new ApiError("Pledge request failed.", response.status);
+    throw new ApiError(
+      await readApiErrorMessage(response, "Pledge request failed."),
+      response.status
+    );
   }
   const data = (await response.json()) as { pledge: PledgeRow };
   return data.pledge;
@@ -95,7 +126,10 @@ export async function createVendorBid(
     body: JSON.stringify(body)
   });
   if (!response.ok) {
-    throw new ApiError("Vendor bid request failed.", response.status);
+    throw new ApiError(
+      await readApiErrorMessage(response, "Vendor bid request failed."),
+      response.status
+    );
   }
   const data = (await response.json()) as { vendor_bid: VendorBidRow };
   return data.vendor_bid;

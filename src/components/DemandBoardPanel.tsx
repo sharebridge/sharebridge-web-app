@@ -6,8 +6,10 @@ import {
   createPledge,
   createVendorBid,
   fetchDemandBoard,
+  type AllocationHint,
   type DemandBoardSnapshot,
   type DemandWindowRow,
+  type PledgeRow,
   type SeekerDemandRow
 } from "../api/demandBoard";
 import { isCoordinatorSession } from "../sessionRole";
@@ -127,6 +129,15 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                           </span>
                         </>
                       ) : null}
+                      {row.allocation_hint ? (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <span className={`allocation-hint allocation-hint-${row.allocation_hint}`}>
+                            {allocationHintLabel(row.allocation_hint)}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                     <div className="demand-bucket-actions">
                       <button
@@ -168,19 +179,40 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
             </p>
           )}
 
-          {snapshot.pledges.length > 0 ? (
+          {(snapshot.orphan_pledges?.length ?? 0) > 0 ? (
             <>
-              <h3 className="intent-group-title">Meal pledges</h3>
+              <h3 className="intent-group-title">Unmatched pledges</h3>
+              <p className="demand-lede demand-gap">
+                These use a place name or old key that does not match any demand
+                bucket — they do not count toward aggregated totals.
+              </p>
               <ul className="preset-list">
-                {snapshot.pledges.map((row) => (
+                {snapshot.orphan_pledges?.map((row) => (
                   <li key={row.pledge_id}>
-                    <strong>{row.locality_key}</strong> — {row.meal_units} units ·{" "}
-                    {row.status} · {formatWhen(row.created_at)}
+                    <PledgeListItem row={row} coordinator={coordinator} orphan />
                   </li>
                 ))}
               </ul>
             </>
           ) : null}
+
+          {snapshot.pledges.filter((row) => row.matches_demand_bucket !== false)
+            .length > 0 ? (
+            <>
+              <h3 className="intent-group-title">Meal pledges</h3>
+              <ul className="preset-list">
+                {snapshot.pledges
+                  .filter((row) => row.matches_demand_bucket !== false)
+                  .map((row) => (
+                    <li key={row.pledge_id}>
+                      <PledgeListItem row={row} coordinator={coordinator} />
+                    </li>
+                  ))}
+              </ul>
+            </>
+          ) : snapshot.pledges.length === 0 ? null : (
+            <p className="empty">No pledges matched to active demand buckets yet.</p>
+          )}
 
           {snapshot.vendor_bids.length > 0 ? (
             <>
@@ -346,6 +378,40 @@ function LocalityBucketSelect({
         </option>
       ))}
     </select>
+  );
+}
+
+function allocationHintLabel(hint: AllocationHint): string {
+  switch (hint) {
+    case "needs_pledges":
+      return "Needs more pledges";
+    case "needs_vendor_bids":
+      return "Needs vendor capacity";
+    case "balanced":
+      return "Balanced — coordinator can plan handoff";
+    default:
+      return hint;
+  }
+}
+
+function PledgeListItem({
+  row,
+  coordinator,
+  orphan = false
+}: {
+  row: PledgeRow;
+  coordinator: boolean;
+  orphan?: boolean;
+}) {
+  return (
+    <>
+      <strong>{row.locality_key}</strong>
+      {orphan ? " (unmatched)" : ""} — {row.meal_units} units · {row.status} ·{" "}
+      {formatWhen(row.created_at)}
+      {coordinator && row.pledged_by_user_id ? (
+        <> · donor {row.pledged_by_user_id}</>
+      ) : null}
+    </>
   );
 }
 
