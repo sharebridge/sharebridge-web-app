@@ -412,6 +412,25 @@ body {
   font-weight: 500;
 }
 
+.demand-bucket-list .demand-bucket-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.demand-bucket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.demand-locality-select {
+  width: 100%;
+  max-width: 100%;
+}
+
 .map-panel-empty,
 .demand-panel {
   margin-bottom: 16px;

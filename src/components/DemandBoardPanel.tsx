@@ -7,6 +7,7 @@ import {
   createVendorBid,
   fetchDemandBoard,
   type DemandBoardSnapshot,
+  type DemandWindowRow,
   type SeekerDemandRow
 } from "../api/demandBoard";
 import { isCoordinatorSession } from "../sessionRole";
@@ -96,36 +97,55 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                 Aggregated by area (demand vs pledge vs bid)
               </h3>
               <p className="demand-lede">
-                Locality keys come from GPS buckets (configurable km grid on the
-                server). Pledge and bid forms must use the same key as a row
-                below so totals line up.
+                Choose an area bucket below for pledges and vendor bids. Keys
+                come from GPS (server km grid), not place names.
               </p>
-              <ul className="preset-list">
+              <ul className="preset-list demand-bucket-list">
                 {snapshot.demand_windows.map((row) => (
-                  <li key={row.locality_key}>
-                    <strong>{row.locality_key}</strong> — demand{" "}
-                    {row.meal_units_total} units ({row.demand_count} record
-                    {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
-                    {row.pledged_units_total ?? 0} · vendor capacity{" "}
-                    {row.bid_portions_total ?? 0}
-                    {(row.unmet_demand_units ?? 0) > 0 ? (
-                      <>
-                        {" "}
-                        · <span className="demand-gap">
-                          {row.unmet_demand_units} units still unpledged
-                        </span>
-                      </>
-                    ) : (
-                      " · pledges cover demand"
-                    )}
-                    {(row.supply_gap_units ?? 0) > 0 ? (
-                      <>
-                        {" "}
-                        · <span className="demand-gap">
-                          {row.supply_gap_units} units short on vendor bids
-                        </span>
-                      </>
-                    ) : null}
+                  <li key={row.locality_key} className="demand-bucket-row">
+                    <div>
+                      <strong>{row.locality_key}</strong> — demand{" "}
+                      {row.meal_units_total} units ({row.demand_count} record
+                      {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
+                      {row.pledged_units_total ?? 0} · vendor capacity{" "}
+                      {row.bid_portions_total ?? 0}
+                      {(row.unmet_demand_units ?? 0) > 0 ? (
+                        <>
+                          {" "}
+                          · <span className="demand-gap">
+                            {row.unmet_demand_units} units still unpledged
+                          </span>
+                        </>
+                      ) : (
+                        " · pledges cover demand"
+                      )}
+                      {(row.supply_gap_units ?? 0) > 0 ? (
+                        <>
+                          {" "}
+                          · <span className="demand-gap">
+                            {row.supply_gap_units} units short on vendor bids
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                    <div className="demand-bucket-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setPledgeLocality(row.locality_key)}
+                      >
+                        Use for pledge
+                      </button>
+                      {coordinator ? (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setBidLocality(row.locality_key)}
+                        >
+                          Use for bid
+                        </button>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -178,14 +198,13 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
 
           <h3 className="intent-group-title">Pledge meals (donor)</h3>
           <div className="detail-grid">
-            <label>
-              Locality key
-              <input
-                className="sign-in-google-btn"
-                list="demand-locality-keys"
+            <label htmlFor="pledge-locality-select">
+              Area bucket
+              <LocalityBucketSelect
+                id="pledge-locality-select"
+                windows={snapshot.demand_windows}
                 value={pledgeLocality}
-                onChange={(e) => setPledgeLocality(e.target.value)}
-                placeholder="Pick from aggregated list above"
+                onChange={setPledgeLocality}
               />
             </label>
             <label>
@@ -230,14 +249,13 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                 Temporary MVP entry until fulfiller accounts bid on their own.
               </p>
               <div className="detail-grid">
-                <label>
-                  Locality key
-                  <input
-                    className="sign-in-google-btn"
-                    list="demand-locality-keys"
+                <label htmlFor="bid-locality-select">
+                  Area bucket
+                  <LocalityBucketSelect
+                    id="bid-locality-select"
+                    windows={snapshot.demand_windows}
                     value={bidLocality}
-                    onChange={(e) => setBidLocality(e.target.value)}
-                    placeholder="Pick from aggregated list above"
+                    onChange={setBidLocality}
                   />
                 </label>
                 <label>
@@ -289,14 +307,45 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
               </button>
             </>
           ) : null}
-          <datalist id="demand-locality-keys">
-            {snapshot.demand_windows.map((row) => (
-              <option key={row.locality_key} value={row.locality_key} />
-            ))}
-          </datalist>
         </>
       ) : null}
     </section>
+  );
+}
+
+function LocalityBucketSelect({
+  id,
+  windows,
+  value,
+  onChange
+}: {
+  id: string;
+  windows: DemandWindowRow[];
+  value: string;
+  onChange: (localityKey: string) => void;
+}) {
+  if (windows.length === 0) {
+    return (
+      <p className="demand-lede">
+        No buckets yet. Record seeker demand with GPS on mobile first.
+      </p>
+    );
+  }
+  return (
+    <select
+      id={id}
+      className="sign-in-google-btn demand-locality-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Choose area bucket…</option>
+      {windows.map((row) => (
+        <option key={row.locality_key} value={row.locality_key}>
+          {row.locality_key} — {row.meal_units_total} units demand (
+          {row.unmet_demand_units ?? 0} unpledged)
+        </option>
+      ))}
+    </select>
   );
 }
 
