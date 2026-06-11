@@ -58,7 +58,7 @@ describe("feedScopeFromApi", () => {
       since: "2h",
       feed: { window_hours: 2, radius_m: 5000, location_mode: "near" }
     });
-    expect(donorEmptyListMessage(scope, true)).toContain("any donor");
+    expect(donorEmptyListMessage(scope, true)).toContain("anyone");
     expect(donorEmptyListMessage(scope, false)).toContain("By area");
   });
 });

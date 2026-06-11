@@ -111,7 +111,7 @@ export function donorLocationUnavailableNotice(
         : reason === "unsupported"
           ? "This browser cannot provide location."
           : "Your location could not be read.";
-  return `${reasonText} Other donors nearby are hidden until location is available — only your initiations from ${time} are listed below. Allow location for this site and click Refresh for the full neighbourhood feed.`;
+  return `${reasonText} Other initiators nearby are hidden until location is available — only your initiations from ${time} are listed below. Allow location for this site and click Refresh for the full neighbourhood feed.`;
 }
 
 /** Empty list — separate from location errors. */
@@ -122,12 +122,12 @@ export function donorEmptyListMessage(
   const time = donorFeedWindowPhrase(scope);
   if (viewerLocationShared && scope?.radiusM) {
     const radius = radiusPhraseMetres(scope.radiusM);
-    return `No order initiations from any donor ${time} ${radius}.`;
+    return `No order initiations from anyone ${time} ${radius}.`;
   }
   if (viewerLocationShared) {
-    return `No order initiations from any donor ${time} near you.`;
+    return `No order initiations from anyone ${time} near you.`;
   }
-  return `No initiations you registered ${time}. Tap By area and allow location to see neighbourhood orders from other donors.`;
+  return `No initiations you registered ${time}. Tap By area and allow location to see neighbourhood orders from other initiators.`;
 }
 
 /** Shown when neighbourhood rows lack handover GPS (distance unknown). */

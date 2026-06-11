@@ -40,14 +40,14 @@ describe("groupOrderIntents", () => {
     })
   ];
 
-  it("groups by donor", () => {
-    const groups = groupOrderIntents(rows, "donor");
+  it("groups by initiator", () => {
+    const groups = groupOrderIntents(rows, "initiator");
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.key === "alice")?.intents).toHaveLength(2);
     expect(groups.find((g) => g.key === "bob")?.intents).toHaveLength(1);
   });
 
-  it("donor group label is email-only with full line in title", () => {
+  it("initiator group label is email-only with full line in title", () => {
     const withEmail = groupOrderIntents(
       [
         intent({
@@ -56,7 +56,7 @@ describe("groupOrderIntents", () => {
           donor_email: "alice@example.com"
         })
       ],
-      "donor"
+      "initiator"
     );
     expect(withEmail[0].label).toBe("alice@example.com");
     expect(withEmail[0].title).toBe("alice@example.com (alice)");

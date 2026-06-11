@@ -13,13 +13,13 @@ const baseConfig: AppConfig = {
 describe("formatSignInError", () => {
   it("passes through user-service message", () => {
     const err = new ApiError(
-      "This account cannot use the mobile donor app.",
+      "This account cannot use the mobile app.",
       403,
       "wrong_client_role",
-      "no_donor_role"
+      "no_initiator_role"
     );
     expect(formatSignInError(err, baseConfig)).toBe(
-      "This account cannot use the mobile donor app."
+      "This account cannot use the mobile app."
     );
   });
 

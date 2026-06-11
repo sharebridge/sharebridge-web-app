@@ -1,16 +1,16 @@
 import type { AuthSession } from "../authSession";
 import { sessionHeaderLabel } from "../sessionRole";
 
-export type DashboardKind = "coordinator" | "donor";
+export type DashboardKind = "coordinator" | "initiator";
 
 const COPY: Record<DashboardKind, { eyebrow: string; roleLabel: string }> = {
   coordinator: {
     eyebrow: "Coordinator dashboard",
     roleLabel: "Coordinator"
   },
-  donor: {
-    eyebrow: "Donor dashboard (limited)",
-    roleLabel: "Donor"
+  initiator: {
+    eyebrow: "Initiator dashboard (limited)",
+    roleLabel: "Initiator"
   }
 };
 
@@ -22,7 +22,7 @@ type Props = {
   feedLede?: string;
 };
 
-/** Shared green banner header for coordinator and donor dashboards (same DOM + CSS). */
+/** Shared green banner header for coordinator and initiator dashboards (same DOM + CSS). */
 export function DashboardHero({
   kind,
   session,

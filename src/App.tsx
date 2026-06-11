@@ -325,7 +325,7 @@ function AppShell() {
 
       <main className="main">
         <DashboardHero
-          kind={coordinatorView ? "coordinator" : "donor"}
+          kind={coordinatorView ? "coordinator" : "initiator"}
           session={session}
           initiationCount={intents.length}
           feedLede={
@@ -341,7 +341,7 @@ function AppShell() {
 
         {apiDashboard === "limited" ? (
           <div className="banner" role="status">
-            You are on the donor dashboard with limited view. Request admin to
+            You are on the initiator dashboard with limited view. Request admin to
             add more roles if you have legitimate reasons.
           </div>
         ) : null}
@@ -351,7 +351,7 @@ function AppShell() {
         !viewerLocationShared ? (
           <div className="banner banner-info" role="status">
             Showing only initiations you registered. Tap <strong>By area</strong>{" "}
-            and allow location to load neighbourhood orders from other donors.
+            and allow location to load neighbourhood orders from other initiators.
           </div>
         ) : null}
 
@@ -375,9 +375,11 @@ function AppShell() {
 
         {coordinatorView &&
         intents.length > 0 &&
-        !intents.some((row) => row.donor_email?.trim()) ? (
+        !intents.some(
+          (row) => (row.initiator_email ?? row.donor_email)?.trim()
+        ) ? (
           <div className="banner" role="status">
-            No donor emails on these rows yet — usually because those donors
+            No initiator emails on these rows yet — usually because those initiators
             never signed in with Google (only user ids in the database), or
             integration-service needs the latest deploy with email lookup.
           </div>

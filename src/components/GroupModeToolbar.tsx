@@ -7,7 +7,7 @@ type Props = {
   onSelect: (mode: OrderGroupMode) => void;
 };
 
-/** Day / area (and coordinator: donor) controls — always shown for donor dashboard. */
+/** Day / area (and coordinator: initiator) controls — always shown for initiator dashboard. */
 export function GroupModeToolbar({
   coordinatorView,
   groupMode,
@@ -30,13 +30,13 @@ export function GroupModeToolbar({
           <button
             type="button"
             className={
-              groupMode === "donor"
+              groupMode === "initiator"
                 ? "group-mode-btn active"
                 : "group-mode-btn"
             }
-            onClick={() => onSelect("donor")}
+            onClick={() => onSelect("initiator")}
           >
-            By donor
+            By initiator
           </button>
         ) : null}
         <button

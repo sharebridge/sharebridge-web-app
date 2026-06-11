@@ -7,7 +7,11 @@ export type AllocationHint =
   | "balanced";
 
 export type DemandWindowRow = {
+  bucket_key?: string;
   locality_key: string;
+  standard_offer_id?: string | null;
+  menu_label?: string;
+  price_inr?: number | null;
   demand_count: number;
   meal_units_total: number;
   latest_at: string;
@@ -18,11 +22,23 @@ export type DemandWindowRow = {
   allocation_hint?: AllocationHint;
 };
 
+export type StandardOfferRow = {
+  standard_offer_id: string;
+  locality_key: string;
+  menu_label: string;
+  price_inr?: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type SeekerDemandRow = {
   seeker_demand_id: string;
   reported_by_user_id?: string | null;
   status: string;
   meal_units: number;
+  standard_offer_id?: string | null;
+  menu_label?: string;
+  price_inr?: number | null;
   need_description: string;
   verbal_notes?: string;
   location_lat?: number | null;
@@ -36,6 +52,8 @@ export type PledgeRow = {
   pledge_id: string;
   pledged_by_user_id?: string;
   locality_key: string;
+  standard_offer_id?: string | null;
+  menu_label?: string;
   meal_units: number;
   status: string;
   created_at: string;
@@ -46,6 +64,8 @@ export type VendorBidRow = {
   vendor_bid_id: string;
   submitted_by_user_id?: string;
   locality_key: string;
+  standard_offer_id?: string | null;
+  menu_label?: string;
   vendor_name: string;
   portions: number;
   status: string;
@@ -58,8 +78,15 @@ export type DemandBoardSnapshot = {
   status: string;
   role?: string | null;
   message: string;
-  standard_offers: unknown[];
+  standard_offers: StandardOfferRow[];
   demand_windows: DemandWindowRow[];
+  active_offer_buckets?: Array<{
+    bucket_key: string;
+    locality_key: string;
+    standard_offer_id: string | null;
+    menu_label?: string;
+    price_inr?: number | null;
+  }>;
   active_locality_keys?: string[];
   seeker_demands: SeekerDemandRow[];
   pledges: PledgeRow[];
@@ -68,6 +95,24 @@ export type DemandBoardSnapshot = {
   orphan_vendor_bids?: VendorBidRow[];
   generated_at: string;
 };
+
+export function demandLineKey(row: DemandWindowRow): string {
+  return (
+    row.bucket_key ??
+    `${row.locality_key}::${row.standard_offer_id ?? "legacy"}`
+  );
+}
+
+export function parseDemandLineKey(key: string): {
+  locality_key: string;
+  standard_offer_id: string;
+} {
+  const [locality_key, standard_offer_id] = key.split("::");
+  return {
+    locality_key: locality_key ?? "",
+    standard_offer_id: standard_offer_id === "legacy" ? "" : (standard_offer_id ?? "")
+  };
+}
 
 async function readApiErrorMessage(
   response: Response,
@@ -87,7 +132,11 @@ async function readApiErrorMessage(
 export async function createPledge(
   apiBaseUrl: string,
   session: AuthSession,
-  body: { locality_key: string; meal_units: number }
+  body: {
+    locality_key: string;
+    standard_offer_id: string;
+    meal_units: number;
+  }
 ): Promise<PledgeRow> {
   const response = await fetch(`${apiBaseUrl}/v1/pledges`, {
     method: "POST",
@@ -112,6 +161,7 @@ export async function createVendorBid(
   session: AuthSession,
   body: {
     locality_key: string;
+    standard_offer_id: string;
     vendor_name: string;
     portions: number;
     notes?: string;

@@ -5,7 +5,9 @@ import { formatWhen } from "../format";
 import {
   createPledge,
   createVendorBid,
+  demandLineKey,
   fetchDemandBoard,
+  parseDemandLineKey,
   type AllocationHint,
   type DemandBoardSnapshot,
   type DemandWindowRow,
@@ -24,9 +26,9 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pledgeLocality, setPledgeLocality] = useState("");
+  const [pledgeLineKey, setPledgeLineKey] = useState("");
   const [pledgeUnits, setPledgeUnits] = useState("1");
-  const [bidLocality, setBidLocality] = useState("");
+  const [bidLineKey, setBidLineKey] = useState("");
   const [bidVendor, setBidVendor] = useState("");
   const [bidPortions, setBidPortions] = useState("10");
   const [submitting, setSubmitting] = useState(false);
@@ -80,8 +82,12 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
               <dd>{snapshot.status}</dd>
             </div>
             <div>
-              <dt>Locality buckets</dt>
+              <dt>Demand lines</dt>
               <dd>{snapshot.demand_windows.length}</dd>
+            </div>
+            <div>
+              <dt>Standard menu items</dt>
+              <dd>{snapshot.standard_offers.length}</dd>
             </div>
             <div>
               <dt>Recent demands</dt>
@@ -96,18 +102,21 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
           {snapshot.demand_windows.length > 0 ? (
             <>
               <h3 className="intent-group-title">
-                Aggregated by area (demand vs pledge vs bid)
+                Aggregated by menu item (demand vs pledge vs bid)
               </h3>
               <p className="demand-lede">
-                Choose an area bucket below for pledges and vendor bids. Keys
-                come from GPS (server km grid), not place names.
+                Each line is a standard menu item in a GPS area bucket — not
+                free-text. Pledge or bid against the exact item seekers asked
+                for.
               </p>
               <ul className="preset-list demand-bucket-list">
                 {snapshot.demand_windows.map((row) => (
-                  <li key={row.locality_key} className="demand-bucket-row">
+                  <li key={demandLineKey(row)} className="demand-bucket-row">
                     <div>
-                      <strong>{row.locality_key}</strong> — demand{" "}
-                      {row.meal_units_total} units ({row.demand_count} record
+                      <strong>{row.menu_label ?? row.standard_offer_id ?? "Item"}</strong>
+                      {row.price_inr != null ? ` (₹${row.price_inr})` : ""} @{" "}
+                      {row.locality_key} — demand {row.meal_units_total} units (
+                      {row.demand_count} record
                       {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
                       {row.pledged_units_total ?? 0} · vendor capacity{" "}
                       {row.bid_portions_total ?? 0}
@@ -143,7 +152,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => setPledgeLocality(row.locality_key)}
+                        onClick={() => setPledgeLineKey(demandLineKey(row))}
                       >
                         Use for pledge
                       </button>
@@ -151,7 +160,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                         <button
                           type="button"
                           className="btn btn-secondary"
-                          onClick={() => setBidLocality(row.locality_key)}
+                          onClick={() => setBidLineKey(demandLineKey(row))}
                         >
                           Use for bid
                         </button>
@@ -174,7 +183,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
             </>
           ) : (
             <p className="empty">
-              No seeker demands yet. Donors and coordinators can record from the
+              No meal needs yet. Initiators and coordinators can record from the
               mobile app hub → Record seeker demand.
             </p>
           )}
@@ -183,8 +192,8 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
             <>
               <h3 className="intent-group-title">Unmatched pledges</h3>
               <p className="demand-lede demand-gap">
-                These use a place name or old key that does not match any demand
-                bucket — they do not count toward aggregated totals.
+                These use a place name, old key, or wrong menu item — they do
+                not count toward aggregated totals.
               </p>
               <ul className="preset-list">
                 {snapshot.orphan_pledges?.map((row) => (
@@ -220,23 +229,24 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
               <ul className="preset-list">
                 {snapshot.vendor_bids.map((row) => (
                   <li key={row.vendor_bid_id}>
-                    <strong>{row.vendor_name}</strong> ({row.locality_key}) —{" "}
-                    {row.portions} portions · {row.status}
+                    <strong>{row.vendor_name}</strong> —{" "}
+                    {row.menu_label ?? row.standard_offer_id ?? "item"} @{" "}
+                    {row.locality_key} — {row.portions} portions · {row.status}
                   </li>
                 ))}
               </ul>
             </>
           ) : null}
 
-          <h3 className="intent-group-title">Pledge meals (donor)</h3>
+          <h3 className="intent-group-title">Pledge meals (initiator)</h3>
           <div className="detail-grid">
-            <label htmlFor="pledge-locality-select">
-              Area bucket
-              <LocalityBucketSelect
-                id="pledge-locality-select"
+            <label htmlFor="pledge-line-select">
+              Demand line (menu item + area)
+              <DemandLineSelect
+                id="pledge-line-select"
                 windows={snapshot.demand_windows}
-                value={pledgeLocality}
-                onChange={setPledgeLocality}
+                value={pledgeLineKey}
+                onChange={setPledgeLineKey}
               />
             </label>
             <label>
@@ -251,13 +261,15 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
           <button
             type="button"
             className="btn btn-secondary"
-            disabled={submitting || !pledgeLocality.trim()}
+            disabled={submitting || !pledgeLineKey.trim()}
             onClick={() => {
               void (async () => {
                 setSubmitting(true);
                 try {
+                  const line = parseDemandLineKey(pledgeLineKey.trim());
                   await createPledge(getAppConfig().apiBaseUrl, session, {
-                    locality_key: pledgeLocality.trim(),
+                    locality_key: line.locality_key,
+                    standard_offer_id: line.standard_offer_id,
                     meal_units: Number(pledgeUnits) || 1
                   });
                   await load();
@@ -281,13 +293,13 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                 Temporary MVP entry until fulfiller accounts bid on their own.
               </p>
               <div className="detail-grid">
-                <label htmlFor="bid-locality-select">
-                  Area bucket
-                  <LocalityBucketSelect
-                    id="bid-locality-select"
+                <label htmlFor="bid-line-select">
+                  Demand line (menu item + area)
+                  <DemandLineSelect
+                    id="bid-line-select"
                     windows={snapshot.demand_windows}
-                    value={bidLocality}
-                    onChange={setBidLocality}
+                    value={bidLineKey}
+                    onChange={setBidLineKey}
                   />
                 </label>
                 <label>
@@ -311,14 +323,16 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                 type="button"
                 className="btn btn-secondary"
                 disabled={
-                  submitting || !bidLocality.trim() || !bidVendor.trim()
+                  submitting || !bidLineKey.trim() || !bidVendor.trim()
                 }
                 onClick={() => {
                   void (async () => {
                     setSubmitting(true);
                     try {
+                      const line = parseDemandLineKey(bidLineKey.trim());
                       await createVendorBid(getAppConfig().apiBaseUrl, session, {
-                        locality_key: bidLocality.trim(),
+                        locality_key: line.locality_key,
+                        standard_offer_id: line.standard_offer_id,
                         vendor_name: bidVendor.trim(),
                         portions: Number(bidPortions) || 1
                       });
@@ -345,7 +359,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
   );
 }
 
-function LocalityBucketSelect({
+function DemandLineSelect({
   id,
   windows,
   value,
@@ -354,12 +368,13 @@ function LocalityBucketSelect({
   id: string;
   windows: DemandWindowRow[];
   value: string;
-  onChange: (localityKey: string) => void;
+  onChange: (lineKey: string) => void;
 }) {
   if (windows.length === 0) {
     return (
       <p className="demand-lede">
-        No buckets yet. Record seeker demand with GPS on mobile first.
+        No demand lines yet. Record seeker demand with a standard item on
+        mobile first.
       </p>
     );
   }
@@ -370,13 +385,16 @@ function LocalityBucketSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
-      <option value="">Choose area bucket…</option>
-      {windows.map((row) => (
-        <option key={row.locality_key} value={row.locality_key}>
-          {row.locality_key} — {row.meal_units_total} units demand (
-          {row.unmet_demand_units ?? 0} unpledged)
-        </option>
-      ))}
+      <option value="">Choose menu item + area…</option>
+      {windows
+        .filter((row) => row.standard_offer_id)
+        .map((row) => (
+          <option key={demandLineKey(row)} value={demandLineKey(row)}>
+            {row.menu_label ?? row.standard_offer_id} @ {row.locality_key} —{" "}
+            {row.meal_units_total} units demand (
+            {row.unmet_demand_units ?? 0} unpledged)
+          </option>
+        ))}
     </select>
   );
 }
@@ -405,11 +423,12 @@ function PledgeListItem({
 }) {
   return (
     <>
-      <strong>{row.locality_key}</strong>
-      {orphan ? " (unmatched)" : ""} — {row.meal_units} units · {row.status} ·{" "}
+      <strong>{row.menu_label ?? row.standard_offer_id ?? row.locality_key}</strong>
+      {orphan ? " (unmatched)" : ""} @ {row.locality_key} — {row.meal_units}{" "}
+      units · {row.status} ·{" "}
       {formatWhen(row.created_at)}
       {coordinator && row.pledged_by_user_id ? (
-        <> · donor {row.pledged_by_user_id}</>
+        <> · initiator {row.pledged_by_user_id}</>
       ) : null}
     </>
   );
@@ -420,7 +439,8 @@ function SeekerDemandCard({ row }: { row: SeekerDemandRow }) {
     <li className="intent-row-wrap">
       <div className="intent-inline-detail">
         <p>
-          <strong>{row.need_description}</strong>
+          <strong>{row.menu_label ?? row.need_description}</strong>
+          {row.price_inr != null ? ` · ₹${row.price_inr}` : ""}
         </p>
         <p className="intent-metrics">
           {row.meal_units} meal unit{row.meal_units === 1 ? "" : "s"}

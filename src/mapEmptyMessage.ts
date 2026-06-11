@@ -40,7 +40,7 @@ export function mapEmptyMessage(
     return "None of your initiations include GPS coordinates. On mobile, allow location when you copy AI instructions (Help a seeker).";
   }
   if (intents.length > 0) {
-    return "Map shows pins for your own initiations only. Other donors' orders appear in List with distance (m); their exact locations are not shown here.";
+    return "Map shows pins for your own initiations only. Other initiators' orders appear in List with distance (m); their exact locations are not shown here.";
   }
   return "No initiations in this feed yet. Register from the mobile app or use By area after allowing location.";
 }

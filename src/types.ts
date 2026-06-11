@@ -1,7 +1,9 @@
 export type OrderInitiation = {
   order_intent_id: string;
   user_id?: string | null;
-  /** Coordinator dashboard only — email of the donor who registered this intent. */
+  /** Coordinator dashboard only — email of the initiator who registered this intent. */
+  initiator_email?: string | null;
+  /** @deprecated use initiator_email */
   donor_email?: string | null;
   location_lat?: number | null;
   location_lng?: number | null;

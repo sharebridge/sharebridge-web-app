@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatDistanceM,
-  formatDonorMeta,
+  formatInitiatorMeta,
   formatElapsedSince,
   primaryRestaurant,
   statusLabel
@@ -17,11 +17,11 @@ describe("format helpers", () => {
     expect(statusLabel(undefined)).toBe("unknown");
   });
 
-  it("formats donor meta with email and id", () => {
-    expect(formatDonorMeta("alice", "alice@example.com")).toBe(
+  it("formats initiator meta with email and id", () => {
+    expect(formatInitiatorMeta("alice", "alice@example.com")).toBe(
       "alice@example.com · alice"
     );
-    expect(formatDonorMeta("alice", null)).toBe("Donor alice");
+    expect(formatInitiatorMeta("alice", null)).toBe("Initiator alice");
   });
 
   it("formats distance in metres", () => {

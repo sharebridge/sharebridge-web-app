@@ -1,6 +1,7 @@
 import type { AuthSession } from "../authSession";
 import type { OrderFeedMeta } from "../feedScope";
 import type { OrderInitiation } from "../types";
+import { ORDER_INTENTS_PATH } from "./paths";
 
 export class ApiError extends Error {
   status: number;
@@ -30,7 +31,7 @@ export type OrderIntentsLoadResult = {
 };
 
 /**
- * List order intents. Window and radius are enforced server-side for donors;
+ * List order intents. Window and radius are enforced server-side for initiators;
  * pass viewer coordinates only when available (limited dashboard).
  */
 export async function fetchOrderInitiations(
@@ -38,7 +39,7 @@ export async function fetchOrderInitiations(
   session: AuthSession,
   viewerLocation: ViewerLocation | null = null
 ): Promise<OrderIntentsLoadResult> {
-  const url = new URL(`${apiBaseUrl}/v1/donor-seeker/order-intents`);
+  const url = new URL(`${apiBaseUrl}${ORDER_INTENTS_PATH}`);
   if (viewerLocation) {
     url.searchParams.set("near_lat", String(viewerLocation.near_lat));
     url.searchParams.set("near_lng", String(viewerLocation.near_lng));
@@ -104,7 +105,7 @@ export async function patchOrderIntent(
   patch: { payment_status?: string; delivery_status?: string }
 ): Promise<OrderInitiation> {
   const response = await fetch(
-    `${apiBaseUrl}/v1/donor-seeker/order-intents/${encodeURIComponent(orderIntentId)}`,
+    `${apiBaseUrl}${ORDER_INTENTS_PATH}/${encodeURIComponent(orderIntentId)}`,
     {
       method: "PATCH",
       headers: {

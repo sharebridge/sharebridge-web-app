@@ -1,6 +1,6 @@
 import {
   formatDistanceM,
-  formatDonorMeta,
+  formatInitiatorMeta,
   formatElapsedSince,
   formatWhen,
   primaryRestaurant,
@@ -118,7 +118,10 @@ function IntentRow({
   const restaurant = primaryRestaurant(intent);
   const meta = [
     showDonorInList
-      ? formatDonorMeta(intent.user_id, intent.donor_email)
+      ? formatInitiatorMeta(
+          intent.user_id,
+          intent.initiator_email ?? intent.donor_email
+        )
       : null,
     statusLabel(intent.status),
     restaurant

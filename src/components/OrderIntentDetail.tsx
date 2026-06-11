@@ -49,12 +49,16 @@ export function OrderIntentDetail({
       {coordinatorView ? (
         <>
           <div>
-            <dt>Donor email</dt>
-            <dd>{intent.donor_email?.trim() || "—"}</dd>
+            <dt>Initiator email</dt>
+            <dd>
+              {intent.initiator_email?.trim() ||
+                intent.donor_email?.trim() ||
+                "—"}
+            </dd>
           </div>
           {!compact ? (
             <div>
-              <dt>Donor user id</dt>
+              <dt>Initiator user id</dt>
               <dd>{intent.user_id?.trim() || "—"}</dd>
             </div>
           ) : null}

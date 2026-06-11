@@ -75,7 +75,7 @@ function SignInCard({ config, onSignedIn }: Props) {
     <section className="sign-in-card panel">
       <h1>Sign in</h1>
       <p className="sign-in-lede">
-        Coordinators see full order details. Donors see a limited neighbourhood
+        Coordinators see full order details. Initiators see a limited neighbourhood
         feed (time window and distance are set on the server and shown after
         sign-in).
       </p>

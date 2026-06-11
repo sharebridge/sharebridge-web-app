@@ -61,13 +61,13 @@ export function statusLabel(status: string | null | undefined): string {
   return status.replace(/_/g, " ");
 }
 
-/** Coordinator list/detail: donor who registered the intent (not the signed-in viewer). */
-export function formatDonorMeta(
+/** Coordinator list/detail: initiator who registered the intent (not the signed-in viewer). */
+export function formatInitiatorMeta(
   userId: string | null | undefined,
-  donorEmail: string | null | undefined
+  initiatorEmail: string | null | undefined
 ): string | null {
   const id = userId?.trim();
-  const email = donorEmail?.trim();
+  const email = initiatorEmail?.trim();
   if (email && id) {
     return `${email} · ${id}`;
   }
@@ -75,10 +75,13 @@ export function formatDonorMeta(
     return email;
   }
   if (id) {
-    return `Donor ${id}`;
+    return `Initiator ${id}`;
   }
   return null;
 }
+
+/** @deprecated use formatInitiatorMeta */
+export const formatDonorMeta = formatInitiatorMeta;
 
 export function primaryRestaurant(intent: OrderInitiation): string | null {
   const selected = intent.selected_preset;
