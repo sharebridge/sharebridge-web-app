@@ -93,7 +93,7 @@ export function localityGroupLabel(intent: OrderInitiation): string {
   }
   const key = intent.locality_key?.trim();
   if (key) {
-    return `Area ${key}`;
+    return key;
   }
   return "No location on record";
 }

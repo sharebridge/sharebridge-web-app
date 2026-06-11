@@ -270,8 +270,12 @@ function AppShell() {
         )
       );
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not update delivery.";
       setError(
-        err instanceof Error ? err.message : "Could not update delivery."
+        message === "Failed to fetch"
+          ? "Could not reach the integration service to mark delivery. Redeploy integration-service after the latest update (PATCH must be allowed in CORS)."
+          : message
       );
     } finally {
       setOpsSaving(false);
