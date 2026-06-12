@@ -15,7 +15,11 @@ import {
   type PledgeRow,
   type SeekerDemandRow
 } from "../api/demandBoard";
-import type { OrderListQuery } from "../coordinatorScope";
+import {
+  EMPTY_ORDER_LIST_QUERY,
+  orderListQueryKey,
+  type OrderListQuery
+} from "../coordinatorScope";
 import type { OrderFeedMeta } from "../feedScope";
 import { isCoordinatorSession } from "../sessionRole";
 
@@ -33,7 +37,7 @@ type Props = {
 export function DemandBoardPanel({
   session,
   refreshKey = 0,
-  scopeQuery = {},
+  scopeQuery = EMPTY_ORDER_LIST_QUERY,
   onBoundariesChange
 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
@@ -48,6 +52,9 @@ export function DemandBoardPanel({
   const pledgeFormRef = useRef<HTMLDivElement>(null);
   const bidFormRef = useRef<HTMLDivElement>(null);
   const coordinator = isCoordinatorSession(session);
+  const scopeQueryKey = orderListQueryKey(scopeQuery);
+  const onBoundariesChangeRef = useRef(onBoundariesChange);
+  onBoundariesChangeRef.current = onBoundariesChange;
 
   const selectDemandLineForPledge = useCallback((lineKey: string) => {
     setPledgeLineKey(lineKey);
@@ -73,7 +80,7 @@ export function DemandBoardPanel({
         scopeQuery
       );
       setSnapshot(data);
-      onBoundariesChange?.(
+      onBoundariesChangeRef.current?.(
         demandBoardFeedMeta(data),
         isCoordinatorSession(session)
       );
@@ -85,11 +92,11 @@ export function DemandBoardPanel({
     } finally {
       setLoading(false);
     }
-  }, [session, scopeQuery, refreshKey]);
+  }, [session, scopeQuery, scopeQueryKey, refreshKey]);
 
   useEffect(() => {
     void load();
-  }, [load, refreshKey]);
+  }, [load]);
 
   return (
     <section className="panel demand-panel" aria-labelledby="demand-heading">

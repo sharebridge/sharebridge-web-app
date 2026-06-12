@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleOAuthProvider, googleLogout } from "@react-oauth/google";
 import {
   ApiError,
@@ -41,6 +41,7 @@ import {
   coordinatorScopeToQuery,
   DEFAULT_COORDINATOR_SCOPE,
   demandBoardQueryFromScope,
+  EMPTY_ORDER_LIST_QUERY,
   type CoordinatorScopeFilters,
   type OrderListQuery
 } from "./coordinatorScope";
@@ -104,6 +105,8 @@ function AppShell() {
   } | null>(null);
   const [scopeApplying, setScopeApplying] = useState(false);
   const isMobileLayout = useMobileLayout();
+  const dashboardModeRef = useRef(dashboardMode);
+  dashboardModeRef.current = dashboardMode;
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
@@ -112,12 +115,16 @@ function AppShell() {
     coordinatorView && intents.length > 0
       ? true
       : apiDashboard === "limited" || (apiDashboard == null && !coordinatorView);
-  const coordinatorDemandQuery = coordinatorView
-    ? demandBoardQueryFromScope(
-        coordinatorScopeApplied,
-        coordinatorNearCoords
-      )
-    : {};
+  const coordinatorDemandQuery = useMemo(
+    () =>
+      coordinatorView
+        ? demandBoardQueryFromScope(
+            coordinatorScopeApplied,
+            coordinatorNearCoords
+          )
+        : EMPTY_ORDER_LIST_QUERY,
+    [coordinatorView, coordinatorScopeApplied, coordinatorNearCoords]
+  );
 
   const loadHistory = useCallback(
     async (active: AuthSession, query: OrderListQuery = {}) => {
@@ -148,7 +155,7 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
-      if (dashboardMode !== "demand") {
+      if (dashboardModeRef.current !== "demand") {
         setDashboardBoundaries(
           dashboardBoundariesFromApi(result.feedMeta, {
             coordinator: result.dashboard === "coordinator"
@@ -183,7 +190,7 @@ function AppShell() {
       setLoading(false);
     }
   },
-    [dashboardMode]
+    []
   );
 
   const loadByAreaWithFreshLocation = useCallback(

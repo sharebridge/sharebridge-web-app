@@ -23,6 +23,26 @@ export type OrderListQuery = {
   locality_key?: string;
 };
 
+/** Stable empty query — avoids new `{}` references each render. */
+export const EMPTY_ORDER_LIST_QUERY: OrderListQuery = {};
+
+export function orderListQueryKey(query: OrderListQuery = EMPTY_ORDER_LIST_QUERY): string {
+  const parts: string[] = [];
+  if (query.since) {
+    parts.push(`since=${query.since}`);
+  }
+  if (query.locality_key) {
+    parts.push(`locality_key=${query.locality_key}`);
+  }
+  if (query.near_lat != null) {
+    parts.push(`near_lat=${query.near_lat}`);
+  }
+  if (query.near_lng != null) {
+    parts.push(`near_lng=${query.near_lng}`);
+  }
+  return parts.length > 0 ? parts.join("&") : "all";
+}
+
 export function coordinatorScopeToQuery(
   filters: CoordinatorScopeFilters,
   viewerCoords: { near_lat: number; near_lng: number } | null
