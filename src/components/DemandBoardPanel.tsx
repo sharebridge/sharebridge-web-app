@@ -124,8 +124,8 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
               </h3>
               <p className="demand-lede">
                 Each line is one standard menu item in one area (e.g.{" "}
-                <code>IN:TN:600115</code>). Tap <strong>Pledge this item</strong>{" "}
-                or <strong>Record vendor bid</strong> to jump to the form below
+                <code>IN:TN:600115</code>). Tap <strong>Pick this for pledge</strong>{" "}
+                or <strong>Pick this for bid</strong> to jump to the form below
                 with that line pre-selected — then enter units and submit.
               </p>
               <ul className="preset-list demand-bucket-list">
@@ -176,7 +176,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                           selectDemandLineForPledge(demandLineKey(row))
                         }
                       >
-                        Pledge this item
+                        Pick this for pledge
                       </button>
                       {coordinator ? (
                         <button
@@ -187,7 +187,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                             selectDemandLineForBid(demandLineKey(row))
                           }
                         >
-                          Record vendor bid
+                          Pick this for bid
                         </button>
                       ) : null}
                     </div>
