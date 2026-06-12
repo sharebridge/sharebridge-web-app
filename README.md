@@ -1,6 +1,6 @@
 # sharingbridge-web-app
 
-**Order initiation history** dashboard for SharingBridge (Vite + React).
+**Order initiation history** and **Demand board** dashboard for SharingBridge (Vite + React).
 
 ## How it works
 
@@ -9,6 +9,8 @@
 | Build | Vite bundles the React UI → static `dist/` |
 | Sign in | Google (GIS) → user-service → JWT in sessionStorage; optional **Use a different Google account** after a prior sign-in on this browser |
 | Data | Dashboard calls integration-service with Bearer token |
+| Views | **List** / **Map** / **Demand** tabs; **Data boundaries** banner shows time, area, sort, and row limit |
+| Coordinator | **Scope toolbar** — filter List, Map, and Demand by time window and area (all / near me / postal key) |
 
 ## Quick start
 
