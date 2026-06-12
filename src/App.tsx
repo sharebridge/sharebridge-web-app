@@ -6,7 +6,6 @@ import {
   patchOrderIntent
 } from "./api/orderIntents";
 import {
-  demandBoardFeedMeta,
   fetchDemandBoard,
   type SeekerDemandRow
 } from "./api/demandBoard";
@@ -283,9 +282,6 @@ function AppShell() {
         coordinatorScopeApplied,
         coordinatorNearCoords
       ));
-      if (dashboardMode === "demand") {
-        setDemandRefreshKey((key) => key + 1);
-      }
       return;
     }
     if (groupMode === "locality") {
