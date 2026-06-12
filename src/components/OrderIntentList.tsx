@@ -1,8 +1,10 @@
 import {
+  deliveryStatusLabel,
   formatDistanceM,
   formatInitiatorMeta,
   formatElapsedSince,
   formatWhen,
+  paymentStatusLabel,
   primaryRestaurant,
   statusLabel
 } from "../format";
@@ -104,6 +106,33 @@ export function OrderIntentList({
   );
 }
 
+function IntentStatusChips({ intent }: { intent: OrderInitiation }) {
+  const paymentDone = intent.payment_status === "paid_externally";
+  const delivered = intent.delivery_status === "delivered";
+  return (
+    <div className="intent-status-chips" aria-label="Payment and delivery status">
+      <span
+        className={
+          paymentDone
+            ? "intent-status-chip intent-status-chip-ok"
+            : "intent-status-chip"
+        }
+      >
+        Payment: {paymentStatusLabel(intent.payment_status)}
+      </span>
+      <span
+        className={
+          delivered
+            ? "intent-status-chip intent-status-chip-ok"
+            : "intent-status-chip"
+        }
+      >
+        Delivery: {deliveryStatusLabel(intent.delivery_status)}
+      </span>
+    </div>
+  );
+}
+
 function IntentMetrics({ intent }: { intent: OrderInitiation }) {
   return (
     <dl className="intent-metrics-grid">
@@ -184,6 +213,7 @@ function IntentRow({
         <span className="intent-row-text">
           <span className="intent-id">{intent.order_intent_id}</span>
           <span className="intent-meta">{meta}</span>
+          <IntentStatusChips intent={intent} />
           <IntentMetrics intent={intent} />
         </span>
       </button>

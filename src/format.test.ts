@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  deliveryStatusLabel,
   formatDistanceM,
   formatInitiatorMeta,
   formatElapsedSince,
+  paymentStatusLabel,
   primaryRestaurant,
   statusLabel
 } from "./format";
@@ -11,6 +13,11 @@ import type { OrderInitiation } from "./types";
 describe("format helpers", () => {
   it("formats status for display", () => {
     expect(statusLabel("instructions_copied")).toBe("instructions copied");
+  });
+
+  it("formats payment and delivery statuses", () => {
+    expect(paymentStatusLabel("paid_externally")).toBe("paid externally");
+    expect(deliveryStatusLabel("out_for_delivery")).toBe("out for delivery");
   });
 
   it("handles missing status without replaceAll", () => {

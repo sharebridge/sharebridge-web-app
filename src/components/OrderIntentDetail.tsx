@@ -1,4 +1,5 @@
 import {
+  deliveryStatusLabel,
   formatDistanceM,
   formatElapsedSince,
   formatWhen,
@@ -95,7 +96,7 @@ export function OrderIntentDetail({
           <div>
             <dt>Delivery</dt>
             <dd>
-              {paymentStatusLabel(intent.delivery_status)}
+              {deliveryStatusLabel(intent.delivery_status)}
               {canMarkDelivered &&
               intent.delivery_status !== "delivered" ? (
                 <button

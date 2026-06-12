@@ -48,6 +48,7 @@ import {
 import { GroupModeToolbar } from "./components/GroupModeToolbar";
 import { DashboardBoundariesBanner } from "./components/DashboardBoundariesBanner";
 import { CoordinatorScopeToolbar } from "./components/CoordinatorScopeToolbar";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
 import {
   locationRequiredMessage,
@@ -92,6 +93,10 @@ function AppShell() {
   >("list");
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
+  const [opsConfirm, setOpsConfirm] = useState<
+    { kind: "payment" | "delivered"; intentId: string } | null
+  >(null);
+  const [opsSuccess, setOpsSuccess] = useState<string | null>(null);
   const [demandRefreshKey, setDemandRefreshKey] = useState(0);
   const [dashboardBoundaries, setDashboardBoundaries] =
     useState<DashboardBoundaries | null>(null);
@@ -346,6 +351,8 @@ function AppShell() {
           row.order_intent_id === updated.order_intent_id ? updated : row
         )
       );
+      setOpsSuccess("Payment marked done — recorded for coordinators.");
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update payment.");
     } finally {
@@ -371,6 +378,12 @@ function AppShell() {
           row.order_intent_id === updated.order_intent_id ? updated : row
         )
       );
+      setOpsSuccess(
+        updated.delivered_at?.trim()
+          ? `Marked delivered at ${new Date(updated.delivered_at).toLocaleString()}.`
+          : "Marked delivered."
+      );
+      setError(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not update delivery."
@@ -379,6 +392,27 @@ function AppShell() {
       setOpsSaving(false);
     }
   }, [session, selectedId, coordinatorView]);
+
+  const requestMarkPaymentDone = useCallback((intentId: string) => {
+    setOpsConfirm({ kind: "payment", intentId });
+  }, []);
+
+  const requestMarkDelivered = useCallback((intentId: string) => {
+    setOpsConfirm({ kind: "delivered", intentId });
+  }, []);
+
+  const confirmPendingOps = useCallback(async () => {
+    if (!opsConfirm) {
+      return;
+    }
+    const pending = opsConfirm;
+    setOpsConfirm(null);
+    if (pending.kind === "payment") {
+      await handleMarkPaymentDone(pending.intentId);
+    } else {
+      await handleMarkDelivered(pending.intentId);
+    }
+  }, [opsConfirm, handleMarkPaymentDone, handleMarkDelivered]);
 
   function handleSignedIn(next: AuthSession) {
     saveSession(next);
@@ -425,6 +459,27 @@ function AppShell() {
         />
       ) : null}
 
+      {opsConfirm ? (
+        <ConfirmDialog
+          title={
+            opsConfirm.kind === "payment"
+              ? "Mark payment done?"
+              : "Mark delivered?"
+          }
+          message={
+            opsConfirm.kind === "payment"
+              ? "Confirm you placed and paid for this meal in the vendor app. Coordinators will see payment as done."
+              : "Confirm handover to the beneficiary is complete. This sets delivery status and stamps Delivered at."
+          }
+          confirmLabel={
+            opsConfirm.kind === "payment" ? "Mark payment done" : "Mark delivered"
+          }
+          confirming={opsSaving}
+          onCancel={() => setOpsConfirm(null)}
+          onConfirm={() => void confirmPendingOps()}
+        />
+      ) : null}
+
       <main className="main">
         <DashboardHero
           kind={coordinatorView ? "coordinator" : "initiator"}
@@ -435,6 +490,19 @@ function AppShell() {
         {error ? (
           <div className="banner banner-error" role="alert">
             {error}
+          </div>
+        ) : null}
+
+        {opsSuccess ? (
+          <div className="banner banner-success" role="status">
+            {opsSuccess}
+            <button
+              type="button"
+              className="banner-dismiss"
+              onClick={() => setOpsSuccess(null)}
+            >
+              Dismiss
+            </button>
           </div>
         ) : null}
 
@@ -597,8 +665,8 @@ function AppShell() {
                   viewerUserId={session.userId}
                   opsSaving={opsSaving}
                   onSelect={setSelectedId}
-                  onMarkPaymentDone={(id) => void handleMarkPaymentDone(id)}
-                  onMarkDelivered={(id) => void handleMarkDelivered(id)}
+                  onMarkPaymentDone={requestMarkPaymentDone}
+                  onMarkDelivered={requestMarkDelivered}
                 />
               )}
             </section>
@@ -619,14 +687,14 @@ function AppShell() {
                   }
                   markingPayment={opsSaving}
                   onMarkPaymentDone={() =>
-                    void handleMarkPaymentDone(selected.order_intent_id)
+                    requestMarkPaymentDone(selected.order_intent_id)
                   }
                   canMarkDelivered={
                     coordinatorView && selected.delivery_status !== "delivered"
                   }
                   markingDelivered={opsSaving}
                   onMarkDelivered={() =>
-                    void handleMarkDelivered(selected.order_intent_id)
+                    requestMarkDelivered(selected.order_intent_id)
                   }
                 />
               ) : (

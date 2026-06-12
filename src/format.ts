@@ -47,11 +47,19 @@ export function formatWhen(iso: string | undefined): string {
   return date.toLocaleString();
 }
 
-export function paymentStatusLabel(status: string | null | undefined): string {
+function humanizeStatusToken(status: string | null | undefined): string {
   if (!status?.trim()) {
     return "pending";
   }
   return status.replace(/_/g, " ");
+}
+
+export function paymentStatusLabel(status: string | null | undefined): string {
+  return humanizeStatusToken(status);
+}
+
+export function deliveryStatusLabel(status: string | null | undefined): string {
+  return humanizeStatusToken(status);
 }
 
 export function statusLabel(status: string | null | undefined): string {
