@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthSession } from "../authSession";
 import { getAppConfig } from "../config";
 import { formatWhen } from "../format";
@@ -32,7 +32,23 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
   const [bidVendor, setBidVendor] = useState("");
   const [bidPortions, setBidPortions] = useState("10");
   const [submitting, setSubmitting] = useState(false);
+  const pledgeFormRef = useRef<HTMLDivElement>(null);
+  const bidFormRef = useRef<HTMLDivElement>(null);
   const coordinator = isCoordinatorSession(session);
+
+  const selectDemandLineForPledge = useCallback((lineKey: string) => {
+    setPledgeLineKey(lineKey);
+    requestAnimationFrame(() => {
+      pledgeFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const selectDemandLineForBid = useCallback((lineKey: string) => {
+    setBidLineKey(lineKey);
+    requestAnimationFrame(() => {
+      bidFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,9 +123,10 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                 Aggregated by menu item (demand vs pledge vs bid)
               </h3>
               <p className="demand-lede">
-                Each line is a standard menu item in a GPS area bucket — not
-                free-text. Pledge or bid against the exact item seekers asked
-                for.
+                Each line is one standard menu item in one area (e.g.{" "}
+                <code>IN:TN:600115</code>). Tap <strong>Pledge this item</strong>{" "}
+                or <strong>Record vendor bid</strong> to jump to the form below
+                with that line pre-selected — then enter units and submit.
               </p>
               <ul className="preset-list demand-bucket-list">
                 {snapshot.demand_windows.map((row) => (
@@ -154,17 +171,23 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => setPledgeLineKey(demandLineKey(row))}
+                        aria-pressed={pledgeLineKey === demandLineKey(row)}
+                        onClick={() =>
+                          selectDemandLineForPledge(demandLineKey(row))
+                        }
                       >
-                        Use for pledge
+                        Pledge this item
                       </button>
                       {coordinator ? (
                         <button
                           type="button"
                           className="btn btn-secondary"
-                          onClick={() => setBidLineKey(demandLineKey(row))}
+                          aria-pressed={bidLineKey === demandLineKey(row)}
+                          onClick={() =>
+                            selectDemandLineForBid(demandLineKey(row))
+                          }
                         >
-                          Use for bid
+                          Record vendor bid
                         </button>
                       ) : null}
                     </div>
@@ -240,7 +263,23 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
             </>
           ) : null}
 
+          <div ref={pledgeFormRef} className="demand-form-block">
           <h3 className="intent-group-title">Pledge meals (initiator)</h3>
+          {pledgeLineKey ? (
+            <p className="demand-selection-banner" role="status">
+              Selected:{" "}
+              <strong>
+                {demandLineLabel(
+                  findDemandWindow(snapshot.demand_windows, pledgeLineKey)
+                )}
+              </strong>{" "}
+              — enter meal units, then <strong>Submit pledge</strong>.
+            </p>
+          ) : (
+            <p className="demand-lede">
+              Choose a demand line from the list above or from the dropdown.
+            </p>
+          )}
           <div className="detail-grid">
             <label htmlFor="pledge-line-select">
               Demand line (menu item + area)
@@ -287,13 +326,27 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
           >
             Submit pledge
           </button>
+          </div>
 
           {coordinator ? (
-            <>
+            <div ref={bidFormRef} className="demand-form-block">
               <h3 className="intent-group-title">Vendor bid (coordinator)</h3>
               <p className="demand-lede">
-                Temporary MVP entry until fulfiller accounts bid on their own.
+                Kitchen or vendor capacity for a demand line (MVP manual entry
+                until fulfiller accounts bid on their own).
               </p>
+              {bidLineKey ? (
+                <p className="demand-selection-banner" role="status">
+                  Selected:{" "}
+                  <strong>
+                    {demandLineLabel(
+                      findDemandWindow(snapshot.demand_windows, bidLineKey)
+                    )}
+                  </strong>{" "}
+                  — enter vendor name and portions, then{" "}
+                  <strong>Submit vendor bid</strong>.
+                </p>
+              ) : null}
               <div className="detail-grid">
                 <label htmlFor="bid-line-select">
                   Demand line (menu item + area)
@@ -353,7 +406,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
               >
                 Submit vendor bid
               </button>
-            </>
+            </div>
           ) : null}
         </>
       ) : null}
@@ -399,6 +452,21 @@ function DemandLineSelect({
         ))}
     </select>
   );
+}
+
+function findDemandWindow(
+  windows: DemandWindowRow[],
+  lineKey: string
+): DemandWindowRow | undefined {
+  return windows.find((row) => demandLineKey(row) === lineKey);
+}
+
+function demandLineLabel(row: DemandWindowRow | undefined): string {
+  if (!row) {
+    return "demand line";
+  }
+  const menu = row.menu_label ?? row.standard_offer_id ?? "Item";
+  return `${menu} @ ${row.locality_key}`;
 }
 
 function allocationHintLabel(hint: AllocationHint): string {

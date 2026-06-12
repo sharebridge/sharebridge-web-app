@@ -426,6 +426,26 @@ body {
   gap: 8px;
 }
 
+.demand-form-block {
+  margin-top: 20px;
+  padding-top: 4px;
+}
+
+.demand-selection-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ok, #15803d) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok, #15803d) 35%, transparent);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.demand-bucket-actions .btn[aria-pressed="true"] {
+  border-color: var(--ok, #15803d);
+  background: color-mix(in srgb, var(--ok, #15803d) 14%, var(--surface, #fff));
+}
+
 .demand-locality-select {
   width: 100%;
   max-width: 100%;
