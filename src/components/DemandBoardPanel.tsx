@@ -42,12 +42,8 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
       setSnapshot(data);
     } catch (err) {
       setSnapshot(null);
-      const message =
-        err instanceof Error ? err.message : "Could not load demand board.";
       setError(
-        message === "Failed to fetch"
-          ? "Could not reach the integration service. If other tabs work, try Refresh demand — otherwise redeploy integration-service after the latest update."
-          : message
+        err instanceof Error ? err.message : "Could not load demand board."
       );
     } finally {
       setLoading(false);
