@@ -6,6 +6,7 @@ import {
   patchOrderIntent
 } from "./api/orderIntents";
 import {
+  demandBoardFeedMeta,
   fetchDemandBoard,
   type SeekerDemandRow
 } from "./api/demandBoard";
@@ -22,6 +23,7 @@ import { DashboardHero } from "./components/DashboardHero";
 import { getAppConfig } from "./config";
 import { sessionHeaderLabel } from "./sessionRole";
 import type { OrderGroupMode } from "./groupOrderIntents";
+import type { OrderFeedMeta } from "./feedScope";
 import type { OrderInitiation } from "./types";
 import { OrderIntentList } from "./components/OrderIntentList";
 import { OrderIntentDetail } from "./components/OrderIntentDetail";
@@ -29,13 +31,23 @@ import { OrderIntentsMap } from "./components/OrderIntentsMap";
 import { DemandBoardPanel } from "./components/DemandBoardPanel";
 import { useMobileLayout } from "./hooks/useMobileLayout";
 import {
+  dashboardBoundariesFromApi,
   donorEmptyListMessage,
-  donorFeedLede,
   donorNoHandoverLocationNotice,
   feedScopeFromApi,
+  type DashboardBoundaries,
   type FeedScope
 } from "./feedScope";
+import {
+  coordinatorScopeToQuery,
+  DEFAULT_COORDINATOR_SCOPE,
+  demandBoardQueryFromScope,
+  type CoordinatorScopeFilters,
+  type OrderListQuery
+} from "./coordinatorScope";
 import { GroupModeToolbar } from "./components/GroupModeToolbar";
+import { DashboardBoundariesBanner } from "./components/DashboardBoundariesBanner";
+import { CoordinatorScopeToolbar } from "./components/CoordinatorScopeToolbar";
 import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
 import {
   locationRequiredMessage,
@@ -81,6 +93,17 @@ function AppShell() {
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [demandRefreshKey, setDemandRefreshKey] = useState(0);
+  const [dashboardBoundaries, setDashboardBoundaries] =
+    useState<DashboardBoundaries | null>(null);
+  const [coordinatorScopeDraft, setCoordinatorScopeDraft] =
+    useState<CoordinatorScopeFilters>(DEFAULT_COORDINATOR_SCOPE);
+  const [coordinatorScopeApplied, setCoordinatorScopeApplied] =
+    useState<CoordinatorScopeFilters>(DEFAULT_COORDINATOR_SCOPE);
+  const [coordinatorNearCoords, setCoordinatorNearCoords] = useState<{
+    near_lat: number;
+    near_lng: number;
+  } | null>(null);
+  const [scopeApplying, setScopeApplying] = useState(false);
   const isMobileLayout = useMobileLayout();
 
   const selected =
@@ -90,11 +113,15 @@ function AppShell() {
     coordinatorView && intents.length > 0
       ? true
       : apiDashboard === "limited" || (apiDashboard == null && !coordinatorView);
+  const coordinatorDemandQuery = coordinatorView
+    ? demandBoardQueryFromScope(
+        coordinatorScopeApplied,
+        coordinatorNearCoords
+      )
+    : {};
+
   const loadHistory = useCallback(
-    async (
-      active: AuthSession,
-      viewerCoords: { near_lat: number; near_lng: number } | null = null
-    ) => {
+    async (active: AuthSession, query: OrderListQuery = {}) => {
     if (isSessionExpired(active)) {
       clearSession();
       setSession(null);
@@ -106,12 +133,14 @@ function AppShell() {
     setError(null);
     setLocationNotice(null);
     setFeedScope(null);
-    setViewerLocationShared(viewerCoords != null);
+    setViewerLocationShared(
+      query.near_lat != null && query.near_lng != null
+    );
     try {
       const result = await fetchOrderInitiations(
         appConfig.apiBaseUrl,
         active,
-        viewerCoords
+        query
       );
       setIntents(result.intents);
       setApiDashboard(result.dashboard);
@@ -120,6 +149,13 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
+      if (dashboardMode !== "demand") {
+        setDashboardBoundaries(
+          dashboardBoundariesFromApi(result.feedMeta, {
+            coordinator: result.dashboard === "coordinator"
+          })
+        );
+      }
       setSelectedId((prev) =>
         prev &&
         result.intents.some((row) => row.order_intent_id === prev)
@@ -148,7 +184,7 @@ function AppShell() {
       setLoading(false);
     }
   },
-    []
+    [dashboardMode]
   );
 
   const loadByAreaWithFreshLocation = useCallback(
@@ -173,6 +209,46 @@ function AppShell() {
     [loadHistory]
   );
 
+  const handleDemandBoundariesChange = useCallback(
+    (meta: OrderFeedMeta, coordinator: boolean) => {
+      setDashboardBoundaries(
+        dashboardBoundariesFromApi(meta, { coordinator })
+      );
+    },
+    []
+  );
+
+  const handleApplyCoordinatorScope = useCallback(async () => {
+    if (!session) {
+      return;
+    }
+    setScopeApplying(true);
+    try {
+      let nearCoords: { near_lat: number; near_lng: number } | null = null;
+      let query = coordinatorScopeToQuery(coordinatorScopeDraft, null);
+      if (coordinatorScopeDraft.areaMode === "near") {
+        const location = await readViewerLocation();
+        if (location.status !== "granted") {
+          setLocationDialogMessage(
+            locationRequiredMessage(location.reason)
+          );
+          return;
+        }
+        nearCoords = {
+          near_lat: location.coords.lat,
+          near_lng: location.coords.lng
+        };
+        query = coordinatorScopeToQuery(coordinatorScopeDraft, nearCoords);
+      }
+      setCoordinatorNearCoords(nearCoords);
+      setCoordinatorScopeApplied({ ...coordinatorScopeDraft });
+      await loadHistory(session, query);
+      setDemandRefreshKey((key) => key + 1);
+    } finally {
+      setScopeApplying(false);
+    }
+  }, [session, coordinatorScopeDraft, loadHistory]);
+
   const handleGroupModeClick = useCallback(
     async (nextMode: OrderGroupMode) => {
       if (!session) {
@@ -180,7 +256,7 @@ function AppShell() {
       }
       if (nextMode !== "locality") {
         setGroupMode(nextMode);
-        await loadHistory(session, null);
+        await loadHistory(session, {});
         return;
       }
 
@@ -202,18 +278,37 @@ function AppShell() {
       setDemandRefreshKey((key) => key + 1);
       return;
     }
+    if (coordinatorView) {
+      await loadHistory(session, coordinatorScopeToQuery(
+        coordinatorScopeApplied,
+        coordinatorNearCoords
+      ));
+      if (dashboardMode === "demand") {
+        setDemandRefreshKey((key) => key + 1);
+      }
+      return;
+    }
     if (groupMode === "locality") {
       setAreaLoading(true);
       await loadByAreaWithFreshLocation(session);
       setAreaLoading(false);
     } else {
-      await loadHistory(session, null);
+      await loadHistory(session, {});
     }
-  }, [session, dashboardMode, groupMode, loadHistory, loadByAreaWithFreshLocation]);
+  }, [
+    session,
+    dashboardMode,
+    groupMode,
+    coordinatorView,
+    coordinatorScopeApplied,
+    coordinatorNearCoords,
+    loadHistory,
+    loadByAreaWithFreshLocation
+  ]);
 
   useEffect(() => {
     if (session) {
-      void loadHistory(session, null);
+      void loadHistory(session, {});
     }
   }, [session, loadHistory]);
 
@@ -221,10 +316,14 @@ function AppShell() {
     if (!session || dashboardMode !== "map") {
       return;
     }
-    void fetchDemandBoard(appConfig.apiBaseUrl, session)
+    void fetchDemandBoard(
+      appConfig.apiBaseUrl,
+      session,
+      coordinatorDemandQuery
+    )
       .then((board) => setSeekerDemands(board.seeker_demands))
       .catch(() => setSeekerDemands([]));
-  }, [session, dashboardMode]);
+  }, [session, dashboardMode, coordinatorDemandQuery, demandRefreshKey]);
 
   const handleMarkPaymentDone = useCallback(async (intentId?: string) => {
     const targetId = intentId ?? selectedId;
@@ -328,9 +427,6 @@ function AppShell() {
           kind={coordinatorView ? "coordinator" : "initiator"}
           session={session}
           initiationCount={intents.length}
-          feedLede={
-            coordinatorView ? undefined : donorFeedLede(feedScope)
-          }
         />
 
         {error ? (
@@ -385,6 +481,15 @@ function AppShell() {
           </div>
         ) : null}
 
+        {coordinatorView ? (
+          <CoordinatorScopeToolbar
+            draft={coordinatorScopeDraft}
+            onDraftChange={setCoordinatorScopeDraft}
+            onApply={() => void handleApplyCoordinatorScope()}
+            applying={scopeApplying}
+          />
+        ) : null}
+
         {showGroupToolbar && dashboardMode === "list" ? (
           <GroupModeToolbar
             coordinatorView={coordinatorView}
@@ -393,6 +498,17 @@ function AppShell() {
             onSelect={(mode) => void handleGroupModeClick(mode)}
           />
         ) : null}
+
+        <DashboardBoundariesBanner
+          boundaries={dashboardBoundaries}
+          viewLabel={
+            dashboardMode === "list"
+              ? "List"
+              : dashboardMode === "map"
+                ? "Map"
+                : "Demand"
+          }
+        />
 
         <div className="view-mode-toolbar" role="tablist" aria-label="Dashboard view">
           <button
@@ -433,7 +549,12 @@ function AppShell() {
         </div>
 
         {dashboardMode === "demand" ? (
-          <DemandBoardPanel session={session} refreshKey={demandRefreshKey} />
+          <DemandBoardPanel
+            session={session}
+            refreshKey={demandRefreshKey}
+            scopeQuery={coordinatorDemandQuery}
+            onBoundariesChange={handleDemandBoundariesChange}
+          />
         ) : dashboardMode === "map" ? (
           <OrderIntentsMap
             intents={intents}

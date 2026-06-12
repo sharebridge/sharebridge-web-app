@@ -987,3 +987,117 @@ a {
   display: flex;
   justify-content: flex-end;
 }
+
+.dashboard-boundaries {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.dashboard-boundaries-title {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dashboard-boundaries-grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px 16px;
+}
+
+.dashboard-boundaries-grid dt {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.dashboard-boundaries-grid dd {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.coordinator-scope-toolbar {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+}
+
+.coordinator-scope-lead {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.coordinator-scope-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.coordinator-scope-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.coordinator-scope-field select,
+.coordinator-scope-field input {
+  min-width: 160px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.coordinator-scope-locality input {
+  min-width: 220px;
+}
+
+.coordinator-scope-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.coordinator-scope-apply {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coordinator-scope-apply:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.coordinator-scope-reset {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}

@@ -2,17 +2,27 @@
 export type FeedScope = {
   windowHours: number;
   radiusM: number;
-  locationMode: "near" | "locality" | "own_only";
+  locationMode: "near" | "locality" | "own_only" | "all";
+};
+
+/** Human-readable dashboard capture boundaries shown in the header banner. */
+export type DashboardBoundaries = {
+  timeLabel: string;
+  areaLabel: string;
+  sortLabel: string;
+  maxRowsLabel: string;
 };
 
 export type OrderFeedMeta = {
   since?: string;
   neighbourhood?: Record<string, unknown>;
   feed?: {
-    since?: string;
-    window_hours?: number;
-    radius_m?: number;
+    since?: string | null;
+    window_hours?: number | null;
+    radius_m?: number | null;
     location_mode?: string;
+    locality_key?: string | null;
+    max_rows?: number;
   };
 };
 
@@ -70,7 +80,11 @@ export function feedScopeFromApi(meta: OrderFeedMeta): FeedScope | null {
     (typeof meta.neighbourhood?.mode === "string" && meta.neighbourhood.mode) ||
     "own_only";
   const locationMode =
-    modeRaw === "near" || modeRaw === "locality" ? modeRaw : "own_only";
+    modeRaw === "near" || modeRaw === "locality"
+      ? modeRaw
+      : modeRaw === "all"
+        ? "all"
+        : "own_only";
 
   return {
     windowHours: hours,
@@ -79,18 +93,177 @@ export function feedScopeFromApi(meta: OrderFeedMeta): FeedScope | null {
   };
 }
 
+function parseFeedWindowHours(meta: OrderFeedMeta): number | null {
+  const feed = meta.feed;
+  if (typeof feed?.window_hours === "number" && feed.window_hours > 0) {
+    return Math.round(feed.window_hours);
+  }
+  return parseSinceHours(
+    typeof feed?.since === "string" && feed.since
+      ? feed.since
+      : meta.since
+  );
+}
+
+function formatSinceLabel(since: string | undefined): string | null {
+  const hours = parseSinceHours(since);
+  if (hours == null) {
+    return null;
+  }
+  return hoursPhrase(hours);
+}
+
+function areaLabelFromNeighbourhood(
+  neighbourhood: Record<string, unknown> | undefined,
+  feed: OrderFeedMeta["feed"]
+): string | null {
+  const mode =
+    (typeof feed?.location_mode === "string" && feed.location_mode) ||
+    (typeof neighbourhood?.mode === "string" && neighbourhood.mode) ||
+    "";
+  if (mode === "all") {
+    return "All areas";
+  }
+  if (mode === "locality_key" || mode === "locality") {
+    const key =
+      (typeof feed?.locality_key === "string" && feed.locality_key) ||
+      (typeof neighbourhood?.locality_key === "string" &&
+        neighbourhood.locality_key) ||
+      "";
+    return key
+      ? `Postal area ${key} (includes sub-areas)`
+      : "Postal area filter";
+  }
+  if (mode === "near") {
+    const radiusM =
+      typeof feed?.radius_m === "number" && feed.radius_m > 0
+        ? Math.round(feed.radius_m)
+        : typeof neighbourhood?.radius_m === "number"
+          ? Math.round(neighbourhood.radius_m as number)
+          : 0;
+    const viewerKey =
+      typeof neighbourhood?.viewer_locality_key === "string"
+        ? neighbourhood.viewer_locality_key
+        : "";
+    const radius = radiusM > 0 ? radiusPhraseMetres(radiusM) : "near your position";
+    return viewerKey
+      ? `${radius} of your location (≈ ${viewerKey})`
+      : `${radius} of your location`;
+  }
+  return null;
+}
+
+/** Boundaries banner for coordinator and initiator dashboards. */
+export function dashboardBoundariesFromApi(
+  meta: OrderFeedMeta,
+  { coordinator }: { coordinator: boolean }
+): DashboardBoundaries | null {
+  const feed = meta.feed;
+  const neighbourhood = meta.neighbourhood;
+  const hours = parseFeedWindowHours(meta);
+  const modeRaw =
+    (typeof feed?.location_mode === "string" && feed.location_mode) || "";
+  const scope =
+    coordinator && !feed
+      ? null
+      : feedScopeFromApi(meta) ??
+        (coordinator
+          ? {
+              windowHours: hours ?? 0,
+              radiusM:
+                typeof feed?.radius_m === "number" ? Math.round(feed.radius_m) : 0,
+              locationMode:
+                modeRaw === "near" || modeRaw === "locality" || modeRaw === "all"
+                  ? modeRaw
+                  : "all"
+            }
+          : null);
+
+  if (!coordinator && !scope) {
+    if (feed?.location_mode === "all") {
+      const maxRows =
+        typeof feed.max_rows === "number" && feed.max_rows > 0
+          ? Math.round(feed.max_rows)
+          : 100;
+      return {
+        timeLabel: "All time",
+        areaLabel: "All areas",
+        sortLabel: "Sorted by most recently updated",
+        maxRowsLabel: `Up to ${maxRows} rows`
+      };
+    }
+    return null;
+  }
+
+  let timeLabel: string;
+  if (coordinator) {
+    const fromSince = formatSinceLabel(
+      typeof feed?.since === "string" ? feed.since : meta.since
+    );
+    timeLabel = fromSince ?? "All time";
+  } else if (scope) {
+    timeLabel = hoursPhrase(scope.windowHours);
+  } else {
+    return null;
+  }
+
+  let areaLabel =
+    areaLabelFromNeighbourhood(neighbourhood, feed) ??
+    (coordinator ? "All areas" : null);
+  if (!areaLabel && scope) {
+    if (scope.locationMode === "near" && scope.radiusM > 0) {
+      areaLabel = `${radiusPhraseMetres(scope.radiusM)} of your location`;
+    } else if (scope.locationMode === "locality") {
+      areaLabel = "Same postal area grid";
+    } else {
+      areaLabel =
+        "Your initiations only (tap By area + allow location for neighbourhood)";
+    }
+  }
+  if (!areaLabel) {
+    return null;
+  }
+
+  const maxRows =
+    typeof feed?.max_rows === "number" && feed.max_rows > 0
+      ? Math.round(feed.max_rows)
+      : 100;
+  const sortLabel =
+    scope?.locationMode === "near" ||
+    modeRaw === "near" ||
+    (typeof neighbourhood?.mode === "string" && neighbourhood.mode === "near")
+      ? "Sorted nearest first when handover GPS is present"
+      : coordinator
+        ? "Sorted by most recently updated"
+        : "Sorted by distance when location is shared";
+
+  return {
+    timeLabel,
+    areaLabel,
+    sortLabel,
+    maxRowsLabel: `Up to ${maxRows} rows`
+  };
+}
+
 export function donorFeedLede(scope: FeedScope | null): string | undefined {
-  if (!scope) {
+  const boundaries = scope
+    ? dashboardBoundariesFromApi(
+        {
+          since: `${scope.windowHours}h`,
+          feed: {
+            since: `${scope.windowHours}h`,
+            window_hours: scope.windowHours,
+            radius_m: scope.radiusM,
+            location_mode: scope.locationMode
+          }
+        },
+        { coordinator: false }
+      )
+    : null;
+  if (!boundaries) {
     return undefined;
   }
-  const time = hoursPhrase(scope.windowHours);
-  if (scope.locationMode === "near" && scope.radiusM > 0) {
-    return `Neighbourhood feed in ${time}, ${radiusPhraseMetres(scope.radiusM)}.`;
-  }
-  if (scope.locationMode === "locality") {
-    return `Neighbourhood feed in ${time} (same area grid).`;
-  }
-  return `Your initiations in ${time}.`;
+  return `Showing data captured in ${boundaries.timeLabel} · ${boundaries.areaLabel}.`;
 }
 
 export function donorFeedWindowPhrase(scope: FeedScope | null): string {

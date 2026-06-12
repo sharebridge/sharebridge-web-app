@@ -1,5 +1,7 @@
 import { ApiError } from "./orderIntents";
 import type { AuthSession } from "../authSession";
+import type { OrderListQuery } from "../coordinatorScope";
+import type { OrderFeedMeta } from "../feedScope";
 
 export type AllocationHint =
   | "needs_pledges"
@@ -77,6 +79,9 @@ export type VendorBidRow = {
 export type DemandBoardSnapshot = {
   status: string;
   role?: string | null;
+  since?: string;
+  neighbourhood?: Record<string, unknown>;
+  feed?: OrderFeedMeta["feed"];
   message: string;
   standard_offers: StandardOfferRow[];
   demand_windows: DemandWindowRow[];
@@ -185,11 +190,31 @@ export async function createVendorBid(
   return data.vendor_bid;
 }
 
+export function demandBoardFeedMeta(snapshot: DemandBoardSnapshot): OrderFeedMeta {
+  return {
+    since: snapshot.since,
+    neighbourhood: snapshot.neighbourhood,
+    feed: snapshot.feed
+  };
+}
+
 export async function fetchDemandBoard(
   apiBaseUrl: string,
-  session: AuthSession
+  session: AuthSession,
+  query: OrderListQuery = {}
 ): Promise<DemandBoardSnapshot> {
-  const response = await fetch(`${apiBaseUrl}/v1/demand/board`, {
+  const url = new URL(`${apiBaseUrl}/v1/demand/board`);
+  if (query.since) {
+    url.searchParams.set("since", query.since);
+  }
+  if (query.near_lat != null && query.near_lng != null) {
+    url.searchParams.set("near_lat", String(query.near_lat));
+    url.searchParams.set("near_lng", String(query.near_lng));
+  }
+  if (query.locality_key) {
+    url.searchParams.set("locality_key", query.locality_key);
+  }
+  const response = await fetch(url.toString(), {
     headers: {
       authorization: `Bearer ${session.token}`,
       "content-type": "application/json"

@@ -5,6 +5,7 @@ import { formatWhen } from "../format";
 import {
   createPledge,
   createVendorBid,
+  demandBoardFeedMeta,
   demandLineKey,
   fetchDemandBoard,
   parseDemandLineKey,
@@ -14,15 +15,27 @@ import {
   type PledgeRow,
   type SeekerDemandRow
 } from "../api/demandBoard";
+import type { OrderListQuery } from "../coordinatorScope";
+import type { OrderFeedMeta } from "../feedScope";
 import { isCoordinatorSession } from "../sessionRole";
 
 type Props = {
   session: AuthSession;
   /** Bumped by header Refresh while Demand tab is active. */
   refreshKey?: number;
+  scopeQuery?: OrderListQuery;
+  onBoundariesChange?: (
+    meta: OrderFeedMeta,
+    coordinator: boolean
+  ) => void;
 };
 
-export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
+export function DemandBoardPanel({
+  session,
+  refreshKey = 0,
+  scopeQuery = {},
+  onBoundariesChange
+}: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +67,16 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchDemandBoard(getAppConfig().apiBaseUrl, session);
+      const data = await fetchDemandBoard(
+        getAppConfig().apiBaseUrl,
+        session,
+        scopeQuery
+      );
       setSnapshot(data);
+      onBoundariesChange?.(
+        demandBoardFeedMeta(data),
+        isCoordinatorSession(session)
+      );
     } catch (err) {
       setSnapshot(null);
       setError(
@@ -64,7 +85,7 @@ export function DemandBoardPanel({ session, refreshKey = 0 }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, scopeQuery, refreshKey]);
 
   useEffect(() => {
     void load();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dashboardBoundariesFromApi,
   donorEmptyListMessage,
   donorFeedLede,
   donorLocationUnavailableNotice,
@@ -24,7 +25,7 @@ describe("feedScopeFromApi", () => {
       locationMode: "near"
     });
     expect(donorFeedLede(scope)).toBe(
-      "Neighbourhood feed in the last 2 hours, within 5 km."
+      "Showing data captured in the last 2 hours · within 5 km of your location."
     );
   });
 
@@ -37,7 +38,9 @@ describe("feedScopeFromApi", () => {
         location_mode: "own_only"
       }
     });
-    expect(donorFeedLede(scope)).toBe("Your initiations in the last 2 hours.");
+    expect(donorFeedLede(scope)).toBe(
+      "Showing data captured in the last 2 hours · Your initiations only (tap By area + allow location for neighbourhood)."
+    );
   });
 
   it("location notice explains permission not empty neighbourhood", () => {
@@ -51,6 +54,43 @@ describe("feedScopeFromApi", () => {
     expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
       "only your initiations"
     );
+  });
+
+  it("coordinator boundaries describe all-time and scoped filters", () => {
+    const all = dashboardBoundariesFromApi(
+      {
+        feed: {
+          since: null,
+          window_hours: null,
+          location_mode: "all",
+          max_rows: 100
+        }
+      },
+      { coordinator: true }
+    );
+    expect(all?.timeLabel).toBe("All time");
+    expect(all?.areaLabel).toBe("All areas");
+
+    const scoped = dashboardBoundariesFromApi(
+      {
+        since: "24h",
+        feed: {
+          since: "24h",
+          window_hours: 24,
+          location_mode: "locality",
+          locality_key: "IN:TN:600001",
+          max_rows: 50
+        },
+        neighbourhood: {
+          mode: "locality_key",
+          locality_key: "IN:TN:600001"
+        }
+      },
+      { coordinator: true }
+    );
+    expect(scoped?.timeLabel).toBe("the last 24 hours");
+    expect(scoped?.areaLabel).toContain("IN:TN:600001");
+    expect(scoped?.maxRowsLabel).toBe("Up to 50 rows");
   });
 
   it("empty list message distinguishes neighbourhood vs own-only", () => {

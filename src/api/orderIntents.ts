@@ -1,4 +1,5 @@
 import type { AuthSession } from "../authSession";
+import type { OrderListQuery } from "../coordinatorScope";
 import type { OrderFeedMeta } from "../feedScope";
 import type { OrderInitiation } from "../types";
 import { ORDER_INTENTS_PATH } from "./paths";
@@ -30,20 +31,30 @@ export type OrderIntentsLoadResult = {
   feedMeta: OrderFeedMeta;
 };
 
+function applyOrderListQuery(url: URL, query: OrderListQuery = {}) {
+  if (query.since) {
+    url.searchParams.set("since", query.since);
+  }
+  if (query.near_lat != null && query.near_lng != null) {
+    url.searchParams.set("near_lat", String(query.near_lat));
+    url.searchParams.set("near_lng", String(query.near_lng));
+  }
+  if (query.locality_key) {
+    url.searchParams.set("locality_key", query.locality_key);
+  }
+}
+
 /**
  * List order intents. Window and radius are enforced server-side for initiators;
- * pass viewer coordinates only when available (limited dashboard).
+ * coordinators may pass `since`, `locality_key`, or viewer coordinates.
  */
 export async function fetchOrderInitiations(
   apiBaseUrl: string,
   session: AuthSession,
-  viewerLocation: ViewerLocation | null = null
+  query: OrderListQuery = {}
 ): Promise<OrderIntentsLoadResult> {
   const url = new URL(`${apiBaseUrl}${ORDER_INTENTS_PATH}`);
-  if (viewerLocation) {
-    url.searchParams.set("near_lat", String(viewerLocation.near_lat));
-    url.searchParams.set("near_lng", String(viewerLocation.near_lng));
-  }
+  applyOrderListQuery(url, query);
 
   const response = await fetch(url, {
     headers: {
