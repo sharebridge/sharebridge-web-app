@@ -104,6 +104,35 @@ export function OrderIntentList({
   );
 }
 
+function IntentMetrics({ intent }: { intent: OrderInitiation }) {
+  return (
+    <dl className="intent-metrics-grid">
+      <div>
+        <dt>Order intent taken</dt>
+        <dd>
+          {formatWhen(intent.created_at)}
+          <span className="detail-sub">
+            {" "}
+            ({formatElapsedSince(intent.created_at)})
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt>Delivered at</dt>
+        <dd>
+          {intent.delivered_at?.trim()
+            ? formatWhen(intent.delivered_at)
+            : "—"}
+        </dd>
+      </div>
+      <div>
+        <dt>Distance (m)</dt>
+        <dd>{formatDistanceM(intent.distance_m)}</dd>
+      </div>
+    </dl>
+  );
+}
+
 function IntentRow({
   intent,
   showDonorInList,
@@ -128,11 +157,6 @@ function IntentRow({
   ]
     .filter(Boolean)
     .join(" · ");
-  const metrics = [
-    `Intent taken ${formatWhen(intent.created_at)} (${formatElapsedSince(intent.created_at)})`,
-    `Delivered ${intent.delivered_at ? formatWhen(intent.delivered_at) : "—"}`,
-    `Distance ${formatDistanceM(intent.distance_m)}`
-  ].join(" · ");
   const hasThumb = Boolean(
     intent.reference_photo_thumbnail_url?.trim() &&
       (intent.reference_photo_view_url?.trim() ||
@@ -160,7 +184,7 @@ function IntentRow({
         <span className="intent-row-text">
           <span className="intent-id">{intent.order_intent_id}</span>
           <span className="intent-meta">{meta}</span>
-          <span className="intent-metrics">{metrics}</span>
+          <IntentMetrics intent={intent} />
         </span>
       </button>
     </>
