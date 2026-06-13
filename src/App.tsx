@@ -24,7 +24,11 @@ import { sessionHeaderLabel } from "./sessionRole";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderFeedMeta } from "./feedScope";
 import type { OrderInitiation } from "./types";
-import { OrderIntentList } from "./components/OrderIntentList";
+import { InitiationsList } from "./components/InitiationsList";
+import {
+  initiationSelectionId,
+  mergeInitiationFeed
+} from "./initiationFeed";
 import { OrderIntentDetail } from "./components/OrderIntentDetail";
 import { OrderIntentsMap } from "./components/OrderIntentsMap";
 import { DemandBoardPanel } from "./components/DemandBoardPanel";
@@ -75,7 +79,7 @@ function AppShell() {
     loadSession()
   );
   const [intents, setIntents] = useState<OrderInitiation[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [groupMode, setGroupMode] = useState<OrderGroupMode>("day");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,8 +116,21 @@ function AppShell() {
   const [scopeApplying, setScopeApplying] = useState(false);
   const isMobileLayout = useMobileLayout();
 
+  const initiationItems = useMemo(
+    () => mergeInitiationFeed(intents, seekerDemands),
+    [intents, seekerDemands]
+  );
+  const selectedIntentId = selectedKey?.startsWith("vendor_order:")
+    ? selectedKey.slice("vendor_order:".length)
+    : null;
   const selected =
-    intents.find((row) => row.order_intent_id === selectedId) ?? null;
+    intents.find((row) => row.order_intent_id === selectedIntentId) ?? null;
+  const selectedMealNeed = selectedKey?.startsWith("meal_need:")
+    ? seekerDemands.find(
+        (row) =>
+          row.seeker_demand_id === selectedKey.slice("meal_need:".length)
+      ) ?? null
+    : null;
   const coordinatorView = apiDashboard === "coordinator";
   const showGroupToolbar =
     coordinatorView && intents.length > 0
@@ -164,17 +181,11 @@ function AppShell() {
           coordinator: result.dashboard === "coordinator"
         })
       );
-      setSelectedId((prev) =>
-        prev &&
-        result.intents.some((row) => row.order_intent_id === prev)
-          ? prev
-          : result.intents[0]?.order_intent_id ?? null
-      );
     } catch (err) {
       setIntents([]);
       setApiDashboard(null);
       setFeedScope(null);
-      setSelectedId(null);
+      setSelectedKey(null);
       if (err instanceof ApiError && err.status === 401) {
         clearSession();
         setSession(null);
@@ -327,7 +338,7 @@ function AppShell() {
   }, [session, loadHistory]);
 
   useEffect(() => {
-    if (!session || dashboardMode !== "map") {
+    if (!session) {
       return;
     }
     void fetchDemandBoard(
@@ -337,10 +348,24 @@ function AppShell() {
     )
       .then((board) => setSeekerDemands(board.seeker_demands))
       .catch(() => setSeekerDemands([]));
-  }, [session, dashboardMode, coordinatorDemandQuery, demandRefreshKey]);
+  }, [session, coordinatorDemandQuery, demandRefreshKey]);
+
+  useEffect(() => {
+    setSelectedKey((prev) => {
+      if (
+        prev &&
+        initiationItems.some((row) => initiationSelectionId(row) === prev)
+      ) {
+        return prev;
+      }
+      return initiationItems[0]
+        ? initiationSelectionId(initiationItems[0])
+        : null;
+    });
+  }, [initiationItems]);
 
   const handleMarkPaymentDone = useCallback(async (intentId?: string) => {
-    const targetId = intentId ?? selectedId;
+    const targetId = intentId ?? selectedIntentId;
     if (!session || !targetId) {
       return;
     }
@@ -364,10 +389,10 @@ function AppShell() {
     } finally {
       setOpsSaving(false);
     }
-  }, [session, selectedId]);
+  }, [session, selectedIntentId]);
 
   const handleMarkDelivered = useCallback(async (intentId?: string) => {
-    const targetId = intentId ?? selectedId;
+    const targetId = intentId ?? selectedIntentId;
     if (!session || !targetId || !coordinatorView) {
       return;
     }
@@ -397,7 +422,7 @@ function AppShell() {
     } finally {
       setOpsSaving(false);
     }
-  }, [session, selectedId, coordinatorView]);
+  }, [session, selectedIntentId, coordinatorView]);
 
   const requestMarkPaymentDone = useCallback((intentId: string) => {
     setOpsConfirm({ kind: "payment", intentId });
@@ -433,12 +458,12 @@ function AppShell() {
     }
     setSession(null);
     setIntents([]);
-    setSelectedId(null);
+    setSelectedKey(null);
     setError(null);
   }
 
   function handleHome() {
-    setSelectedId(null);
+    setSelectedKey(null);
     setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -474,7 +499,7 @@ function AppShell() {
           }
           message={
             opsConfirm.kind === "payment"
-              ? "Confirm you placed and paid for this meal in the vendor app. Coordinators will see payment as done."
+              ? "Confirm you placed and paid for this meal in the vendor app."
               : "Confirm handover to the beneficiary is complete. This sets delivery status and stamps Delivered at."
           }
           confirmLabel={
@@ -623,26 +648,31 @@ function AppShell() {
             >
               <section className="panel list-panel" aria-labelledby="list-heading">
                 <div className="panel-head">
-                  <h2 id="list-heading">Order initiations</h2>
+                  <h2 id="list-heading">Initiations</h2>
                   {loading ? <span className="badge">Syncing…</span> : null}
                 </div>
-                {intents.length === 0 && !loading ? (
+                <p className="panel-lede">
+                  Vendor orders you pay yourself, and meal needs that flow through
+                  pledges below.
+                </p>
+                {initiationItems.length === 0 && !loading ? (
                   <p className="empty">
                     {apiDashboard === "limited"
                       ? donorEmptyListMessage(feedScope, viewerLocationShared)
-                      : "No order initiations yet."}
+                      : "No initiations yet."}
                   </p>
                 ) : (
-                  <OrderIntentList
+                  <InitiationsList
+                    items={initiationItems}
                     intents={intents}
                     groupMode={groupMode}
-                    selectedId={selectedId}
+                    selectedKey={selectedKey}
                     showDonorInList={coordinatorView}
                     coordinatorView={coordinatorView}
                     showInlineDetail={isMobileLayout}
                     viewerUserId={session.userId}
                     opsSaving={opsSaving}
-                    onSelect={setSelectedId}
+                    onSelect={setSelectedKey}
                     onMarkPaymentDone={requestMarkPaymentDone}
                     onMarkDelivered={requestMarkDelivered}
                   />
@@ -675,6 +705,37 @@ function AppShell() {
                       requestMarkDelivered(selected.order_intent_id)
                     }
                   />
+                ) : selectedMealNeed ? (
+                  <div className="intent-inline-detail">
+                    <p>
+                      <span className="initiation-kind-chip">Meal need</span>
+                    </p>
+                    <p>
+                      <strong>
+                        {selectedMealNeed.menu_label ??
+                          selectedMealNeed.need_description}
+                      </strong>
+                      {selectedMealNeed.price_inr != null
+                        ? ` · ₹${selectedMealNeed.price_inr}`
+                        : ""}
+                    </p>
+                    <p className="intent-metrics">
+                      {selectedMealNeed.meal_units} meal unit
+                      {selectedMealNeed.meal_units === 1 ? "" : "s"}
+                      {selectedMealNeed.locality_key
+                        ? ` · ${selectedMealNeed.locality_key}`
+                        : ""}
+                    </p>
+                    <p>
+                      Payment is via the pledge and vendor-bid supply section
+                      below — not direct checkout by the initiator.
+                    </p>
+                    {selectedMealNeed.verbal_notes?.trim() ? (
+                      <p className="intent-meta">
+                        {selectedMealNeed.verbal_notes}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : (
                   <p className="empty">
                     Select an initiation to review handover context.
@@ -694,8 +755,10 @@ function AppShell() {
           <OrderIntentsMap
             intents={intents}
             seekerDemands={seekerDemands}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+            selectedId={selectedIntentId}
+            onSelect={(orderIntentId) =>
+              setSelectedKey(`vendor_order:${orderIntentId}`)
+            }
             coordinatorView={coordinatorView}
             viewerUserId={session.userId}
           />

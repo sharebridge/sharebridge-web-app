@@ -10,8 +10,7 @@ import {
   fetchDemandBoard,
   parseDemandLineKey,
   type DemandBoardSnapshot,
-  type PledgeRow,
-  type SeekerDemandRow
+  type PledgeRow
 } from "../api/demandBoard";
 import {
   DEFAULT_LINE_DRAFT,
@@ -197,18 +196,20 @@ export function DemandBoardPanel({
       aria-labelledby="demand-heading"
     >
       <div className="panel-head">
-        <h2 id="demand-heading">Meal demand &amp; supply</h2>
-        <div className="panel-head-actions">
-          {loading ? <span className="badge">Loading…</span> : null}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={loading}
-            onClick={() => void load()}
-          >
-            Refresh demand
-          </button>
-        </div>
+        <h2 id="demand-heading">Supply — pledge &amp; bid</h2>
+        {loading && !embedded ? <span className="badge">Loading…</span> : null}
+        {!embedded ? (
+          <div className="panel-head-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={loading}
+              onClick={() => void load()}
+            >
+              Refresh demand
+            </button>
+          </div>
+        ) : null}
       </div>
       {error ? (
         <div className="banner banner-error" role="alert">
@@ -217,17 +218,13 @@ export function DemandBoardPanel({
       ) : null}
       {snapshot ? (
         <>
-          <p className="demand-lede">{snapshot.message}</p>
+          {!embedded && snapshot.message ? (
+            <p className="demand-lede">{snapshot.message}</p>
+          ) : null}
 
           {pledgeableWindows.length > 0 ? (
             <>
-              <h3 className="intent-group-title">
-                Demand lines — pledge &amp; bid on each row
-              </h3>
-              <p className="demand-lede">
-                Enter units or vendor capacity on the line, or select multiple
-                rows and use bulk actions below.
-              </p>
+              <h3 className="intent-group-title">Demand lines</h3>
 
               {selectedKeys.length > 0 ? (
                 <div className="demand-bulk-bar" role="region" aria-label="Bulk pledge and bid">
@@ -326,21 +323,10 @@ export function DemandBoardPanel({
             </>
           ) : (
             <p className="empty">
-              No aggregated demand lines in this scope. Record meal needs on
-              mobile or widen the area filter.
+              No aggregated demand lines in this scope. Widen the area filter or
+              record a meal need from mobile.
             </p>
           )}
-
-          {snapshot.seeker_demands.length > 0 ? (
-            <>
-              <h3 className="intent-group-title">Recent meal needs</h3>
-              <ul className="intent-list">
-                {snapshot.seeker_demands.map((row) => (
-                  <SeekerDemandCard key={row.seeker_demand_id} row={row} />
-                ))}
-              </ul>
-            </>
-          ) : null}
 
           {(snapshot.orphan_pledges?.length ?? 0) > 0 ? (
             <>
@@ -412,23 +398,3 @@ function PledgeListItem({
   );
 }
 
-function SeekerDemandCard({ row }: { row: SeekerDemandRow }) {
-  return (
-    <li className="intent-row-wrap">
-      <div className="intent-inline-detail">
-        <p>
-          <strong>{row.menu_label ?? row.need_description}</strong>
-          {row.price_inr != null ? ` · ₹${row.price_inr}` : ""}
-        </p>
-        <p className="intent-metrics">
-          {row.meal_units} meal unit{row.meal_units === 1 ? "" : "s"}
-          {row.locality_key ? ` · ${row.locality_key}` : ""} ·{" "}
-          {formatWhen(row.created_at)}
-        </p>
-        {row.verbal_notes?.trim() ? (
-          <p className="intent-meta">{row.verbal_notes}</p>
-        ) : null}
-      </div>
-    </li>
-  );
-}

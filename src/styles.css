@@ -1161,6 +1161,28 @@ a {
   box-shadow: var(--shadow);
 }
 
+.panel-lede {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.initiation-kind-chip {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.initiation-meal-needs {
+  margin-top: 12px;
+}
+
 .demand-bucket-head {
   display: flex;
   gap: 10px;
