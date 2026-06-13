@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GoogleOAuthProvider, googleLogout } from "@react-oauth/google";
 import {
   ApiError,
@@ -42,6 +42,7 @@ import {
   DEFAULT_COORDINATOR_SCOPE,
   demandBoardQueryFromScope,
   EMPTY_ORDER_LIST_QUERY,
+  normalizeLocalityKey,
   type CoordinatorScopeFilters,
   type OrderListQuery
 } from "./coordinatorScope";
@@ -88,9 +89,9 @@ function AppShell() {
   const [locationDialogMessage, setLocationDialogMessage] = useState<
     string | null
   >(null);
-  const [dashboardMode, setDashboardMode] = useState<
-    "list" | "map" | "demand"
-  >("list");
+  const [dashboardMode, setDashboardMode] = useState<"operations" | "map">(
+    "operations"
+  );
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [opsConfirm, setOpsConfirm] = useState<
@@ -110,8 +111,6 @@ function AppShell() {
   } | null>(null);
   const [scopeApplying, setScopeApplying] = useState(false);
   const isMobileLayout = useMobileLayout();
-  const dashboardModeRef = useRef(dashboardMode);
-  dashboardModeRef.current = dashboardMode;
 
   const selected =
     intents.find((row) => row.order_intent_id === selectedId) ?? null;
@@ -160,13 +159,11 @@ function AppShell() {
           ? feedScopeFromApi(result.feedMeta)
           : null;
       setFeedScope(scope);
-      if (dashboardModeRef.current !== "demand") {
-        setDashboardBoundaries(
-          dashboardBoundariesFromApi(result.feedMeta, {
-            coordinator: result.dashboard === "coordinator"
-          })
-        );
-      }
+      setDashboardBoundaries(
+        dashboardBoundariesFromApi(result.feedMeta, {
+          coordinator: result.dashboard === "coordinator"
+        })
+      );
       setSelectedId((prev) =>
         prev &&
         result.intents.some((row) => row.order_intent_id === prev)
@@ -235,6 +232,15 @@ function AppShell() {
     }
     setScopeApplying(true);
     try {
+      if (coordinatorScopeDraft.areaMode === "locality") {
+        const key = normalizeLocalityKey(coordinatorScopeDraft.localityKey);
+        if (!key) {
+          setLocationDialogMessage(
+            "Enter a postal area key (e.g. IN:TN:600001) before applying scope."
+          );
+          return;
+        }
+      }
       let nearCoords: { near_lat: number; near_lng: number } | null = null;
       let query = coordinatorScopeToQuery(coordinatorScopeDraft, null);
       if (coordinatorScopeDraft.areaMode === "near") {
@@ -285,8 +291,8 @@ function AppShell() {
     if (!session) {
       return;
     }
-    if (dashboardMode === "demand") {
-      setDemandRefreshKey((key) => key + 1);
+    setDemandRefreshKey((key) => key + 1);
+    if (dashboardMode === "map") {
       return;
     }
     if (coordinatorView) {
@@ -561,7 +567,7 @@ function AppShell() {
           />
         ) : null}
 
-        {showGroupToolbar && dashboardMode === "list" ? (
+        {showGroupToolbar && dashboardMode === "operations" ? (
           <GroupModeToolbar
             coordinatorView={coordinatorView}
             groupMode={groupMode}
@@ -573,11 +579,9 @@ function AppShell() {
         <DashboardBoundariesBanner
           boundaries={dashboardBoundaries}
           viewLabel={
-            dashboardMode === "list"
-              ? "List"
-              : dashboardMode === "map"
-                ? "Map"
-                : "Demand"
+            dashboardMode === "operations"
+              ? "Operations"
+              : "Map"
           }
         />
 
@@ -585,13 +589,15 @@ function AppShell() {
           <button
             type="button"
             role="tab"
-            aria-selected={dashboardMode === "list"}
+            aria-selected={dashboardMode === "operations"}
             className={
-              dashboardMode === "list" ? "view-mode-btn active" : "view-mode-btn"
+              dashboardMode === "operations"
+                ? "view-mode-btn active"
+                : "view-mode-btn"
             }
-            onClick={() => setDashboardMode("list")}
+            onClick={() => setDashboardMode("operations")}
           >
-            List
+            Operations
           </button>
           <button
             type="button"
@@ -604,29 +610,87 @@ function AppShell() {
           >
             Map
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={dashboardMode === "demand"}
-            className={
-              dashboardMode === "demand"
-                ? "view-mode-btn active"
-                : "view-mode-btn"
-            }
-            onClick={() => setDashboardMode("demand")}
-          >
-            Demand
-          </button>
         </div>
 
-        {dashboardMode === "demand" ? (
-          <DemandBoardPanel
-            session={session}
-            refreshKey={demandRefreshKey}
-            scopeQuery={coordinatorDemandQuery}
-            onBoundariesChange={handleDemandBoundariesChange}
-          />
-        ) : dashboardMode === "map" ? (
+        {dashboardMode === "operations" ? (
+          <>
+            <div
+              className={
+                isMobileLayout
+                  ? "dashboard layout layout-mobile-inline"
+                  : "dashboard layout"
+              }
+            >
+              <section className="panel list-panel" aria-labelledby="list-heading">
+                <div className="panel-head">
+                  <h2 id="list-heading">Order initiations</h2>
+                  {loading ? <span className="badge">Syncing…</span> : null}
+                </div>
+                {intents.length === 0 && !loading ? (
+                  <p className="empty">
+                    {apiDashboard === "limited"
+                      ? donorEmptyListMessage(feedScope, viewerLocationShared)
+                      : "No order initiations yet."}
+                  </p>
+                ) : (
+                  <OrderIntentList
+                    intents={intents}
+                    groupMode={groupMode}
+                    selectedId={selectedId}
+                    showDonorInList={coordinatorView}
+                    coordinatorView={coordinatorView}
+                    showInlineDetail={isMobileLayout}
+                    viewerUserId={session.userId}
+                    opsSaving={opsSaving}
+                    onSelect={setSelectedId}
+                    onMarkPaymentDone={requestMarkPaymentDone}
+                    onMarkDelivered={requestMarkDelivered}
+                  />
+                )}
+              </section>
+
+              <section
+                className="panel detail-panel detail-panel-desktop"
+                aria-labelledby="detail-heading"
+              >
+                <h2 id="detail-heading">Initiation detail</h2>
+                {selected ? (
+                  <OrderIntentDetail
+                    intent={selected}
+                    coordinatorView={coordinatorView}
+                    canMarkPaymentDone={
+                      !coordinatorView &&
+                      selected.user_id === session.userId &&
+                      selected.payment_status !== "paid_externally"
+                    }
+                    markingPayment={opsSaving}
+                    onMarkPaymentDone={() =>
+                      requestMarkPaymentDone(selected.order_intent_id)
+                    }
+                    canMarkDelivered={
+                      coordinatorView && selected.delivery_status !== "delivered"
+                    }
+                    markingDelivered={opsSaving}
+                    onMarkDelivered={() =>
+                      requestMarkDelivered(selected.order_intent_id)
+                    }
+                  />
+                ) : (
+                  <p className="empty">
+                    Select an initiation to review handover context.
+                  </p>
+                )}
+              </section>
+            </div>
+            <DemandBoardPanel
+              session={session}
+              refreshKey={demandRefreshKey}
+              scopeQuery={coordinatorDemandQuery}
+              onBoundariesChange={handleDemandBoundariesChange}
+              embedded
+            />
+          </>
+        ) : (
           <OrderIntentsMap
             intents={intents}
             seekerDemands={seekerDemands}
@@ -635,75 +699,6 @@ function AppShell() {
             coordinatorView={coordinatorView}
             viewerUserId={session.userId}
           />
-        ) : (
-          <div
-            className={
-              isMobileLayout
-                ? "dashboard layout layout-mobile-inline"
-                : "dashboard layout"
-            }
-          >
-            <section className="panel list-panel" aria-labelledby="list-heading">
-              <div className="panel-head">
-                <h2 id="list-heading">Recent initiations</h2>
-                {loading ? <span className="badge">Syncing…</span> : null}
-              </div>
-              {intents.length === 0 && !loading ? (
-                <p className="empty">
-                  {apiDashboard === "limited"
-                    ? donorEmptyListMessage(feedScope, viewerLocationShared)
-                    : "No order initiations yet."}
-                </p>
-              ) : (
-                <OrderIntentList
-                  intents={intents}
-                  groupMode={groupMode}
-                  selectedId={selectedId}
-                  showDonorInList={coordinatorView}
-                  coordinatorView={coordinatorView}
-                  showInlineDetail={isMobileLayout}
-                  viewerUserId={session.userId}
-                  opsSaving={opsSaving}
-                  onSelect={setSelectedId}
-                  onMarkPaymentDone={requestMarkPaymentDone}
-                  onMarkDelivered={requestMarkDelivered}
-                />
-              )}
-            </section>
-
-            <section
-              className="panel detail-panel detail-panel-desktop"
-              aria-labelledby="detail-heading"
-            >
-              <h2 id="detail-heading">Initiation detail</h2>
-              {selected ? (
-                <OrderIntentDetail
-                  intent={selected}
-                  coordinatorView={coordinatorView}
-                  canMarkPaymentDone={
-                    !coordinatorView &&
-                    selected.user_id === session.userId &&
-                    selected.payment_status !== "paid_externally"
-                  }
-                  markingPayment={opsSaving}
-                  onMarkPaymentDone={() =>
-                    requestMarkPaymentDone(selected.order_intent_id)
-                  }
-                  canMarkDelivered={
-                    coordinatorView && selected.delivery_status !== "delivered"
-                  }
-                  markingDelivered={opsSaving}
-                  onMarkDelivered={() =>
-                    requestMarkDelivered(selected.order_intent_id)
-                  }
-                />
-              ) : (
-                <p className="empty">
-                  Select an initiation to review handover context.
-                </p>
-              )}
-            </section>
-          </div>
         )}
       </main>
 

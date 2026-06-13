@@ -1,5 +1,6 @@
 import {
   DEFAULT_COORDINATOR_SCOPE,
+  normalizeLocalityKey,
   type CoordinatorAreaMode,
   type CoordinatorScopeFilters,
   type CoordinatorSincePreset
@@ -88,7 +89,10 @@ export function CoordinatorScopeToolbar({
               value={draft.localityKey}
               placeholder="IN:TN:600001"
               onChange={(event) =>
-                onDraftChange({ ...draft, localityKey: event.target.value })
+                onDraftChange({
+                  ...draft,
+                  localityKey: normalizeLocalityKey(event.target.value)
+                })
               }
             />
           </label>

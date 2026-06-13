@@ -9,12 +9,15 @@ import {
   demandLineKey,
   fetchDemandBoard,
   parseDemandLineKey,
-  type AllocationHint,
   type DemandBoardSnapshot,
-  type DemandWindowRow,
   type PledgeRow,
   type SeekerDemandRow
 } from "../api/demandBoard";
+import {
+  DEFAULT_LINE_DRAFT,
+  DemandLineRow,
+  type DemandLineDraft
+} from "./DemandLineRow";
 import {
   EMPTY_ORDER_LIST_QUERY,
   orderListQueryKey,
@@ -25,49 +28,55 @@ import { isCoordinatorSession } from "../sessionRole";
 
 type Props = {
   session: AuthSession;
-  /** Bumped by header Refresh while Demand tab is active. */
   refreshKey?: number;
   scopeQuery?: OrderListQuery;
   onBoundariesChange?: (
     meta: OrderFeedMeta,
     coordinator: boolean
   ) => void;
+  /** When true, hide outer panel chrome (embedded in Operations tab). */
+  embedded?: boolean;
 };
 
 export function DemandBoardPanel({
   session,
   refreshKey = 0,
   scopeQuery = EMPTY_ORDER_LIST_QUERY,
-  onBoundariesChange
+  onBoundariesChange,
+  embedded = false
 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pledgeLineKey, setPledgeLineKey] = useState("");
-  const [pledgeUnits, setPledgeUnits] = useState("1");
-  const [bidLineKey, setBidLineKey] = useState("");
-  const [bidVendor, setBidVendor] = useState("");
-  const [bidPortions, setBidPortions] = useState("10");
   const [submitting, setSubmitting] = useState(false);
-  const pledgeFormRef = useRef<HTMLDivElement>(null);
-  const bidFormRef = useRef<HTMLDivElement>(null);
+  const [lineDrafts, setLineDrafts] = useState<Record<string, DemandLineDraft>>(
+    {}
+  );
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [bulkPledgeUnits, setBulkPledgeUnits] = useState("1");
+  const [bulkBidVendor, setBulkBidVendor] = useState("");
+  const [bulkBidPortions, setBulkBidPortions] = useState("10");
   const coordinator = isCoordinatorSession(session);
   const scopeQueryKey = orderListQueryKey(scopeQuery);
   const onBoundariesChangeRef = useRef(onBoundariesChange);
   onBoundariesChangeRef.current = onBoundariesChange;
 
-  const selectDemandLineForPledge = useCallback((lineKey: string) => {
-    setPledgeLineKey(lineKey);
-    requestAnimationFrame(() => {
-      pledgeFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  const getDraft = useCallback(
+    (lineKey: string): DemandLineDraft =>
+      lineDrafts[lineKey] ?? DEFAULT_LINE_DRAFT,
+    [lineDrafts]
+  );
+
+  const setDraft = useCallback((lineKey: string, draft: DemandLineDraft) => {
+    setLineDrafts((prev) => ({ ...prev, [lineKey]: draft }));
   }, []);
 
-  const selectDemandLineForBid = useCallback((lineKey: string) => {
-    setBidLineKey(lineKey);
-    requestAnimationFrame(() => {
-      bidFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  const toggleSelected = useCallback((lineKey: string) => {
+    setSelectedKeys((prev) =>
+      prev.includes(lineKey)
+        ? prev.filter((key) => key !== lineKey)
+        : [...prev, lineKey]
+    );
   }, []);
 
   const load = useCallback(async () => {
@@ -98,10 +107,97 @@ export function DemandBoardPanel({
     void load();
   }, [load]);
 
+  const submitPledge = useCallback(
+    async (lineKey: string, unitsRaw: string) => {
+      const line = parseDemandLineKey(lineKey);
+      if (!line.standard_offer_id) {
+        throw new Error("This demand line has no standard menu item.");
+      }
+      await createPledge(getAppConfig().apiBaseUrl, session, {
+        locality_key: line.locality_key,
+        standard_offer_id: line.standard_offer_id,
+        meal_units: Math.max(1, Number(unitsRaw) || 1)
+      });
+    },
+    [session]
+  );
+
+  const submitBid = useCallback(
+    async (lineKey: string, vendor: string, portionsRaw: string) => {
+      const line = parseDemandLineKey(lineKey);
+      if (!line.standard_offer_id) {
+        throw new Error("This demand line has no standard menu item.");
+      }
+      await createVendorBid(getAppConfig().apiBaseUrl, session, {
+        locality_key: line.locality_key,
+        standard_offer_id: line.standard_offer_id,
+        vendor_name: vendor.trim(),
+        portions: Math.max(1, Number(portionsRaw) || 1)
+      });
+    },
+    [session]
+  );
+
+  const runForLine = useCallback(
+    async (
+      lineKey: string,
+      action: "pledge" | "bid"
+    ) => {
+      const draft = getDraft(lineKey);
+      setSubmitting(true);
+      setError(null);
+      try {
+        if (action === "pledge") {
+          await submitPledge(lineKey, draft.pledgeUnits);
+        } else {
+          await submitBid(lineKey, draft.bidVendor, draft.bidPortions);
+        }
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save.");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [getDraft, load, submitBid, submitPledge]
+  );
+
+  const runBulk = useCallback(
+    async (action: "pledge" | "bid") => {
+      if (selectedKeys.length === 0) {
+        return;
+      }
+      setSubmitting(true);
+      setError(null);
+      try {
+        for (const lineKey of selectedKeys) {
+          if (action === "pledge") {
+            await submitPledge(lineKey, bulkPledgeUnits);
+          } else {
+            await submitBid(lineKey, bulkBidVendor, bulkBidPortions);
+          }
+        }
+        setSelectedKeys([]);
+        await load();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Bulk action failed.");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [bulkBidPortions, bulkBidVendor, bulkPledgeUnits, load, selectedKeys, submitBid, submitPledge]
+  );
+
+  const pledgeableWindows =
+    snapshot?.demand_windows.filter((row) => row.standard_offer_id) ?? [];
+
   return (
-    <section className="panel demand-panel" aria-labelledby="demand-heading">
+    <section
+      className={embedded ? "demand-panel-embedded" : "panel demand-panel"}
+      aria-labelledby="demand-heading"
+    >
       <div className="panel-head">
-        <h2 id="demand-heading">Demand &amp; vendor bids</h2>
+        <h2 id="demand-heading">Meal demand &amp; supply</h2>
         <div className="panel-head-actions">
           {loading ? <span className="badge">Loading…</span> : null}
           <button
@@ -122,132 +218,133 @@ export function DemandBoardPanel({
       {snapshot ? (
         <>
           <p className="demand-lede">{snapshot.message}</p>
-          <dl className="detail-grid">
-            <div>
-              <dt>Status</dt>
-              <dd>{snapshot.status}</dd>
-            </div>
-            <div>
-              <dt>Demand lines</dt>
-              <dd>{snapshot.demand_windows.length}</dd>
-            </div>
-            <div>
-              <dt>Standard menu items</dt>
-              <dd>{snapshot.standard_offers.length}</dd>
-            </div>
-            <div>
-              <dt>Recent demands</dt>
-              <dd>{snapshot.seeker_demands.length}</dd>
-            </div>
-            <div>
-              <dt>Vendor bids</dt>
-              <dd>{snapshot.vendor_bids.length}</dd>
-            </div>
-          </dl>
 
-          {snapshot.demand_windows.length > 0 ? (
+          {pledgeableWindows.length > 0 ? (
             <>
               <h3 className="intent-group-title">
-                Aggregated by menu item (demand vs pledge vs bid)
+                Demand lines — pledge &amp; bid on each row
               </h3>
               <p className="demand-lede">
-                Each line is one standard menu item in one area (e.g.{" "}
-                <code>IN:TN:600115</code>). Tap <strong>Pick this for pledge</strong>{" "}
-                or <strong>Pick this for bid</strong> to jump to the form below
-                with that line pre-selected — then enter units and submit.
+                Enter units or vendor capacity on the line, or select multiple
+                rows and use bulk actions below.
               </p>
-              <ul className="preset-list demand-bucket-list">
-                {snapshot.demand_windows.map((row) => (
-                  <li key={demandLineKey(row)} className="demand-bucket-row">
-                    <div>
-                      <strong>{row.menu_label ?? row.standard_offer_id ?? "Item"}</strong>
-                      {row.price_inr != null ? ` (₹${row.price_inr})` : ""} @{" "}
-                      {row.locality_key} — demand {row.meal_units_total} units (
-                      {row.demand_count} record
-                      {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
-                      {row.pledged_units_total ?? 0} · vendor capacity{" "}
-                      {row.bid_portions_total ?? 0}
-                      {(row.unmet_demand_units ?? 0) > 0 ? (
-                        <>
-                          {" "}
-                          · <span className="demand-gap">
-                            {row.unmet_demand_units} units still unpledged
-                          </span>
-                        </>
-                      ) : (
-                        " · pledges cover demand"
-                      )}
-                      {(row.supply_gap_units ?? 0) > 0 ? (
-                        <>
-                          {" "}
-                          · <span className="demand-gap">
-                            {row.supply_gap_units} units short on vendor bids
-                          </span>
-                        </>
-                      ) : null}
-                      {row.allocation_hint ? (
-                        <>
-                          {" "}
-                          ·{" "}
-                          <span className={`allocation-hint allocation-hint-${row.allocation_hint}`}>
-                            {allocationHintLabel(row.allocation_hint)}
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-                    <div className="demand-bucket-actions">
+
+              {selectedKeys.length > 0 ? (
+                <div className="demand-bulk-bar" role="region" aria-label="Bulk pledge and bid">
+                  <span className="demand-bulk-count">
+                    {selectedKeys.length} line
+                    {selectedKeys.length === 1 ? "" : "s"} selected
+                  </span>
+                  <div className="demand-inline-op">
+                    <label>
+                      Bulk pledge units
+                      <input
+                        type="number"
+                        min={1}
+                        value={bulkPledgeUnits}
+                        disabled={submitting}
+                        onChange={(event) =>
+                          setBulkPledgeUnits(event.target.value)
+                        }
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-compact"
+                      disabled={submitting}
+                      onClick={() => void runBulk("pledge")}
+                    >
+                      Apply pledge to selected
+                    </button>
+                  </div>
+                  {coordinator ? (
+                    <div className="demand-inline-op">
+                      <label>
+                        Vendor
+                        <input
+                          type="text"
+                          value={bulkBidVendor}
+                          placeholder="Kitchen name"
+                          disabled={submitting}
+                          onChange={(event) =>
+                            setBulkBidVendor(event.target.value)
+                          }
+                        />
+                      </label>
+                      <label>
+                        Portions
+                        <input
+                          type="number"
+                          min={1}
+                          value={bulkBidPortions}
+                          disabled={submitting}
+                          onChange={(event) =>
+                            setBulkBidPortions(event.target.value)
+                          }
+                        />
+                      </label>
                       <button
                         type="button"
-                        className="btn btn-secondary"
-                        aria-pressed={pledgeLineKey === demandLineKey(row)}
-                        onClick={() =>
-                          selectDemandLineForPledge(demandLineKey(row))
-                        }
+                        className="btn btn-secondary btn-compact"
+                        disabled={submitting || !bulkBidVendor.trim()}
+                        onClick={() => void runBulk("bid")}
                       >
-                        Pick this for pledge
+                        Apply bid to selected
                       </button>
-                      {coordinator ? (
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          aria-pressed={bidLineKey === demandLineKey(row)}
-                          onClick={() =>
-                            selectDemandLineForBid(demandLineKey(row))
-                          }
-                        >
-                          Pick this for bid
-                        </button>
-                      ) : null}
                     </div>
-                  </li>
-                ))}
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-compact"
+                    disabled={submitting}
+                    onClick={() => setSelectedKeys([])}
+                  >
+                    Clear selection
+                  </button>
+                </div>
+              ) : null}
+
+              <ul className="preset-list demand-bucket-list">
+                {pledgeableWindows.map((row) => {
+                  const key = demandLineKey(row);
+                  return (
+                    <DemandLineRow
+                      key={key}
+                      row={row}
+                      coordinator={coordinator}
+                      selected={selectedKeys.includes(key)}
+                      draft={getDraft(key)}
+                      submitting={submitting}
+                      onToggleSelect={() => toggleSelected(key)}
+                      onDraftChange={(draft) => setDraft(key, draft)}
+                      onPledge={() => void runForLine(key, "pledge")}
+                      onBid={() => void runForLine(key, "bid")}
+                    />
+                  );
+                })}
               </ul>
             </>
-          ) : null}
+          ) : (
+            <p className="empty">
+              No aggregated demand lines in this scope. Record meal needs on
+              mobile or widen the area filter.
+            </p>
+          )}
 
           {snapshot.seeker_demands.length > 0 ? (
             <>
-              <h3 className="intent-group-title">Recent seeker demands</h3>
+              <h3 className="intent-group-title">Recent meal needs</h3>
               <ul className="intent-list">
                 {snapshot.seeker_demands.map((row) => (
                   <SeekerDemandCard key={row.seeker_demand_id} row={row} />
                 ))}
               </ul>
             </>
-          ) : (
-            <p className="empty">
-              No meal needs yet. Initiators and coordinators can record from the
-              mobile app hub → Record seeker demand.
-            </p>
-          )}
+          ) : null}
 
           {(snapshot.orphan_pledges?.length ?? 0) > 0 ? (
             <>
               <h3 className="intent-group-title">Unmatched pledges</h3>
-              <p className="demand-lede demand-gap">
-                These use a place name, old key, or wrong menu item — they do
-                not count toward aggregated totals.
-              </p>
               <ul className="preset-list">
                 {snapshot.orphan_pledges?.map((row) => (
                   <li key={row.pledge_id}>
@@ -272,9 +369,7 @@ export function DemandBoardPanel({
                   ))}
               </ul>
             </>
-          ) : snapshot.pledges.length === 0 ? null : (
-            <p className="empty">No pledges matched to active demand buckets yet.</p>
-          )}
+          ) : null}
 
           {snapshot.vendor_bids.length > 0 ? (
             <>
@@ -290,224 +385,10 @@ export function DemandBoardPanel({
               </ul>
             </>
           ) : null}
-
-          <div ref={pledgeFormRef} className="demand-form-block">
-          <h3 className="intent-group-title">Pledge meals (initiator)</h3>
-          {pledgeLineKey ? (
-            <p className="demand-selection-banner" role="status">
-              Selected:{" "}
-              <strong>
-                {demandLineLabel(
-                  findDemandWindow(snapshot.demand_windows, pledgeLineKey)
-                )}
-              </strong>{" "}
-              — enter meal units, then <strong>Submit pledge</strong>.
-            </p>
-          ) : (
-            <p className="demand-lede">
-              Choose a demand line from the list above or from the dropdown.
-            </p>
-          )}
-          <div className="detail-grid">
-            <label htmlFor="pledge-line-select">
-              Demand line (menu item + area)
-              <DemandLineSelect
-                id="pledge-line-select"
-                windows={snapshot.demand_windows}
-                value={pledgeLineKey}
-                onChange={setPledgeLineKey}
-              />
-            </label>
-            <label>
-              Meal units
-              <input
-                className="sign-in-google-btn"
-                value={pledgeUnits}
-                onChange={(e) => setPledgeUnits(e.target.value)}
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={submitting || !pledgeLineKey.trim()}
-            onClick={() => {
-              void (async () => {
-                setSubmitting(true);
-                try {
-                  const line = parseDemandLineKey(pledgeLineKey.trim());
-                  await createPledge(getAppConfig().apiBaseUrl, session, {
-                    locality_key: line.locality_key,
-                    standard_offer_id: line.standard_offer_id,
-                    meal_units: Number(pledgeUnits) || 1
-                  });
-                  await load();
-                } catch (err) {
-                  setError(
-                    err instanceof Error ? err.message : "Could not pledge."
-                  );
-                } finally {
-                  setSubmitting(false);
-                }
-              })();
-            }}
-          >
-            Submit pledge
-          </button>
-          </div>
-
-          {coordinator ? (
-            <div ref={bidFormRef} className="demand-form-block">
-              <h3 className="intent-group-title">Vendor bid (coordinator)</h3>
-              <p className="demand-lede">
-                Kitchen or vendor capacity for a demand line (MVP manual entry
-                until fulfiller accounts bid on their own).
-              </p>
-              {bidLineKey ? (
-                <p className="demand-selection-banner" role="status">
-                  Selected:{" "}
-                  <strong>
-                    {demandLineLabel(
-                      findDemandWindow(snapshot.demand_windows, bidLineKey)
-                    )}
-                  </strong>{" "}
-                  — enter vendor name and portions, then{" "}
-                  <strong>Submit vendor bid</strong>.
-                </p>
-              ) : null}
-              <div className="detail-grid">
-                <label htmlFor="bid-line-select">
-                  Demand line (menu item + area)
-                  <DemandLineSelect
-                    id="bid-line-select"
-                    windows={snapshot.demand_windows}
-                    value={bidLineKey}
-                    onChange={setBidLineKey}
-                  />
-                </label>
-                <label>
-                  Vendor name
-                  <input
-                    className="sign-in-google-btn"
-                    value={bidVendor}
-                    onChange={(e) => setBidVendor(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Portions
-                  <input
-                    className="sign-in-google-btn"
-                    value={bidPortions}
-                    onChange={(e) => setBidPortions(e.target.value)}
-                  />
-                </label>
-              </div>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={
-                  submitting || !bidLineKey.trim() || !bidVendor.trim()
-                }
-                onClick={() => {
-                  void (async () => {
-                    setSubmitting(true);
-                    try {
-                      const line = parseDemandLineKey(bidLineKey.trim());
-                      await createVendorBid(getAppConfig().apiBaseUrl, session, {
-                        locality_key: line.locality_key,
-                        standard_offer_id: line.standard_offer_id,
-                        vendor_name: bidVendor.trim(),
-                        portions: Number(bidPortions) || 1
-                      });
-                      await load();
-                    } catch (err) {
-                      setError(
-                        err instanceof Error
-                          ? err.message
-                          : "Could not submit vendor bid."
-                      );
-                    } finally {
-                      setSubmitting(false);
-                    }
-                  })();
-                }}
-              >
-                Submit vendor bid
-              </button>
-            </div>
-          ) : null}
         </>
       ) : null}
     </section>
   );
-}
-
-function DemandLineSelect({
-  id,
-  windows,
-  value,
-  onChange
-}: {
-  id: string;
-  windows: DemandWindowRow[];
-  value: string;
-  onChange: (lineKey: string) => void;
-}) {
-  if (windows.length === 0) {
-    return (
-      <p className="demand-lede">
-        No demand lines yet. Record seeker demand with a standard item on
-        mobile first.
-      </p>
-    );
-  }
-  return (
-    <select
-      id={id}
-      className="sign-in-google-btn demand-locality-select"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">Choose menu item + area…</option>
-      {windows
-        .filter((row) => row.standard_offer_id)
-        .map((row) => (
-          <option key={demandLineKey(row)} value={demandLineKey(row)}>
-            {row.menu_label ?? row.standard_offer_id} @ {row.locality_key} —{" "}
-            {row.meal_units_total} units demand (
-            {row.unmet_demand_units ?? 0} unpledged)
-          </option>
-        ))}
-    </select>
-  );
-}
-
-function findDemandWindow(
-  windows: DemandWindowRow[],
-  lineKey: string
-): DemandWindowRow | undefined {
-  return windows.find((row) => demandLineKey(row) === lineKey);
-}
-
-function demandLineLabel(row: DemandWindowRow | undefined): string {
-  if (!row) {
-    return "demand line";
-  }
-  const menu = row.menu_label ?? row.standard_offer_id ?? "Item";
-  return `${menu} @ ${row.locality_key}`;
-}
-
-function allocationHintLabel(hint: AllocationHint): string {
-  switch (hint) {
-    case "needs_pledges":
-      return "Needs more pledges";
-    case "needs_vendor_bids":
-      return "Needs vendor capacity";
-    case "balanced":
-      return "Balanced — coordinator can plan handoff";
-    default:
-      return hint;
-  }
 }
 
 function PledgeListItem({
@@ -523,8 +404,7 @@ function PledgeListItem({
     <>
       <strong>{row.menu_label ?? row.standard_offer_id ?? row.locality_key}</strong>
       {orphan ? " (unmatched)" : ""} @ {row.locality_key} — {row.meal_units}{" "}
-      units · {row.status} ·{" "}
-      {formatWhen(row.created_at)}
+      units · {row.status} · {formatWhen(row.created_at)}
       {coordinator && row.pledged_by_user_id ? (
         <> · initiator {row.pledged_by_user_id}</>
       ) : null}

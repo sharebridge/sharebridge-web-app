@@ -43,6 +43,18 @@ export function orderListQueryKey(query: OrderListQuery = EMPTY_ORDER_LIST_QUERY
   return parts.length > 0 ? parts.join("&") : "all";
 }
 
+export function normalizeLocalityKey(key: string): string {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed
+    .split(":")
+    .map((part) => part.trim().toUpperCase())
+    .filter(Boolean)
+    .join(":");
+}
+
 export function coordinatorScopeToQuery(
   filters: CoordinatorScopeFilters,
   viewerCoords: { near_lat: number; near_lng: number } | null
@@ -55,7 +67,7 @@ export function coordinatorScopeToQuery(
     query.near_lat = viewerCoords.near_lat;
     query.near_lng = viewerCoords.near_lng;
   } else if (filters.areaMode === "locality") {
-    const key = filters.localityKey.trim();
+    const key = normalizeLocalityKey(filters.localityKey);
     if (key) {
       query.locality_key = key;
     }
