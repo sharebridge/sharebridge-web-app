@@ -4,13 +4,10 @@ import {
   type InitiationFeedItem
 } from "../initiationFeed";
 import type { OrderInitiation } from "../types";
-import { OrderIntentList } from "./OrderIntentList";
-import type { OrderGroupMode } from "../groupOrderIntents";
+import { OrderIntentDetail } from "./OrderIntentDetail";
 
 type Props = {
   items: InitiationFeedItem[];
-  intents: OrderInitiation[];
-  groupMode: OrderGroupMode;
   selectedKey: string | null;
   showDonorInList: boolean;
   coordinatorView: boolean;
@@ -22,10 +19,28 @@ type Props = {
   onMarkDelivered?: (orderIntentId: string) => void;
 };
 
+function initiationKindLabel(kind: InitiationFeedItem["kind"]): string {
+  return kind === "vendor_order" ? "Vendor order" : "Meal need";
+}
+
+function vendorOrderTitle(intent: OrderInitiation): string {
+  const preset = intent.selected_preset;
+  if (
+    preset &&
+    typeof preset.restaurant_name === "string" &&
+    preset.restaurant_name.trim()
+  ) {
+    return preset.restaurant_name.trim();
+  }
+  const snapshot = intent.presets_snapshot[0];
+  if (snapshot?.restaurant_name?.trim()) {
+    return snapshot.restaurant_name.trim();
+  }
+  return intent.pack_id;
+}
+
 export function InitiationsList({
   items,
-  intents,
-  groupMode,
   selectedKey,
   showDonorInList,
   coordinatorView,
@@ -36,73 +51,100 @@ export function InitiationsList({
   onMarkPaymentDone,
   onMarkDelivered
 }: Props) {
-  const mealNeeds = items.filter((row) => row.kind === "meal_need");
-
   if (items.length === 0) {
     return null;
   }
 
   return (
-    <>
-      {intents.length > 0 ? (
-        <OrderIntentList
-          intents={intents}
-          groupMode={groupMode}
-          selectedId={
-            selectedKey?.startsWith("vendor_order:")
-              ? selectedKey.slice("vendor_order:".length)
-              : null
-          }
-          showDonorInList={showDonorInList}
-          coordinatorView={coordinatorView}
-          showInlineDetail={showInlineDetail}
-          viewerUserId={viewerUserId}
-          opsSaving={opsSaving}
-          onSelect={(orderIntentId) =>
-            onSelect(`vendor_order:${orderIntentId}`)
-          }
-          onMarkPaymentDone={onMarkPaymentDone}
-          onMarkDelivered={onMarkDelivered}
-        />
-      ) : null}
-      {mealNeeds.length > 0 ? (
-        <ul className="intent-list initiation-meal-needs">
-          {mealNeeds.map((row) => {
-            const key = initiationSelectionId(row);
-            const demand = row.demand;
-            const selected = selectedKey === key;
-            return (
-              <li key={key} className="intent-row-wrap">
-                <button
-                  type="button"
-                  className={selected ? "intent-row active" : "intent-row"}
-                  onClick={() => onSelect(key)}
-                >
-                  <span className="initiation-kind-chip">Meal need</span>
-                  <strong>{demand.menu_label ?? demand.need_description}</strong>
-                  {demand.price_inr != null ? ` · ₹${demand.price_inr}` : ""}
-                  <span className="intent-meta">
-                    {demand.meal_units} unit{demand.meal_units === 1 ? "" : "s"}
-                    {demand.locality_key ? ` · ${demand.locality_key}` : ""} ·{" "}
-                    {formatWhen(demand.created_at)} · pledge flow
-                  </span>
-                </button>
-                {showInlineDetail && selected ? (
-                  <div className="intent-inline-detail">
-                    <p>
-                      Recorded meal need — payment is handled through pledges and
-                      vendor bids below, not direct checkout by the initiator.
-                    </p>
-                    {demand.verbal_notes?.trim() ? (
-                      <p className="intent-meta">{demand.verbal_notes}</p>
-                    ) : null}
-                  </div>
+    <ul className="intent-list initiation-timeline">
+      {items.map((row) => {
+        const key = initiationSelectionId(row);
+        const selected = selectedKey === key;
+        if (row.kind === "vendor_order") {
+          const intent = row.intent;
+          return (
+            <li key={key} className="intent-row-wrap">
+              <button
+                type="button"
+                className={selected ? "intent-row active" : "intent-row"}
+                onClick={() => onSelect(key)}
+              >
+                <span className="initiation-kind-chip">
+                  {initiationKindLabel(row.kind)}
+                </span>
+                <strong>{vendorOrderTitle(intent)}</strong>
+                <span className="intent-meta">
+                  {showDonorInList && intent.initiator_email
+                    ? `${intent.initiator_email} · `
+                    : ""}
+                  {intent.payment_status === "paid_externally"
+                    ? "Paid"
+                    : "Payment pending"}{" "}
+                  · {formatWhen(intent.created_at)}
+                </span>
+              </button>
+              {showInlineDetail && selected ? (
+                <div className="intent-inline-detail">
+                  <OrderIntentDetail
+                    intent={intent}
+                    coordinatorView={coordinatorView}
+                    compact
+                    canMarkPaymentDone={
+                      !coordinatorView &&
+                      intent.user_id === viewerUserId &&
+                      intent.payment_status !== "paid_externally"
+                    }
+                    markingPayment={opsSaving}
+                    onMarkPaymentDone={() =>
+                      onMarkPaymentDone?.(intent.order_intent_id)
+                    }
+                    canMarkDelivered={
+                      coordinatorView && intent.delivery_status !== "delivered"
+                    }
+                    markingDelivered={opsSaving}
+                    onMarkDelivered={() =>
+                      onMarkDelivered?.(intent.order_intent_id)
+                    }
+                  />
+                </div>
+              ) : null}
+            </li>
+          );
+        }
+
+        const demand = row.demand;
+        return (
+          <li key={key} className="intent-row-wrap">
+            <button
+              type="button"
+              className={selected ? "intent-row active" : "intent-row"}
+              onClick={() => onSelect(key)}
+            >
+              <span className="initiation-kind-chip">
+                {initiationKindLabel(row.kind)}
+              </span>
+              <strong>{demand.menu_label ?? demand.need_description}</strong>
+              {demand.price_inr != null ? ` · ₹${demand.price_inr}` : ""}
+              <span className="intent-meta">
+                {demand.meal_units} unit{demand.meal_units === 1 ? "" : "s"}
+                {demand.locality_key ? ` · ${demand.locality_key}` : ""} ·{" "}
+                {formatWhen(demand.created_at)} · pledge flow
+              </span>
+            </button>
+            {showInlineDetail && selected ? (
+              <div className="intent-inline-detail">
+                <p>
+                  Recorded meal need — payment is handled through pledges and
+                  vendor bids below, not direct checkout by the initiator.
+                </p>
+                {demand.verbal_notes?.trim() ? (
+                  <p className="intent-meta">{demand.verbal_notes}</p>
                 ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </>
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

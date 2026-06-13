@@ -664,8 +664,6 @@ function AppShell() {
                 ) : (
                   <InitiationsList
                     items={initiationItems}
-                    intents={intents}
-                    groupMode={groupMode}
                     selectedKey={selectedKey}
                     showDonorInList={coordinatorView}
                     coordinatorView={coordinatorView}

@@ -1179,8 +1179,8 @@ a {
   vertical-align: middle;
 }
 
-.initiation-meal-needs {
-  margin-top: 12px;
+.initiation-timeline .intent-row-wrap + .intent-row-wrap {
+  margin-top: 4px;
 }
 
 .demand-bucket-head {
