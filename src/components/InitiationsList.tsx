@@ -133,10 +133,10 @@ export function InitiationsList({
             </button>
             {showInlineDetail && selected ? (
               <div className="intent-inline-detail">
-                <p>
-                  Recorded meal need — payment is handled through pledges and
-                  vendor bids below, not direct checkout by the initiator.
-                </p>
+                    <p>
+                      Recorded meal need — open the <strong>Supply</strong> tab for
+                      pledges and vendor bids.
+                    </p>
                 {demand.verbal_notes?.trim() ? (
                   <p className="intent-meta">{demand.verbal_notes}</p>
                 ) : null}

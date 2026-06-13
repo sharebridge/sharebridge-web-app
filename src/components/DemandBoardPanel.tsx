@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AuthSession } from "../authSession";
 import { getAppConfig } from "../config";
-import { formatWhen } from "../format";
 import {
   createPledge,
   createVendorBid,
@@ -9,14 +8,14 @@ import {
   demandLineKey,
   fetchDemandBoard,
   parseDemandLineKey,
-  type DemandBoardSnapshot,
-  type PledgeRow
+  type DemandBoardSnapshot
 } from "../api/demandBoard";
 import {
   DEFAULT_LINE_DRAFT,
   DemandLineRow,
   type DemandLineDraft
 } from "./DemandLineRow";
+import { SupplyLedgerPanel } from "./SupplyLedgerPanel";
 import {
   EMPTY_ORDER_LIST_QUERY,
   orderListQueryKey,
@@ -24,6 +23,15 @@ import {
 } from "../coordinatorScope";
 import type { OrderFeedMeta } from "../feedScope";
 import { isCoordinatorSession } from "../sessionRole";
+import {
+  filterBidsLedger,
+  filterDemandLines,
+  filterPledgesLedger,
+  lineLabelFromKey,
+  SUPPLY_STATUS_FILTER_LABELS,
+  type SupplyStatusFilter
+} from "../supplyFilters";
+import { useMobileLayout } from "../hooks/useMobileLayout";
 
 type Props = {
   session: AuthSession;
@@ -33,16 +41,13 @@ type Props = {
     meta: OrderFeedMeta,
     coordinator: boolean
   ) => void;
-  /** When true, hide outer panel chrome (embedded in Operations tab). */
-  embedded?: boolean;
 };
 
 export function DemandBoardPanel({
   session,
   refreshKey = 0,
   scopeQuery = EMPTY_ORDER_LIST_QUERY,
-  onBoundariesChange,
-  embedded = false
+  onBoundariesChange
 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,11 +56,15 @@ export function DemandBoardPanel({
   const [lineDrafts, setLineDrafts] = useState<Record<string, DemandLineDraft>>(
     {}
   );
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [bulkSelectedKeys, setBulkSelectedKeys] = useState<string[]>([]);
+  const [detailLineKey, setDetailLineKey] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<SupplyStatusFilter>("all");
+  const [ledgerTab, setLedgerTab] = useState<"pledges" | "bids">("pledges");
   const [bulkPledgeUnits, setBulkPledgeUnits] = useState("1");
   const [bulkBidVendor, setBulkBidVendor] = useState("");
   const [bulkBidPortions, setBulkBidPortions] = useState("10");
   const coordinator = isCoordinatorSession(session);
+  const isMobileLayout = useMobileLayout();
   const scopeQueryKey = orderListQueryKey(scopeQuery);
   const onBoundariesChangeRef = useRef(onBoundariesChange);
   onBoundariesChangeRef.current = onBoundariesChange;
@@ -70,8 +79,8 @@ export function DemandBoardPanel({
     setLineDrafts((prev) => ({ ...prev, [lineKey]: draft }));
   }, []);
 
-  const toggleSelected = useCallback((lineKey: string) => {
-    setSelectedKeys((prev) =>
+  const toggleBulkSelected = useCallback((lineKey: string) => {
+    setBulkSelectedKeys((prev) =>
       prev.includes(lineKey)
         ? prev.filter((key) => key !== lineKey)
         : [...prev, lineKey]
@@ -138,10 +147,7 @@ export function DemandBoardPanel({
   );
 
   const runForLine = useCallback(
-    async (
-      lineKey: string,
-      action: "pledge" | "bid"
-    ) => {
+    async (lineKey: string, action: "pledge" | "bid") => {
       const draft = getDraft(lineKey);
       setSubmitting(true);
       setError(null);
@@ -163,20 +169,20 @@ export function DemandBoardPanel({
 
   const runBulk = useCallback(
     async (action: "pledge" | "bid") => {
-      if (selectedKeys.length === 0) {
+      if (bulkSelectedKeys.length === 0) {
         return;
       }
       setSubmitting(true);
       setError(null);
       try {
-        for (const lineKey of selectedKeys) {
+        for (const lineKey of bulkSelectedKeys) {
           if (action === "pledge") {
             await submitPledge(lineKey, bulkPledgeUnits);
           } else {
             await submitBid(lineKey, bulkBidVendor, bulkBidPortions);
           }
         }
-        setSelectedKeys([]);
+        setBulkSelectedKeys([]);
         await load();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Bulk action failed.");
@@ -184,217 +190,245 @@ export function DemandBoardPanel({
         setSubmitting(false);
       }
     },
-    [bulkBidPortions, bulkBidVendor, bulkPledgeUnits, load, selectedKeys, submitBid, submitPledge]
+    [
+      bulkBidPortions,
+      bulkBidVendor,
+      bulkPledgeUnits,
+      bulkSelectedKeys,
+      load,
+      submitBid,
+      submitPledge
+    ]
   );
 
-  const pledgeableWindows =
-    snapshot?.demand_windows.filter((row) => row.standard_offer_id) ?? [];
+  const demandWindows = snapshot?.demand_windows ?? [];
+  const matchedPledges =
+    snapshot?.pledges.filter((row) => row.matches_demand_bucket !== false) ??
+    [];
+
+  const filteredLines = useMemo(
+    () =>
+      filterDemandLines(
+        demandWindows,
+        statusFilter,
+        session.userId,
+        matchedPledges
+      ),
+    [demandWindows, statusFilter, session.userId, matchedPledges]
+  );
+
+  const ledgerPledges = useMemo(
+    () =>
+      filterPledgesLedger(
+        matchedPledges,
+        snapshot?.orphan_pledges ?? [],
+        statusFilter,
+        session.userId,
+        detailLineKey
+      ),
+    [
+      matchedPledges,
+      snapshot?.orphan_pledges,
+      statusFilter,
+      session.userId,
+      detailLineKey
+    ]
+  );
+
+  const ledgerBids = useMemo(
+    () =>
+      filterBidsLedger(
+        snapshot?.vendor_bids ?? [],
+        statusFilter,
+        detailLineKey
+      ),
+    [snapshot?.vendor_bids, statusFilter, detailLineKey]
+  );
+
+  const selectedLineLabel = detailLineKey
+    ? lineLabelFromKey(detailLineKey, demandWindows)
+    : null;
+
+  const selectAllVisible = () => {
+    setBulkSelectedKeys(filteredLines.map((row) => demandLineKey(row)));
+  };
 
   return (
-    <section
-      className={embedded ? "demand-panel-embedded" : "panel demand-panel"}
-      aria-labelledby="demand-heading"
-    >
-      <div className="panel-head">
+    <section className="supply-workspace" aria-labelledby="demand-heading">
+      <div className="panel-head supply-workspace-head">
         <h2 id="demand-heading">Supply — pledge &amp; bid</h2>
-        {loading && !embedded ? <span className="badge">Loading…</span> : null}
-        {!embedded ? (
-          <div className="panel-head-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={loading}
-              onClick={() => void load()}
-            >
-              Refresh demand
-            </button>
-          </div>
-        ) : null}
+        {loading ? <span className="badge">Loading…</span> : null}
       </div>
+
+      <div
+        className="supply-filter-bar"
+        role="toolbar"
+        aria-label="Supply status filters"
+      >
+        {(Object.keys(SUPPLY_STATUS_FILTER_LABELS) as SupplyStatusFilter[]).map(
+          (key) => (
+            <button
+              key={key}
+              type="button"
+              className={
+                statusFilter === key
+                  ? "supply-filter-chip active"
+                  : "supply-filter-chip"
+              }
+              onClick={() => setStatusFilter(key)}
+            >
+              {SUPPLY_STATUS_FILTER_LABELS[key]}
+            </button>
+          )
+        )}
+        <span className="supply-filter-hint">My bids — coming for vendors</span>
+      </div>
+
       {error ? (
         <div className="banner banner-error" role="alert">
           {error}
         </div>
       ) : null}
-      {snapshot ? (
-        <>
-          {!embedded && snapshot.message ? (
-            <p className="demand-lede">{snapshot.message}</p>
-          ) : null}
 
-          {pledgeableWindows.length > 0 ? (
-            <>
-              <h3 className="intent-group-title">Demand lines</h3>
+      <div
+        className="demand-bulk-bar demand-bulk-bar-sticky"
+        role="region"
+        aria-label="Bulk pledge and bid"
+      >
+        <span className="demand-bulk-count">
+          {bulkSelectedKeys.length === 0
+            ? "Select lines with checkboxes for bulk actions"
+            : `${bulkSelectedKeys.length} line${bulkSelectedKeys.length === 1 ? "" : "s"} selected`}
+        </span>
+        <button
+          type="button"
+          className="btn btn-secondary btn-compact"
+          disabled={filteredLines.length === 0}
+          onClick={selectAllVisible}
+        >
+          Select visible
+        </button>
+        <div className="demand-inline-op">
+          <label>
+            Bulk units
+            <input
+              type="number"
+              min={1}
+              value={bulkPledgeUnits}
+              disabled={submitting}
+              onChange={(event) => setBulkPledgeUnits(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn-secondary btn-compact"
+            disabled={submitting || bulkSelectedKeys.length === 0}
+            onClick={() => void runBulk("pledge")}
+          >
+            Bulk pledge
+          </button>
+        </div>
+        {coordinator ? (
+          <div className="demand-inline-op">
+            <label>
+              Vendor
+              <input
+                type="text"
+                value={bulkBidVendor}
+                placeholder="Kitchen name"
+                disabled={submitting}
+                onChange={(event) => setBulkBidVendor(event.target.value)}
+              />
+            </label>
+            <label>
+              Portions
+              <input
+                type="number"
+                min={1}
+                value={bulkBidPortions}
+                disabled={submitting}
+                onChange={(event) => setBulkBidPortions(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="btn btn-secondary btn-compact"
+              disabled={
+                submitting ||
+                bulkSelectedKeys.length === 0 ||
+                !bulkBidVendor.trim()
+              }
+              onClick={() => void runBulk("bid")}
+            >
+              Bulk bid
+            </button>
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn-secondary btn-compact"
+          disabled={submitting || bulkSelectedKeys.length === 0}
+          onClick={() => setBulkSelectedKeys([])}
+        >
+          Clear
+        </button>
+      </div>
 
-              {selectedKeys.length > 0 ? (
-                <div className="demand-bulk-bar" role="region" aria-label="Bulk pledge and bid">
-                  <span className="demand-bulk-count">
-                    {selectedKeys.length} line
-                    {selectedKeys.length === 1 ? "" : "s"} selected
-                  </span>
-                  <div className="demand-inline-op">
-                    <label>
-                      Bulk pledge units
-                      <input
-                        type="number"
-                        min={1}
-                        value={bulkPledgeUnits}
-                        disabled={submitting}
-                        onChange={(event) =>
-                          setBulkPledgeUnits(event.target.value)
-                        }
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-compact"
-                      disabled={submitting}
-                      onClick={() => void runBulk("pledge")}
-                    >
-                      Apply pledge to selected
-                    </button>
-                  </div>
-                  {coordinator ? (
-                    <div className="demand-inline-op">
-                      <label>
-                        Vendor
-                        <input
-                          type="text"
-                          value={bulkBidVendor}
-                          placeholder="Kitchen name"
-                          disabled={submitting}
-                          onChange={(event) =>
-                            setBulkBidVendor(event.target.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        Portions
-                        <input
-                          type="number"
-                          min={1}
-                          value={bulkBidPortions}
-                          disabled={submitting}
-                          onChange={(event) =>
-                            setBulkBidPortions(event.target.value)
-                          }
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-compact"
-                        disabled={submitting || !bulkBidVendor.trim()}
-                        onClick={() => void runBulk("bid")}
-                      >
-                        Apply bid to selected
-                      </button>
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-compact"
-                    disabled={submitting}
-                    onClick={() => setSelectedKeys([])}
-                  >
-                    Clear selection
-                  </button>
-                </div>
-              ) : null}
-
-              <ul className="preset-list demand-bucket-list">
-                {pledgeableWindows.map((row) => {
-                  const key = demandLineKey(row);
-                  return (
-                    <DemandLineRow
-                      key={key}
-                      row={row}
-                      coordinator={coordinator}
-                      selected={selectedKeys.includes(key)}
-                      draft={getDraft(key)}
-                      submitting={submitting}
-                      onToggleSelect={() => toggleSelected(key)}
-                      onDraftChange={(draft) => setDraft(key, draft)}
-                      onPledge={() => void runForLine(key, "pledge")}
-                      onBid={() => void runForLine(key, "bid")}
-                    />
-                  );
-                })}
-              </ul>
-            </>
-          ) : (
+      <div
+        className={
+          isMobileLayout
+            ? "supply-split layout-mobile-inline"
+            : "supply-split dashboard layout"
+        }
+      >
+        <section className="panel supply-lines-panel" aria-labelledby="supply-lines-heading">
+          <div className="panel-head">
+            <h3 id="supply-lines-heading">Demand lines</h3>
+            <span className="badge">{filteredLines.length} shown</span>
+          </div>
+          {!snapshot && !loading ? (
+            <p className="empty">Could not load supply data.</p>
+          ) : filteredLines.length === 0 && !loading ? (
             <p className="empty">
-              No aggregated demand lines in this scope. Widen the area filter or
-              record a meal need from mobile.
+              No demand lines match this filter. Widen scope or choose another
+              filter.
             </p>
+          ) : (
+            <ul className="preset-list demand-bucket-list">
+              {filteredLines.map((row) => {
+                const key = demandLineKey(row);
+                return (
+                  <DemandLineRow
+                    key={key}
+                    row={row}
+                    coordinator={coordinator}
+                    bulkSelected={bulkSelectedKeys.includes(key)}
+                    detailSelected={detailLineKey === key}
+                    draft={getDraft(key)}
+                    submitting={submitting}
+                    onToggleBulk={() => toggleBulkSelected(key)}
+                    onSelectDetail={() =>
+                      setDetailLineKey((prev) => (prev === key ? null : key))
+                    }
+                    onDraftChange={(draft) => setDraft(key, draft)}
+                    onPledge={() => void runForLine(key, "pledge")}
+                    onBid={() => void runForLine(key, "bid")}
+                  />
+                );
+              })}
+            </ul>
           )}
+        </section>
 
-          {(snapshot.orphan_pledges?.length ?? 0) > 0 ? (
-            <>
-              <h3 className="intent-group-title">Unmatched pledges</h3>
-              <ul className="preset-list">
-                {snapshot.orphan_pledges?.map((row) => (
-                  <li key={row.pledge_id}>
-                    <PledgeListItem row={row} coordinator={coordinator} orphan />
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {snapshot.pledges.filter((row) => row.matches_demand_bucket !== false)
-            .length > 0 ? (
-            <>
-              <h3 className="intent-group-title">Meal pledges</h3>
-              <ul className="preset-list">
-                {snapshot.pledges
-                  .filter((row) => row.matches_demand_bucket !== false)
-                  .map((row) => (
-                    <li key={row.pledge_id}>
-                      <PledgeListItem row={row} coordinator={coordinator} />
-                    </li>
-                  ))}
-              </ul>
-            </>
-          ) : null}
-
-          {snapshot.vendor_bids.length > 0 ? (
-            <>
-              <h3 className="intent-group-title">Vendor capacity bids</h3>
-              <ul className="preset-list">
-                {snapshot.vendor_bids.map((row) => (
-                  <li key={row.vendor_bid_id}>
-                    <strong>{row.vendor_name}</strong> —{" "}
-                    {row.menu_label ?? row.standard_offer_id ?? "item"} @{" "}
-                    {row.locality_key} — {row.portions} portions · {row.status}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </>
-      ) : null}
+        <SupplyLedgerPanel
+          ledgerTab={ledgerTab}
+          onLedgerTabChange={setLedgerTab}
+          pledges={ledgerPledges}
+          bids={ledgerBids}
+          coordinator={coordinator}
+          selectedLineLabel={selectedLineLabel}
+        />
+      </div>
     </section>
   );
 }
-
-function PledgeListItem({
-  row,
-  coordinator,
-  orphan = false
-}: {
-  row: PledgeRow;
-  coordinator: boolean;
-  orphan?: boolean;
-}) {
-  return (
-    <>
-      <strong>{row.menu_label ?? row.standard_offer_id ?? row.locality_key}</strong>
-      {orphan ? " (unmatched)" : ""} @ {row.locality_key} — {row.meal_units}{" "}
-      units · {row.status} · {formatWhen(row.created_at)}
-      {coordinator && row.pledged_by_user_id ? (
-        <> · initiator {row.pledged_by_user_id}</>
-      ) : null}
-    </>
-  );
-}
-

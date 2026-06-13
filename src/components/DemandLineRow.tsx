@@ -16,10 +16,12 @@ export const DEFAULT_LINE_DRAFT: DemandLineDraft = {
 type Props = {
   row: DemandWindowRow;
   coordinator: boolean;
-  selected: boolean;
+  bulkSelected: boolean;
+  detailSelected: boolean;
   draft: DemandLineDraft;
   submitting: boolean;
-  onToggleSelect: () => void;
+  onToggleBulk: () => void;
+  onSelectDetail: () => void;
   onDraftChange: (next: DemandLineDraft) => void;
   onPledge: () => void;
   onBid: () => void;
@@ -28,10 +30,12 @@ type Props = {
 export function DemandLineRow({
   row,
   coordinator,
-  selected,
+  bulkSelected,
+  detailSelected,
   draft,
   submitting,
-  onToggleSelect,
+  onToggleBulk,
+  onSelectDetail,
   onDraftChange,
   onPledge,
   onBid
@@ -40,58 +44,60 @@ export function DemandLineRow({
   const canPledge = Boolean(row.standard_offer_id);
 
   return (
-    <li className={`demand-bucket-row${selected ? " demand-bucket-row-selected" : ""}`}>
-      <div className="demand-bucket-head">
-        <label className="demand-line-select">
+    <li
+      className={`demand-bucket-row${bulkSelected ? " demand-bucket-row-selected" : ""}${detailSelected ? " demand-bucket-row-detail-active" : ""}`}
+    >
+      <div className="demand-row-grid">
+        <label className="demand-line-select" title="Select for bulk actions">
           <input
             type="checkbox"
-            checked={selected}
-            onChange={onToggleSelect}
-            aria-label={`Select ${row.menu_label ?? lineKey}`}
+            checked={bulkSelected}
+            onChange={onToggleBulk}
+            aria-label={`Bulk select ${row.menu_label ?? lineKey}`}
           />
         </label>
-        <div className="demand-bucket-summary">
+        <button
+          type="button"
+          className="demand-row-summary-btn"
+          onClick={onSelectDetail}
+        >
           <strong>{row.menu_label ?? row.standard_offer_id ?? "Item"}</strong>
-          {row.price_inr != null ? ` (₹${row.price_inr})` : ""} @ {row.locality_key} —
-          demand {row.meal_units_total} units ({row.demand_count} record
-          {row.demand_count === 1 ? "" : "s"}) · pledged{" "}
-          {row.pledged_units_total ?? 0} · vendor capacity{" "}
-          {row.bid_portions_total ?? 0}
-          {(row.unmet_demand_units ?? 0) > 0 ? (
-            <>
-              {" "}
-              · <span className="demand-gap">
-                {row.unmet_demand_units} units still unpledged
-              </span>
-            </>
-          ) : (
-            " · pledges cover demand"
-          )}
-          {(row.supply_gap_units ?? 0) > 0 ? (
-            <>
-              {" "}
-              · <span className="demand-gap">
-                {row.supply_gap_units} units short on vendor bids
-              </span>
-            </>
-          ) : null}
-          {row.allocation_hint ? (
-            <>
-              {" "}
-              ·{" "}
-              <span
-                className={`allocation-hint allocation-hint-${row.allocation_hint}`}
-              >
-                {allocationHintLabel(row.allocation_hint)}
-              </span>
-            </>
-          ) : null}
-        </div>
-      </div>
-      <div className="demand-inline-ops">
-        <div className="demand-inline-op">
-          <label>
-            Pledge units
+          {row.price_inr != null ? ` (₹${row.price_inr})` : ""}
+          <span className="intent-meta">
+            @ {row.locality_key} · demand {row.meal_units_total} · pledged{" "}
+            {row.pledged_units_total ?? 0} · bids {row.bid_portions_total ?? 0}
+            {(row.unmet_demand_units ?? 0) > 0 ? (
+              <>
+                {" "}
+                · <span className="demand-gap">
+                  {row.unmet_demand_units} unpledged
+                </span>
+              </>
+            ) : null}
+            {(row.supply_gap_units ?? 0) > 0 ? (
+              <>
+                {" "}
+                · <span className="demand-gap">
+                  {row.supply_gap_units} short on bids
+                </span>
+              </>
+            ) : null}
+            {row.allocation_hint ? (
+              <>
+                {" "}
+                ·{" "}
+                <span
+                  className={`allocation-hint allocation-hint-${row.allocation_hint}`}
+                >
+                  {allocationHintLabel(row.allocation_hint)}
+                </span>
+              </>
+            ) : null}
+          </span>
+        </button>
+        <div className="demand-row-actions">
+          <label className="demand-action-field">
+            <span>Units</span>
             <input
               type="number"
               min={1}
@@ -110,45 +116,45 @@ export function DemandLineRow({
           >
             Pledge
           </button>
+          {coordinator ? (
+            <>
+              <label className="demand-action-field">
+                <span>Vendor</span>
+                <input
+                  type="text"
+                  value={draft.bidVendor}
+                  placeholder="Kitchen"
+                  disabled={submitting || !canPledge}
+                  onChange={(event) =>
+                    onDraftChange({ ...draft, bidVendor: event.target.value })
+                  }
+                />
+              </label>
+              <label className="demand-action-field">
+                <span>Portions</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={draft.bidPortions}
+                  disabled={submitting || !canPledge}
+                  onChange={(event) =>
+                    onDraftChange({ ...draft, bidPortions: event.target.value })
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="btn btn-secondary btn-compact"
+                disabled={
+                  submitting || !canPledge || !draft.bidVendor.trim()
+                }
+                onClick={onBid}
+              >
+                Bid
+              </button>
+            </>
+          ) : null}
         </div>
-        {coordinator ? (
-          <div className="demand-inline-op">
-            <label>
-              Vendor
-              <input
-                type="text"
-                value={draft.bidVendor}
-                placeholder="Kitchen name"
-                disabled={submitting || !canPledge}
-                onChange={(event) =>
-                  onDraftChange({ ...draft, bidVendor: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              Portions
-              <input
-                type="number"
-                min={1}
-                value={draft.bidPortions}
-                disabled={submitting || !canPledge}
-                onChange={(event) =>
-                  onDraftChange({ ...draft, bidPortions: event.target.value })
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="btn btn-secondary btn-compact"
-              disabled={
-                submitting || !canPledge || !draft.bidVendor.trim()
-              }
-              onClick={onBid}
-            >
-              Bid
-            </button>
-          </div>
-        ) : null}
       </div>
     </li>
   );
@@ -157,11 +163,11 @@ export function DemandLineRow({
 function allocationHintLabel(hint: AllocationHint): string {
   switch (hint) {
     case "needs_pledges":
-      return "Needs more pledges";
+      return "Needs pledges";
     case "needs_vendor_bids":
-      return "Needs vendor capacity";
+      return "Needs bids";
     case "balanced":
-      return "Balanced — coordinator can plan handoff";
+      return "Balanced";
     default:
       return hint;
   }

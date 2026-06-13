@@ -93,9 +93,9 @@ function AppShell() {
   const [locationDialogMessage, setLocationDialogMessage] = useState<
     string | null
   >(null);
-  const [dashboardMode, setDashboardMode] = useState<"operations" | "map">(
-    "operations"
-  );
+  const [dashboardMode, setDashboardMode] = useState<
+    "operations" | "supply" | "map"
+  >("operations");
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [opsConfirm, setOpsConfirm] = useState<
@@ -303,7 +303,7 @@ function AppShell() {
       return;
     }
     setDemandRefreshKey((key) => key + 1);
-    if (dashboardMode === "map") {
+    if (dashboardMode === "map" || dashboardMode === "supply") {
       return;
     }
     if (coordinatorView) {
@@ -606,7 +606,9 @@ function AppShell() {
           viewLabel={
             dashboardMode === "operations"
               ? "Operations"
-              : "Map"
+              : dashboardMode === "supply"
+                ? "Supply"
+                : "Map"
           }
         />
 
@@ -623,6 +625,19 @@ function AppShell() {
             onClick={() => setDashboardMode("operations")}
           >
             Operations
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={dashboardMode === "supply"}
+            className={
+              dashboardMode === "supply"
+                ? "view-mode-btn active"
+                : "view-mode-btn"
+            }
+            onClick={() => setDashboardMode("supply")}
+          >
+            Supply
           </button>
           <button
             type="button"
@@ -653,7 +668,7 @@ function AppShell() {
                 </div>
                 <p className="panel-lede">
                   Vendor orders you pay yourself, and meal needs that flow through
-                  pledges below.
+                  the Supply tab.
                 </p>
                 {initiationItems.length === 0 && !loading ? (
                   <p className="empty">
@@ -725,8 +740,8 @@ function AppShell() {
                         : ""}
                     </p>
                     <p>
-                      Payment is via the pledge and vendor-bid supply section
-                      below — not direct checkout by the initiator.
+                      Payment is via the Supply tab — pledges and vendor bids,
+                      not direct checkout by the initiator.
                     </p>
                     {selectedMealNeed.verbal_notes?.trim() ? (
                       <p className="intent-meta">
@@ -741,14 +756,14 @@ function AppShell() {
                 )}
               </section>
             </div>
-            <DemandBoardPanel
-              session={session}
-              refreshKey={demandRefreshKey}
-              scopeQuery={coordinatorDemandQuery}
-              onBoundariesChange={handleDemandBoundariesChange}
-              embedded
-            />
           </>
+        ) : dashboardMode === "supply" ? (
+          <DemandBoardPanel
+            session={session}
+            refreshKey={demandRefreshKey}
+            scopeQuery={coordinatorDemandQuery}
+            onBoundariesChange={handleDemandBoundariesChange}
+          />
         ) : (
           <OrderIntentsMap
             intents={intents}
