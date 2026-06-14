@@ -254,16 +254,14 @@ export function DemandBoardPanel({
   };
 
   return (
-    <section className="supply-workspace" aria-labelledby="demand-heading">
-      <div className="panel-head supply-workspace-head">
-        <h2 id="demand-heading">Supply — pledge &amp; bid</h2>
-        {loading ? <span className="badge">Loading…</span> : null}
-      </div>
-
+    <section
+      className="supply-workspace"
+      aria-label="Actions — pledge and bid"
+    >
       <div
         className="supply-filter-bar"
         role="toolbar"
-        aria-label="Supply status filters"
+        aria-label="Actions status filters"
       >
         {(Object.keys(SUPPLY_STATUS_FILTER_LABELS) as SupplyStatusFilter[]).map(
           (key) => (
@@ -281,6 +279,7 @@ export function DemandBoardPanel({
             </button>
           )
         )}
+        {loading ? <span className="badge">Loading…</span> : null}
         <span className="supply-filter-hint">My bids — coming for vendors</span>
       </div>
 
@@ -296,9 +295,9 @@ export function DemandBoardPanel({
         aria-label="Bulk pledge and bid"
       >
         <span className="demand-bulk-count">
-          {bulkSelectedKeys.length === 0
-            ? "Select lines with checkboxes for bulk actions"
-            : `${bulkSelectedKeys.length} line${bulkSelectedKeys.length === 1 ? "" : "s"} selected`}
+          {bulkSelectedKeys.length > 0
+            ? `${bulkSelectedKeys.length} line${bulkSelectedKeys.length === 1 ? "" : "s"} selected`
+            : null}
         </span>
         <button
           type="button"
@@ -306,7 +305,7 @@ export function DemandBoardPanel({
           disabled={filteredLines.length === 0}
           onClick={selectAllVisible}
         >
-          Select visible
+          Select rows below
         </button>
         <div className="demand-inline-op">
           <label>
@@ -387,7 +386,7 @@ export function DemandBoardPanel({
             <span className="badge">{filteredLines.length} shown</span>
           </div>
           {!snapshot && !loading ? (
-            <p className="empty">Could not load supply data.</p>
+            <p className="empty">Could not load actions data.</p>
           ) : filteredLines.length === 0 && !loading ? (
             <p className="empty">
               No demand lines match this filter. Widen scope or choose another

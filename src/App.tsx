@@ -94,8 +94,8 @@ function AppShell() {
     string | null
   >(null);
   const [dashboardMode, setDashboardMode] = useState<
-    "operations" | "supply" | "map"
-  >("operations");
+    "initiations" | "actions" | "map"
+  >("initiations");
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [opsConfirm, setOpsConfirm] = useState<
@@ -303,7 +303,7 @@ function AppShell() {
       return;
     }
     setDemandRefreshKey((key) => key + 1);
-    if (dashboardMode === "map" || dashboardMode === "supply") {
+    if (dashboardMode === "map" || dashboardMode === "actions") {
       return;
     }
     if (coordinatorView) {
@@ -592,7 +592,7 @@ function AppShell() {
           />
         ) : null}
 
-        {showGroupToolbar && dashboardMode === "operations" ? (
+        {showGroupToolbar && dashboardMode === "initiations" ? (
           <GroupModeToolbar
             coordinatorView={coordinatorView}
             groupMode={groupMode}
@@ -604,10 +604,10 @@ function AppShell() {
         <DashboardBoundariesBanner
           boundaries={dashboardBoundaries}
           viewLabel={
-            dashboardMode === "operations"
-              ? "Operations"
-              : dashboardMode === "supply"
-                ? "Supply"
+            dashboardMode === "initiations"
+              ? "Initiations"
+              : dashboardMode === "actions"
+                ? "Actions"
                 : "Map"
           }
         />
@@ -616,28 +616,28 @@ function AppShell() {
           <button
             type="button"
             role="tab"
-            aria-selected={dashboardMode === "operations"}
+            aria-selected={dashboardMode === "initiations"}
             className={
-              dashboardMode === "operations"
+              dashboardMode === "initiations"
                 ? "view-mode-btn active"
                 : "view-mode-btn"
             }
-            onClick={() => setDashboardMode("operations")}
+            onClick={() => setDashboardMode("initiations")}
           >
-            Operations
+            Initiations
           </button>
           <button
             type="button"
             role="tab"
-            aria-selected={dashboardMode === "supply"}
+            aria-selected={dashboardMode === "actions"}
             className={
-              dashboardMode === "supply"
+              dashboardMode === "actions"
                 ? "view-mode-btn active"
                 : "view-mode-btn"
             }
-            onClick={() => setDashboardMode("supply")}
+            onClick={() => setDashboardMode("actions")}
           >
-            Supply
+            Actions
           </button>
           <button
             type="button"
@@ -652,7 +652,7 @@ function AppShell() {
           </button>
         </div>
 
-        {dashboardMode === "operations" ? (
+        {dashboardMode === "initiations" ? (
           <>
             <div
               className={
@@ -667,8 +667,8 @@ function AppShell() {
                   {loading ? <span className="badge">Syncing…</span> : null}
                 </div>
                 <p className="panel-lede">
-                  Vendor orders you pay yourself, and meal needs that flow through
-                  the Supply tab.
+                  Direct orders you pay yourself, and items opened for pledging
+                  — use the Actions tab to pledge or bid.
                 </p>
                 {initiationItems.length === 0 && !loading ? (
                   <p className="empty">
@@ -721,7 +721,7 @@ function AppShell() {
                 ) : selectedMealNeed ? (
                   <div className="intent-inline-detail">
                     <p>
-                      <span className="initiation-kind-chip">Meal need</span>
+                      <span className="initiation-kind-chip">For pledging</span>
                     </p>
                     <p>
                       <strong>
@@ -740,8 +740,8 @@ function AppShell() {
                         : ""}
                     </p>
                     <p>
-                      Payment is via the Supply tab — pledges and vendor bids,
-                      not direct checkout by the initiator.
+                      Opened for pledging — use the <strong>Actions</strong> tab
+                      for pledges and vendor bids, not direct checkout here.
                     </p>
                     {selectedMealNeed.verbal_notes?.trim() ? (
                       <p className="intent-meta">
@@ -757,7 +757,7 @@ function AppShell() {
               </section>
             </div>
           </>
-        ) : dashboardMode === "supply" ? (
+        ) : dashboardMode === "actions" ? (
           <DemandBoardPanel
             session={session}
             refreshKey={demandRefreshKey}

@@ -4,6 +4,7 @@ import {
   type InitiationFeedItem
 } from "../initiationFeed";
 import type { OrderInitiation } from "../types";
+import { initiationKindLabel } from "../initiationLabels";
 import { OrderIntentDetail } from "./OrderIntentDetail";
 
 type Props = {
@@ -18,10 +19,6 @@ type Props = {
   onMarkPaymentDone?: (orderIntentId: string) => void;
   onMarkDelivered?: (orderIntentId: string) => void;
 };
-
-function initiationKindLabel(kind: InitiationFeedItem["kind"]): string {
-  return kind === "vendor_order" ? "Vendor order" : "Meal need";
-}
 
 function vendorOrderTitle(intent: OrderInitiation): string {
   const preset = intent.selected_preset;
@@ -128,15 +125,15 @@ export function InitiationsList({
               <span className="intent-meta">
                 {demand.meal_units} unit{demand.meal_units === 1 ? "" : "s"}
                 {demand.locality_key ? ` · ${demand.locality_key}` : ""} ·{" "}
-                {formatWhen(demand.created_at)} · pledge flow
+                {formatWhen(demand.created_at)} · for pledging
               </span>
             </button>
             {showInlineDetail && selected ? (
               <div className="intent-inline-detail">
-                    <p>
-                      Recorded meal need — open the <strong>Supply</strong> tab for
-                      pledges and vendor bids.
-                    </p>
+                <p>
+                  Recorded for pledging — open the <strong>Actions</strong> tab
+                  to pledge or coordinate vendor bids.
+                </p>
                 {demand.verbal_notes?.trim() ? (
                   <p className="intent-meta">{demand.verbal_notes}</p>
                 ) : null}

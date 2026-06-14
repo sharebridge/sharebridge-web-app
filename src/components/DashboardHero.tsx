@@ -38,7 +38,7 @@ export function DashboardHero({
     <section className="hero">
       <p className="hero-eyebrow">{eyebrow}</p>
       <div className="hero-headline-row">
-        <h1>Order initiation history</h1>
+        <h1>Initiations</h1>
         <div className="hero-stats" aria-live="polite">
           <span className="hero-stat-pill">
             <span className="hero-stat-value">{initiationCount}</span>

@@ -20,7 +20,7 @@ export function GroupModeToolbar({
       role="region"
       aria-label="How to group the feed"
     >
-      <p className="feed-toolbar-label">View by</p>
+      <p className="feed-toolbar-label">Group by</p>
       <div
         className="group-mode-toggle"
         role="group"
