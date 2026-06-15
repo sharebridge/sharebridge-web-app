@@ -1,16 +1,18 @@
 # sharingbridge-web-app
 
-**Order initiation history** and **Demand board** dashboard for SharingBridge (Vite + React).
+**Initiations** dashboard for SharingBridge (Vite + React) — coordinator and payee views.
 
 ## How it works
 
 | Step | What |
 |------|------|
-| Build | Vite bundles the React UI → static `dist/` |
-| Sign in | Google (GIS) → user-service → JWT in sessionStorage; optional **Use a different Google account** after a prior sign-in on this browser |
-| Data | Dashboard calls integration-service with Bearer token |
-| Views | **List** / **Map** / **Demand** tabs; **Data boundaries** banner shows time, area, sort, and row limit |
-| Coordinator | **Scope toolbar** — filter List, Map, and Demand by time window and area (all / near me / postal key) |
+| Build | Vite → static `dist/` |
+| Sign in | Google (GIS) → user-service → JWT |
+| Tabs | **Initiations** \| **Actions** \| **Map** |
+| Actions | Pledges, demand lines, kitchen commitments (`GET /v1/demand/board`) |
+| Banner | Data boundaries (time, area, sort, limit) |
+
+Product flows: [Eco_Kitchen_Initiation_Flow.md](https://github.com/sharingbridge/sharingbridge/blob/main/design/Eco_Kitchen_Initiation_Flow.md).
 
 ## Quick start
 
@@ -21,9 +23,7 @@ npm install
 npm run dev
 ```
 
-**Env profiles (committed, no secrets):** copy `.env.example` for a minimal Google-only local setup, or swap in `.env_localtest` / `.env_render` when you need dev sign-in or hosted API URLs. Restart `npm run dev` after any `.env` change.
-
-Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integration-service. Configure Google and seed the coordinator role per [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md) and [coordinator-seed.sql](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/coordinator-seed.sql), then open http://localhost:5173 and **Sign in with Google**.
+Set `WEB_CORS_ORIGINS=http://localhost:5173` on user-service and integration-service. See [web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md).
 
 ## Scripts
 
@@ -32,18 +32,6 @@ Set `WEB_CORS_ORIGINS=http://localhost:5173` on **both** user-service and integr
 | `npm run dev` | Dev server (port 5173) |
 | `npm run build` | Production `dist/` |
 | `npm test` | Unit tests |
-
-## Deploy (Render static site)
-
-Root **`render.yaml`** — **New +** → **Blueprint** → this repo → set `VITE_GOOGLE_CLIENT_ID`. **Auto-deploy** on every push to `main` when **Build & Deploy → Auto-Deploy** is **On Commit**.
-
-If the site only updates on **Manual Deploy**, open the static site in Render → **Settings** → **Build & Deploy** → turn **Auto-Deploy** on.
-
-[configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md) · [e2e-deployment-sequence.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/e2e-deployment-sequence.md)
-
-## Docs
-
-[configuration/web-client.md](https://github.com/sharingbridge/sharingbridge/blob/main/configuration/web-client.md)
 
 ## License
 
