@@ -11,6 +11,7 @@ type Props = {
   onDraftChange: (next: CoordinatorScopeFilters) => void;
   onApply: () => void;
   applying?: boolean;
+  variant?: "coordinator" | "initiator";
 };
 
 const SINCE_OPTIONS: { value: CoordinatorSincePreset; label: string }[] = [
@@ -31,17 +32,24 @@ export function CoordinatorScopeToolbar({
   draft,
   onDraftChange,
   onApply,
-  applying = false
+  applying = false,
+  variant = "coordinator"
 }: Props) {
+  const leadCopy =
+    variant === "initiator"
+      ? "Choose the time window and area for Initiations, Actions, and Map — then tap Apply scope."
+      : "Choose the time window and geographic boundaries for List, Map, and Demand views.";
+
   return (
     <section
       className="coordinator-scope-toolbar"
-      aria-label="Coordinator dashboard scope"
+      aria-label={
+        variant === "initiator"
+          ? "Initiator dashboard scope"
+          : "Coordinator dashboard scope"
+      }
     >
-      <p className="coordinator-scope-lead">
-        Choose the time window and geographic boundaries for List, Map, and
-        Demand views.
-      </p>
+      <p className="coordinator-scope-lead">{leadCopy}</p>
       <div className="coordinator-scope-fields">
         <label className="coordinator-scope-field">
           <span>Time window</span>

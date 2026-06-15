@@ -138,13 +138,18 @@ function AppShell() {
       : apiDashboard === "limited" || (apiDashboard == null && !coordinatorView);
   const coordinatorDemandQuery = useMemo(
     () =>
-      coordinatorView
+      coordinatorView || apiDashboard === "limited"
         ? demandBoardQueryFromScope(
             coordinatorScopeApplied,
             coordinatorNearCoords
           )
         : EMPTY_ORDER_LIST_QUERY,
-    [coordinatorView, coordinatorScopeApplied, coordinatorNearCoords]
+    [
+      coordinatorView,
+      apiDashboard,
+      coordinatorScopeApplied,
+      coordinatorNearCoords
+    ]
   );
 
   const loadHistory = useCallback(
@@ -304,13 +309,25 @@ function AppShell() {
     }
     setDemandRefreshKey((key) => key + 1);
     if (dashboardMode === "map" || dashboardMode === "actions") {
+      if (coordinatorView || apiDashboard === "limited") {
+        await loadHistory(
+          session,
+          coordinatorScopeToQuery(
+            coordinatorScopeApplied,
+            coordinatorNearCoords
+          )
+        );
+      }
       return;
     }
-    if (coordinatorView) {
-      await loadHistory(session, coordinatorScopeToQuery(
-        coordinatorScopeApplied,
-        coordinatorNearCoords
-      ));
+    if (coordinatorView || apiDashboard === "limited") {
+      await loadHistory(
+        session,
+        coordinatorScopeToQuery(
+          coordinatorScopeApplied,
+          coordinatorNearCoords
+        )
+      );
       return;
     }
     if (groupMode === "locality") {
@@ -325,6 +342,7 @@ function AppShell() {
     dashboardMode,
     groupMode,
     coordinatorView,
+    apiDashboard,
     coordinatorScopeApplied,
     coordinatorNearCoords,
     loadHistory,
@@ -575,8 +593,9 @@ function AppShell() {
           </div>
         ) : null}
 
-        {coordinatorView ? (
+        {coordinatorView || apiDashboard === "limited" ? (
           <CoordinatorScopeToolbar
+            variant={coordinatorView ? "coordinator" : "initiator"}
             draft={coordinatorScopeDraft}
             onDraftChange={setCoordinatorScopeDraft}
             onApply={() => void handleApplyCoordinatorScope()}
