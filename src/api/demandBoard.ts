@@ -36,6 +36,8 @@ export type StandardOfferRow = {
 
 export type SeekerDemandRow = {
   seeker_demand_id: string;
+  order_code?: string | null;
+  initiation_route?: string | null;
   reported_by_user_id?: string | null;
   status: string;
   meal_units: number;
@@ -72,6 +74,9 @@ export type VendorBidRow = {
   vendor_name: string;
   portions: number;
   status: string;
+  commitment_status?: string;
+  order_code?: string | null;
+  seeker_demand_id?: string | null;
   notes?: string;
   created_at: string;
   matches_demand_bucket?: boolean;

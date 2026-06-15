@@ -18,6 +18,7 @@ import {
   type DemandLineDraft
 } from "./DemandLineRow";
 import { SupplyLedgerPanel } from "./SupplyLedgerPanel";
+import { ConnectionLookupPanel } from "./ConnectionLookupPanel";
 import {
   ConnectionEmailConsent,
   initialPledgeConsentState
@@ -331,6 +332,12 @@ export function DemandBoardPanel({
       <ConnectionEmailConsent
         checked={pledgeEmailConsent}
         onChange={setPledgeEmailConsent}
+      />
+
+      <ConnectionLookupPanel
+        session={session}
+        snapshot={snapshot}
+        onSessionInvalid={onSessionInvalid}
       />
 
       <div
