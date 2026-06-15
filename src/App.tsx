@@ -462,6 +462,14 @@ function AppShell() {
     setError(null);
   }
 
+  function handleSessionInvalid() {
+    clearSession();
+    setSession(null);
+    setIntents([]);
+    setSelectedKey(null);
+    setError("Your sign-in has expired. Please sign in again.");
+  }
+
   function handleHome() {
     setSelectedKey(null);
     setError(null);
@@ -534,22 +542,6 @@ function AppShell() {
             >
               Dismiss
             </button>
-          </div>
-        ) : null}
-
-        {apiDashboard === "limited" ? (
-          <div className="banner" role="status">
-            You are on the initiator dashboard with limited view. Request admin to
-            add more roles if you have legitimate reasons.
-          </div>
-        ) : null}
-
-        {apiDashboard === "limited" &&
-        groupMode !== "locality" &&
-        !viewerLocationShared ? (
-          <div className="banner banner-info" role="status">
-            Showing only initiations you registered. Tap <strong>By area</strong>{" "}
-            and allow location to load neighbourhood orders from other initiators.
           </div>
         ) : null}
 
@@ -762,6 +754,7 @@ function AppShell() {
             session={session}
             refreshKey={demandRefreshKey}
             scopeQuery={coordinatorDemandQuery}
+            onSessionInvalid={handleSessionInvalid}
             onBoundariesChange={handleDemandBoundariesChange}
           />
         ) : (

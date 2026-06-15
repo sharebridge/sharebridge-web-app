@@ -56,11 +56,18 @@ export function GroupModeToolbar({
               : "group-mode-btn"
           }
           disabled={areaLoading}
+          title="Nearby initiations from other people, grouped by area using your location"
           onClick={() => onSelect("locality")}
         >
           {areaLoading ? "By area…" : "By area"}
         </button>
       </div>
+      {!coordinatorView ? (
+        <p className="feed-toolbar-hint">
+          <strong>By area</strong> — nearby initiations from others (uses your
+          location).
+        </p>
+      ) : null}
     </div>
   );
 }

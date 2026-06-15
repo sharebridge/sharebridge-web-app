@@ -1,4 +1,5 @@
 import { ApiError } from "./orderIntents";
+import { formatUserFacingApiError } from "../apiUserMessage";
 import type { AuthSession } from "../authSession";
 import type { OrderListQuery } from "../coordinatorScope";
 import type { OrderFeedMeta } from "../feedScope";
@@ -154,7 +155,13 @@ export async function createPledge(
   });
   if (!response.ok) {
     throw new ApiError(
-      await readApiErrorMessage(response, "Pledge request failed."),
+      formatUserFacingApiError(
+        new ApiError(
+          await readApiErrorMessage(response, "Pledge request failed."),
+          response.status
+        ),
+        "Pledge request failed."
+      ),
       response.status
     );
   }
@@ -184,7 +191,13 @@ export async function createVendorBid(
   });
   if (!response.ok) {
     throw new ApiError(
-      await readApiErrorMessage(response, "Vendor bid request failed."),
+      formatUserFacingApiError(
+        new ApiError(
+          await readApiErrorMessage(response, "Vendor bid request failed."),
+          response.status
+        ),
+        "Vendor bid request failed."
+      ),
       response.status
     );
   }
@@ -224,15 +237,25 @@ export async function fetchDemandBoard(
   });
   if (!response.ok) {
     let message = "Demand board request failed.";
+    let code: string | undefined;
     try {
-      const body = (await response.json()) as { message?: string };
+      const body = (await response.json()) as {
+        message?: string;
+        code?: string;
+      };
       if (body.message) {
         message = body.message;
       }
+      code = body.code;
     } catch {
       // ignore
     }
-    throw new ApiError(message, response.status);
+    const err = new ApiError(message, response.status, code);
+    throw new ApiError(
+      formatUserFacingApiError(err, "Could not load the Actions board."),
+      response.status,
+      code
+    );
   }
   return (await response.json()) as DemandBoardSnapshot;
 }

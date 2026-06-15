@@ -217,7 +217,7 @@ export function dashboardBoundariesFromApi(
       areaLabel = "Same postal area grid";
     } else {
       areaLabel =
-        "Your initiations only (tap By area + allow location for neighbourhood)";
+        "Your initiations only — use By area for nearby orders from others";
     }
   }
   if (!areaLabel) {
@@ -300,7 +300,7 @@ export function donorEmptyListMessage(
   if (viewerLocationShared) {
     return `No order initiations from anyone ${time} near you.`;
   }
-  return `No initiations you registered ${time}. Tap By area and allow location to see neighbourhood orders from other initiators.`;
+  return `No initiations you registered ${time}.`;
 }
 
 /** Shown when neighbourhood rows lack handover GPS (distance unknown). */

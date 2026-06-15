@@ -629,6 +629,14 @@ body {
   color: var(--muted);
 }
 
+.feed-toolbar-hint {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .feed-toolbar .group-mode-toggle {
   flex: 1 1 auto;
   margin-bottom: 0;

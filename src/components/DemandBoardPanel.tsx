@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AuthSession } from "../authSession";
+import { isSessionExpired } from "../authSession";
+import { formatUserFacingApiError } from "../apiUserMessage";
 import { getAppConfig } from "../config";
 import {
   createPledge,
@@ -35,12 +37,14 @@ import {
   SUPPLY_STATUS_FILTER_LABELS,
   type SupplyStatusFilter
 } from "../supplyFilters";
+import { ApiError } from "../api/orderIntents";
 import { useMobileLayout } from "../hooks/useMobileLayout";
 
 type Props = {
   session: AuthSession;
   refreshKey?: number;
   scopeQuery?: OrderListQuery;
+  onSessionInvalid?: () => void;
   onBoundariesChange?: (
     meta: OrderFeedMeta,
     coordinator: boolean
@@ -51,6 +55,7 @@ export function DemandBoardPanel({
   session,
   refreshKey = 0,
   scopeQuery = EMPTY_ORDER_LIST_QUERY,
+  onSessionInvalid,
   onBoundariesChange
 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
@@ -95,6 +100,11 @@ export function DemandBoardPanel({
   }, []);
 
   const load = useCallback(async () => {
+    if (isSessionExpired(session)) {
+      setError("Your sign-in has expired. Please sign out and sign in again.");
+      onSessionInvalid?.();
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -110,13 +120,16 @@ export function DemandBoardPanel({
       );
     } catch (err) {
       setSnapshot(null);
+      if (err instanceof ApiError && err.status === 401) {
+        onSessionInvalid?.();
+      }
       setError(
-        err instanceof Error ? err.message : "Could not load demand board."
+        formatUserFacingApiError(err, "Could not load the Actions board.")
       );
     } finally {
       setLoading(false);
     }
-  }, [session, scopeQuery, scopeQueryKey, refreshKey]);
+  }, [session, scopeQuery, scopeQueryKey, refreshKey, onSessionInvalid]);
 
   useEffect(() => {
     void load();
@@ -176,7 +189,7 @@ export function DemandBoardPanel({
         }
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not save.");
+        setError(formatUserFacingApiError(err, "Could not save."));
       } finally {
         setSubmitting(false);
       }
@@ -210,7 +223,7 @@ export function DemandBoardPanel({
         setBulkSelectedKeys([]);
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Bulk action failed.");
+        setError(formatUserFacingApiError(err, "Bulk action failed."));
       } finally {
         setSubmitting(false);
       }

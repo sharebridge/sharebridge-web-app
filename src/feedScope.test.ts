@@ -39,7 +39,7 @@ describe("feedScopeFromApi", () => {
       }
     });
     expect(donorFeedLede(scope)).toBe(
-      "Showing data captured in the last 2 hours · Your initiations only (tap By area + allow location for neighbourhood)."
+      "Showing data captured in the last 2 hours · Your initiations only — use By area for nearby orders from others."
     );
   });
 
@@ -99,6 +99,6 @@ describe("feedScopeFromApi", () => {
       feed: { window_hours: 2, radius_m: 5000, location_mode: "near" }
     });
     expect(donorEmptyListMessage(scope, true)).toContain("anyone");
-    expect(donorEmptyListMessage(scope, false)).toContain("By area");
+    expect(donorEmptyListMessage(scope, false)).not.toContain("By area");
   });
 });
