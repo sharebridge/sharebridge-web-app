@@ -131,7 +131,8 @@ export function DemandBoardPanel({
       await createPledge(getAppConfig().apiBaseUrl, session, {
         locality_key: line.locality_key,
         standard_offer_id: line.standard_offer_id,
-        meal_units: Math.max(1, Number(unitsRaw) || 1)
+        meal_units: Math.max(1, Number(unitsRaw) || 1),
+        email_share_consent: true
       });
     },
     [session]
@@ -147,7 +148,8 @@ export function DemandBoardPanel({
         locality_key: line.locality_key,
         standard_offer_id: line.standard_offer_id,
         vendor_name: vendor.trim(),
-        portions: Math.max(1, Number(portionsRaw) || 1)
+        portions: Math.max(1, Number(portionsRaw) || 1),
+        email_share_consent: true
       });
     },
     [session]
@@ -155,8 +157,12 @@ export function DemandBoardPanel({
 
   const runForLine = useCallback(
     async (lineKey: string, action: "pledge" | "bid") => {
-      if (action === "pledge" && !pledgeEmailConsent) {
-        setError("Accept email sharing consent above before pledging.");
+      if (!pledgeEmailConsent) {
+        setError(
+          action === "pledge"
+            ? "Accept email sharing consent above before pledging."
+            : "Accept email sharing consent above before recording a kitchen commitment."
+        );
         return;
       }
       const draft = getDraft(lineKey);
@@ -180,8 +186,12 @@ export function DemandBoardPanel({
 
   const runBulk = useCallback(
     async (action: "pledge" | "bid") => {
-      if (action === "pledge" && !pledgeEmailConsent) {
-        setError("Accept email sharing consent above before pledging.");
+      if (!pledgeEmailConsent) {
+        setError(
+          action === "pledge"
+            ? "Accept email sharing consent above before pledging."
+            : "Accept email sharing consent above before recording kitchen commitments."
+        );
         return;
       }
       if (bulkSelectedKeys.length === 0) {
@@ -378,7 +388,8 @@ export function DemandBoardPanel({
               disabled={
                 submitting ||
                 bulkSelectedKeys.length === 0 ||
-                !bulkBidVendor.trim()
+                !bulkBidVendor.trim() ||
+                !pledgeEmailConsent
               }
               onClick={() => void runBulk("bid")}
             >

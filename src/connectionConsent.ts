@@ -13,7 +13,7 @@ export const PLEDGE_EMAIL_CONSENT_COPY = {
     "Confirm the order code in the app before paying anyone."
   ],
   checkbox:
-    "I understand my login email may be shared with the assigned eco kitchen for this pledge."
+    "I understand my login email may be shared with the assigned eco kitchen for pledges or kitchen commitments on this order."
 } as const;
 
 export function readPledgeEmailConsent(): boolean {

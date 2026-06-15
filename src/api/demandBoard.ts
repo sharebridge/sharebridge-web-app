@@ -141,6 +141,7 @@ export async function createPledge(
     locality_key: string;
     standard_offer_id: string;
     meal_units: number;
+    email_share_consent: boolean;
   }
 ): Promise<PledgeRow> {
   const response = await fetch(`${apiBaseUrl}/v1/pledges`, {
@@ -170,6 +171,7 @@ export async function createVendorBid(
     vendor_name: string;
     portions: number;
     notes?: string;
+    email_share_consent: boolean;
   }
 ): Promise<VendorBidRow> {
   const response = await fetch(`${apiBaseUrl}/v1/vendor-bids`, {
