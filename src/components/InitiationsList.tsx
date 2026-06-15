@@ -4,7 +4,7 @@ import {
   type InitiationFeedItem
 } from "../initiationFeed";
 import type { OrderInitiation } from "../types";
-import { initiationKindLabel } from "../initiationLabels";
+import { initiationApiRouteLabel, initiationKindLabel } from "../initiationLabels";
 import { OrderIntentDetail } from "./OrderIntentDetail";
 
 type Props = {
@@ -110,6 +110,8 @@ export function InitiationsList({
         }
 
         const demand = row.demand;
+        const routeLabel = initiationApiRouteLabel(demand.initiation_route);
+        const isSelfPay = demand.initiation_route === "eco_kitchen_self_pay";
         return (
           <li key={key} className="intent-row-wrap">
             <button
@@ -117,22 +119,22 @@ export function InitiationsList({
               className={selected ? "intent-row active" : "intent-row"}
               onClick={() => onSelect(key)}
             >
-              <span className="initiation-kind-chip">
-                {initiationKindLabel(row.kind)}
-              </span>
+              <span className="initiation-kind-chip">{routeLabel}</span>
               <strong>{demand.menu_label ?? demand.need_description}</strong>
               {demand.price_inr != null ? ` · ₹${demand.price_inr}` : ""}
               <span className="intent-meta">
                 {demand.meal_units} unit{demand.meal_units === 1 ? "" : "s"}
-                {demand.locality_key ? ` · ${demand.locality_key}` : ""} ·{" "}
-                {formatWhen(demand.created_at)} · for pledging
+                {demand.locality_key ? ` · ${demand.locality_key}` : ""}
+                {demand.order_code ? ` · ${demand.order_code}` : ""} ·{" "}
+                {formatWhen(demand.created_at)}
               </span>
             </button>
             {showInlineDetail && selected ? (
               <div className="intent-inline-detail">
                 <p>
-                  Recorded for pledging — open the <strong>Actions</strong> tab
-                  to pledge or coordinate vendor bids.
+                  {isSelfPay
+                    ? "Eco kitchen · I pay — coordinators commit on the Actions tab. After commitment, use Connection with this order code to pay off-platform."
+                    : "Open for pledging — use the Actions tab to pledge or record a kitchen commitment."}
                 </p>
                 {demand.verbal_notes?.trim() ? (
                   <p className="intent-meta">{demand.verbal_notes}</p>

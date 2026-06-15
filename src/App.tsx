@@ -29,6 +29,7 @@ import {
   initiationSelectionId,
   mergeInitiationFeed
 } from "./initiationFeed";
+import { initiationApiRouteLabel } from "./initiationLabels";
 import { OrderIntentDetail } from "./components/OrderIntentDetail";
 import { OrderIntentsMap } from "./components/OrderIntentsMap";
 import { DemandBoardPanel } from "./components/DemandBoardPanel";
@@ -678,8 +679,8 @@ function AppShell() {
                   {loading ? <span className="badge">Syncing…</span> : null}
                 </div>
                 <p className="panel-lede">
-                  Direct orders you pay yourself, and items opened for pledging
-                  — use the Actions tab to pledge or bid.
+                  Direct orders you pay yourself, and eco kitchen initiations —
+                  use the Actions tab to pledge or record a kitchen commit.
                 </p>
                 {initiationItems.length === 0 && !loading ? (
                   <p className="empty">
@@ -732,7 +733,11 @@ function AppShell() {
                 ) : selectedMealNeed ? (
                   <div className="intent-inline-detail">
                     <p>
-                      <span className="initiation-kind-chip">For pledging</span>
+                      <span className="initiation-kind-chip">
+                        {initiationApiRouteLabel(
+                          selectedMealNeed.initiation_route
+                        )}
+                      </span>
                     </p>
                     <p>
                       <strong>
@@ -749,10 +754,15 @@ function AppShell() {
                       {selectedMealNeed.locality_key
                         ? ` · ${selectedMealNeed.locality_key}`
                         : ""}
+                      {selectedMealNeed.order_code
+                        ? ` · ${selectedMealNeed.order_code}`
+                        : ""}
                     </p>
                     <p>
-                      Opened for pledging — use the <strong>Actions</strong> tab
-                      for pledges and vendor bids, not direct checkout here.
+                      {selectedMealNeed.initiation_route ===
+                      "eco_kitchen_self_pay"
+                        ? "Eco kitchen · I pay — coordinators commit on Actions. Use Connection with the order code after commitment."
+                        : "Open for pledging — use the Actions tab for pledges and kitchen commits, not direct checkout here."}
                     </p>
                     {selectedMealNeed.verbal_notes?.trim() ? (
                       <p className="intent-meta">

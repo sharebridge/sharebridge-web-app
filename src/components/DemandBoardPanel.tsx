@@ -296,7 +296,7 @@ export function DemandBoardPanel({
   return (
     <section
       className="supply-workspace"
-      aria-label="Actions — pledge and bid"
+      aria-label="Actions — pledge and kitchen commit"
     >
       <div
         className="supply-filter-bar"
@@ -343,7 +343,7 @@ export function DemandBoardPanel({
       <div
         className="demand-bulk-bar demand-bulk-bar-sticky"
         role="region"
-        aria-label="Bulk pledge and bid"
+        aria-label="Bulk pledge and kitchen commit"
       >
         <span className="demand-bulk-count">
           {bulkSelectedKeys.length > 0
@@ -383,7 +383,7 @@ export function DemandBoardPanel({
         {coordinator ? (
           <div className="demand-inline-op">
             <label>
-              Vendor
+              Kitchen
               <input
                 type="text"
                 value={bulkBidVendor}
@@ -413,7 +413,7 @@ export function DemandBoardPanel({
               }
               onClick={() => void runBulk("bid")}
             >
-              Bulk bid
+              Bulk commit
             </button>
           </div>
         ) : null}

@@ -15,7 +15,7 @@ export type SupplyStatusFilter =
 export const SUPPLY_STATUS_FILTER_LABELS: Record<SupplyStatusFilter, string> = {
   all: "All lines",
   pending_pledge: "Needs pledge",
-  pending_bid: "Needs bid",
+  pending_bid: "Needs kitchen commit",
   my_pledges: "My pledges"
 };
 

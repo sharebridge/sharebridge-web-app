@@ -67,7 +67,8 @@ export function DemandLineRow({
           {row.price_inr != null ? ` (₹${row.price_inr})` : ""}
           <span className="intent-meta">
             @ {row.locality_key} · demand {row.meal_units_total} · pledged{" "}
-            {row.pledged_units_total ?? 0} · bids {row.bid_portions_total ?? 0}
+            {row.pledged_units_total ?? 0} · committed{" "}
+            {row.bid_portions_total ?? 0}
             {(row.unmet_demand_units ?? 0) > 0 ? (
               <>
                 {" "}
@@ -80,7 +81,7 @@ export function DemandLineRow({
               <>
                 {" "}
                 · <span className="demand-gap">
-                  {row.supply_gap_units} short on bids
+                  {row.supply_gap_units} short on kitchen capacity
                 </span>
               </>
             ) : null}
@@ -121,11 +122,11 @@ export function DemandLineRow({
           {coordinator ? (
             <>
               <label className="demand-action-field">
-                <span>Vendor</span>
+                <span>Kitchen</span>
                 <input
                   type="text"
                   value={draft.bidVendor}
-                  placeholder="Kitchen"
+                  placeholder="Kitchen name"
                   disabled={submitting || !canPledge}
                   onChange={(event) =>
                     onDraftChange({ ...draft, bidVendor: event.target.value })
@@ -152,7 +153,7 @@ export function DemandLineRow({
                 }
                 onClick={onBid}
               >
-                Bid
+                Commit
               </button>
             </>
           ) : null}
@@ -167,7 +168,7 @@ function allocationHintLabel(hint: AllocationHint): string {
     case "needs_pledges":
       return "Needs pledges";
     case "needs_vendor_bids":
-      return "Needs bids";
+      return "Needs kitchen commit";
     case "balanced":
       return "Balanced";
     default:

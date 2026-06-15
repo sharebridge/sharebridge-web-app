@@ -23,7 +23,7 @@ export function SupplyLedgerPanel({
   return (
     <section className="panel supply-ledger-panel" aria-labelledby="supply-ledger-heading">
       <div className="panel-head">
-        <h2 id="supply-ledger-heading">Pledges &amp; bids</h2>
+        <h2 id="supply-ledger-heading">Pledges &amp; kitchen commits</h2>
       </div>
       {selectedLineLabel ? (
         <p className="panel-lede">Showing entries for {selectedLineLabel}</p>
@@ -35,7 +35,7 @@ export function SupplyLedgerPanel({
       <div
         className="supply-ledger-tabs"
         role="tablist"
-        aria-label="Pledge and bid ledger"
+        aria-label="Pledge and kitchen commit ledger"
       >
         <button
           type="button"
@@ -57,7 +57,7 @@ export function SupplyLedgerPanel({
           }
           onClick={() => onLedgerTabChange("bids")}
         >
-          Vendor bids ({bids.length})
+          Kitchen commits ({bids.length})
         </button>
       </div>
       {ledgerTab === "pledges" ? (
@@ -83,7 +83,7 @@ export function SupplyLedgerPanel({
           </ul>
         )
       ) : bids.length === 0 ? (
-        <p className="empty">No vendor bids match this filter.</p>
+        <p className="empty">No kitchen commits match this filter.</p>
       ) : (
         <ul className="supply-ledger-list">
           {bids.map((row) => (
