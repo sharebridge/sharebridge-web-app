@@ -20,6 +20,7 @@ type Props = {
   detailSelected: boolean;
   draft: DemandLineDraft;
   submitting: boolean;
+  pledgeEmailConsent: boolean;
   onToggleBulk: () => void;
   onSelectDetail: () => void;
   onDraftChange: (next: DemandLineDraft) => void;
@@ -34,6 +35,7 @@ export function DemandLineRow({
   detailSelected,
   draft,
   submitting,
+  pledgeEmailConsent,
   onToggleBulk,
   onSelectDetail,
   onDraftChange,
@@ -111,7 +113,7 @@ export function DemandLineRow({
           <button
             type="button"
             className="btn btn-secondary btn-compact"
-            disabled={submitting || !canPledge}
+            disabled={submitting || !canPledge || !pledgeEmailConsent}
             onClick={onPledge}
           >
             Pledge

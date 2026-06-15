@@ -17,6 +17,10 @@ import {
 } from "./DemandLineRow";
 import { SupplyLedgerPanel } from "./SupplyLedgerPanel";
 import {
+  ConnectionEmailConsent,
+  initialPledgeConsentState
+} from "./ConnectionEmailConsent";
+import {
   EMPTY_ORDER_LIST_QUERY,
   orderListQueryKey,
   type OrderListQuery
@@ -63,6 +67,9 @@ export function DemandBoardPanel({
   const [bulkPledgeUnits, setBulkPledgeUnits] = useState("1");
   const [bulkBidVendor, setBulkBidVendor] = useState("");
   const [bulkBidPortions, setBulkBidPortions] = useState("10");
+  const [pledgeEmailConsent, setPledgeEmailConsent] = useState(
+    initialPledgeConsentState
+  );
   const coordinator = isCoordinatorSession(session);
   const isMobileLayout = useMobileLayout();
   const scopeQueryKey = orderListQueryKey(scopeQuery);
@@ -148,6 +155,10 @@ export function DemandBoardPanel({
 
   const runForLine = useCallback(
     async (lineKey: string, action: "pledge" | "bid") => {
+      if (action === "pledge" && !pledgeEmailConsent) {
+        setError("Accept email sharing consent above before pledging.");
+        return;
+      }
       const draft = getDraft(lineKey);
       setSubmitting(true);
       setError(null);
@@ -164,11 +175,15 @@ export function DemandBoardPanel({
         setSubmitting(false);
       }
     },
-    [getDraft, load, submitBid, submitPledge]
+    [getDraft, load, pledgeEmailConsent, submitBid, submitPledge]
   );
 
   const runBulk = useCallback(
     async (action: "pledge" | "bid") => {
+      if (action === "pledge" && !pledgeEmailConsent) {
+        setError("Accept email sharing consent above before pledging.");
+        return;
+      }
       if (bulkSelectedKeys.length === 0) {
         return;
       }
@@ -196,6 +211,7 @@ export function DemandBoardPanel({
       bulkPledgeUnits,
       bulkSelectedKeys,
       load,
+      pledgeEmailConsent,
       submitBid,
       submitPledge
     ]
@@ -289,6 +305,11 @@ export function DemandBoardPanel({
         </div>
       ) : null}
 
+      <ConnectionEmailConsent
+        checked={pledgeEmailConsent}
+        onChange={setPledgeEmailConsent}
+      />
+
       <div
         className="demand-bulk-bar demand-bulk-bar-sticky"
         role="region"
@@ -321,7 +342,9 @@ export function DemandBoardPanel({
           <button
             type="button"
             className="btn btn-secondary btn-compact"
-            disabled={submitting || bulkSelectedKeys.length === 0}
+            disabled={
+              submitting || bulkSelectedKeys.length === 0 || !pledgeEmailConsent
+            }
             onClick={() => void runBulk("pledge")}
           >
             Bulk pledge
@@ -405,6 +428,7 @@ export function DemandBoardPanel({
                     detailSelected={detailLineKey === key}
                     draft={getDraft(key)}
                     submitting={submitting}
+                    pledgeEmailConsent={pledgeEmailConsent}
                     onToggleBulk={() => toggleBulkSelected(key)}
                     onSelectDetail={() =>
                       setDetailLineKey((prev) => (prev === key ? null : key))
