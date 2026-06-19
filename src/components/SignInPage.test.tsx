@@ -9,6 +9,10 @@ const pickGoogleAccount = vi.fn();
 
 vi.mock("@react-oauth/google", () => ({
   googleLogout: vi.fn(),
+  useGoogleOAuth: () => ({
+    clientId: "test-client-id",
+    scriptLoadedSuccessfully: true
+  }),
   useGoogleLogin: vi.fn(() => pickGoogleAccount)
 }));
 
@@ -39,6 +43,6 @@ describe("SignInPage", () => {
     expect(screen.queryByText(/coordinator role/i)).toBeNull();
 
     await screen.getByRole("button", { name: /sign in with google/i }).click();
-    expect(pickGoogleAccount).toHaveBeenCalledTimes(1);
+    expect(pickGoogleAccount).toHaveBeenCalledWith({ prompt: "select_account" });
   });
 });

@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { googleLogout, useGoogleLogin } from "@react-oauth/google";
+import {
+  googleLogout,
+  useGoogleLogin,
+  useGoogleOAuth
+} from "@react-oauth/google";
 import { clearSession } from "../authSession";
 import { signInWithGoogleAccessToken } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
@@ -12,35 +16,20 @@ type Props = {
   onSignedIn: (session: AuthSession) => void;
 };
 
-function SignInCard({ config, onSignedIn }: Props) {
+type GoogleSignInButtonProps = {
+  config: AppConfig;
+  onSignedIn: (session: AuthSession) => void;
+  onError: (message: string) => void;
+};
+
+/** Must render under GoogleOAuthProvider (see App.tsx). */
+function GoogleSignInButton({
+  config,
+  onSignedIn,
+  onError
+}: GoogleSignInButtonProps) {
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function mapError(err: unknown) {
-    if (err instanceof ApiError) {
-      setError(formatSignInError(err, config));
-    } else if (err instanceof Error) {
-      setError(err.message);
-    } else {
-      setError("Could not sign in.");
-    }
-  }
-
-  async function completeAccessTokenSignIn(accessToken: string) {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const result = await signInWithGoogleAccessToken(
-        config.userServiceBaseUrl,
-        accessToken
-      );
-      onSignedIn(sessionFromSignIn(result));
-    } catch (err) {
-      mapError(err);
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const { scriptLoadedSuccessfully } = useGoogleOAuth();
 
   const pickGoogleAccount = useGoogleLogin({
     flow: "implicit",
@@ -49,18 +38,49 @@ function SignInCard({ config, onSignedIn }: Props) {
     onSuccess: (tokenResponse) => {
       const accessToken = tokenResponse.access_token?.trim();
       if (!accessToken) {
-        setError("Google did not return an access token.");
+        onError("Google did not return an access token.");
         return;
       }
       void completeAccessTokenSignIn(accessToken);
     },
-    onError: () => setError("Google sign-in was cancelled or failed.")
+    onError: () => onError("Google sign-in was cancelled or failed."),
+    onNonOAuthError: (nonOAuthError) => {
+      if (nonOAuthError.type === "popup_failed_to_open") {
+        onError("Allow pop-ups for this site to sign in with Google.");
+        return;
+      }
+      if (nonOAuthError.type === "popup_closed") {
+        onError("Google sign-in was cancelled.");
+        return;
+      }
+      onError("Google sign-in could not start.");
+    }
   });
 
-  const hasGoogle = config.googleClientId.length > 0;
+  async function completeAccessTokenSignIn(accessToken: string) {
+    setSubmitting(true);
+    onError("");
+    try {
+      const result = await signInWithGoogleAccessToken(
+        config.userServiceBaseUrl,
+        accessToken
+      );
+      onSignedIn(sessionFromSignIn(result));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        onError(formatSignInError(err, config));
+      } else if (err instanceof Error) {
+        onError(err.message);
+      } else {
+        onError("Could not sign in.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   function handleGoogleSignIn() {
-    setError(null);
+    onError("");
     clearSession();
     try {
       window.google?.accounts?.id?.disableAutoSelect?.();
@@ -68,8 +88,37 @@ function SignInCard({ config, onSignedIn }: Props) {
       /* ignore */
     }
     googleLogout();
-    pickGoogleAccount();
+    if (!scriptLoadedSuccessfully) {
+      onError("Google sign-in is still loading. Wait a moment and try again.");
+      return;
+    }
+    pickGoogleAccount({ prompt: "select_account" });
   }
+
+  return (
+    <div className="sign-in-google">
+      <button
+        type="button"
+        className="btn btn-secondary btn-block sign-in-google-btn"
+        disabled={submitting || !scriptLoadedSuccessfully}
+        onClick={handleGoogleSignIn}
+      >
+        {submitting
+          ? "Signing in…"
+          : scriptLoadedSuccessfully
+            ? "Sign in with Google"
+            : "Loading Google sign-in…"}
+      </button>
+      <p className="hint sign-in-google-hint">
+        Opens Google&apos;s account picker (not the browser default account only).
+      </p>
+    </div>
+  );
+}
+
+function SignInCard({ config, onSignedIn }: Props) {
+  const [error, setError] = useState<string | null>(null);
+  const hasGoogle = config.googleClientId.length > 0;
 
   return (
     <section className="sign-in-card panel">
@@ -81,16 +130,11 @@ function SignInCard({ config, onSignedIn }: Props) {
       </p>
 
       {hasGoogle ? (
-        <div className="sign-in-google">
-          <button
-            type="button"
-            className="btn btn-secondary btn-block sign-in-google-btn"
-            disabled={submitting}
-            onClick={handleGoogleSignIn}
-          >
-            {submitting ? "Signing in…" : "Sign in with Google"}
-          </button>
-        </div>
+        <GoogleSignInButton
+          config={config}
+          onSignedIn={onSignedIn}
+          onError={(message) => setError(message.trim() ? message : null)}
+        />
       ) : (
         <div className="banner banner-error" role="alert">
           Set <code>VITE_GOOGLE_CLIENT_ID</code> in <code>.env</code> for Google

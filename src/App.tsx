@@ -67,13 +67,12 @@ import { buildDashboardNotifications } from "./dashboardNotifications";
 const appConfig = getAppConfig();
 
 export function App() {
-  const app = <AppShell />;
   if (!appConfig.googleClientId) {
-    return app;
+    return <AppShell />;
   }
   return (
     <GoogleOAuthProvider clientId={appConfig.googleClientId}>
-      {app}
+      <AppShell />
     </GoogleOAuthProvider>
   );
 }
