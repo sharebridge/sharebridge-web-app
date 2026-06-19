@@ -1,7 +1,7 @@
-import { useRef, useState } from "react";
-import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { useState } from "react";
+import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import { clearSession } from "../authSession";
-import { signInWithGoogle } from "../api/auth";
+import { signInWithGoogleAccessToken } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
 import type { AppConfig } from "../config";
@@ -15,7 +15,6 @@ type Props = {
 function SignInCard({ config, onSignedIn }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const googleButtonHostRef = useRef<HTMLDivElement>(null);
 
   function mapError(err: unknown) {
     if (err instanceof ApiError) {
@@ -27,13 +26,13 @@ function SignInCard({ config, onSignedIn }: Props) {
     }
   }
 
-  async function completeIdTokenSignIn(idToken: string) {
+  async function completeAccessTokenSignIn(accessToken: string) {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await signInWithGoogle(
+      const result = await signInWithGoogleAccessToken(
         config.userServiceBaseUrl,
-        idToken
+        accessToken
       );
       onSignedIn(sessionFromSignIn(result));
     } catch (err) {
@@ -42,6 +41,21 @@ function SignInCard({ config, onSignedIn }: Props) {
       setSubmitting(false);
     }
   }
+
+  const pickGoogleAccount = useGoogleLogin({
+    flow: "implicit",
+    scope: "openid email profile",
+    prompt: "select_account",
+    onSuccess: (tokenResponse) => {
+      const accessToken = tokenResponse.access_token?.trim();
+      if (!accessToken) {
+        setError("Google did not return an access token.");
+        return;
+      }
+      void completeAccessTokenSignIn(accessToken);
+    },
+    onError: () => setError("Google sign-in was cancelled or failed.")
+  });
 
   const hasGoogle = config.googleClientId.length > 0;
 
@@ -54,11 +68,7 @@ function SignInCard({ config, onSignedIn }: Props) {
       /* ignore */
     }
     googleLogout();
-    const host = googleButtonHostRef.current;
-    const googleButton =
-      host?.querySelector<HTMLElement>('[role="button"]') ??
-      host?.querySelector<HTMLElement>("div");
-    googleButton?.click();
+    pickGoogleAccount();
   }
 
   return (
@@ -80,28 +90,6 @@ function SignInCard({ config, onSignedIn }: Props) {
           >
             {submitting ? "Signing in…" : "Sign in with Google"}
           </button>
-          <div
-            ref={googleButtonHostRef}
-            className="sign-in-google-picker"
-            aria-hidden="true"
-          >
-            <GoogleLogin
-              onSuccess={(credentialResponse) => {
-                const idToken = credentialResponse.credential?.trim();
-                if (!idToken) {
-                  setError("Google did not return an id token.");
-                  return;
-                }
-                void completeIdTokenSignIn(idToken);
-              }}
-              onError={() => setError("Google sign-in was cancelled or failed.")}
-              useOneTap={false}
-              auto_select={false}
-              theme="outline"
-              size="large"
-              text="signin_with"
-            />
-          </div>
         </div>
       ) : (
         <div className="banner banner-error" role="alert">
