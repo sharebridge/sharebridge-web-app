@@ -9,7 +9,7 @@
 | Build | Vite → static `dist/` |
 | Sign in | Google (GIS) → user-service → JWT |
 | Tabs | **Initiations** \| **Actions** \| **Map** |
-| Actions | Pledges, demand lines, kitchen commitments (`GET /v1/demand/board`) |
+| Actions | Pledges, demand lines, kitchen commitments, **Connection** panel, **Updates** banner |
 | Banner | Data boundaries (time, area, sort, limit) |
 
 Product flows: [Eco_Kitchen_Initiation_Flow.md](https://github.com/sharingbridge/sharingbridge/blob/main/design/Eco_Kitchen_Initiation_Flow.md).
