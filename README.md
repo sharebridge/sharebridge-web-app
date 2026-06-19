@@ -1,6 +1,6 @@
 # sharingbridge-web-app
 
-**Initiations** dashboard for SharingBridge (Vite + React) — coordinator and payee views.
+**Initiations** dashboard for SharingBridge (Vite + React) — coordinator and initiator (limited) views.
 
 ## How it works
 
