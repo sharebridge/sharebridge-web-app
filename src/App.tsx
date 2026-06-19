@@ -7,6 +7,7 @@ import {
 } from "./api/orderIntents";
 import {
   fetchDemandBoard,
+  type DemandBoardSnapshot,
   type SeekerDemandRow
 } from "./api/demandBoard";
 import { SignInPage } from "./components/SignInPage";
@@ -53,6 +54,7 @@ import {
 } from "./coordinatorScope";
 import { GroupModeToolbar } from "./components/GroupModeToolbar";
 import { DashboardBoundariesBanner } from "./components/DashboardBoundariesBanner";
+import { DashboardNotificationsBanner } from "./components/DashboardNotificationsBanner";
 import { CoordinatorScopeToolbar } from "./components/CoordinatorScopeToolbar";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
@@ -60,6 +62,7 @@ import {
   locationRequiredMessage,
   readViewerLocation
 } from "./viewerLocation";
+import { buildDashboardNotifications } from "./dashboardNotifications";
 
 const appConfig = getAppConfig();
 
@@ -104,6 +107,11 @@ function AppShell() {
   >(null);
   const [opsSuccess, setOpsSuccess] = useState<string | null>(null);
   const [demandRefreshKey, setDemandRefreshKey] = useState(0);
+  const [demandBoardSnapshot, setDemandBoardSnapshot] =
+    useState<DemandBoardSnapshot | null>(null);
+  const [connectionOrderCode, setConnectionOrderCode] = useState<string | null>(
+    null
+  );
   const [dashboardBoundaries, setDashboardBoundaries] =
     useState<DashboardBoundaries | null>(null);
   const [coordinatorScopeDraft, setCoordinatorScopeDraft] =
@@ -358,6 +366,7 @@ function AppShell() {
 
   useEffect(() => {
     if (!session) {
+      setDemandBoardSnapshot(null);
       return;
     }
     void fetchDemandBoard(
@@ -365,9 +374,32 @@ function AppShell() {
       session,
       coordinatorDemandQuery
     )
-      .then((board) => setSeekerDemands(board.seeker_demands))
-      .catch(() => setSeekerDemands([]));
+      .then((board) => {
+        setDemandBoardSnapshot(board);
+        setSeekerDemands(board.seeker_demands);
+      })
+      .catch(() => {
+        setDemandBoardSnapshot(null);
+        setSeekerDemands([]);
+      });
   }, [session, coordinatorDemandQuery, demandRefreshKey]);
+
+  const dashboardNotifications = useMemo(
+    () =>
+      buildDashboardNotifications(demandBoardSnapshot, session?.userId ?? "", {
+        coordinator: coordinatorView
+      }),
+    [demandBoardSnapshot, session?.userId, coordinatorView]
+  );
+
+  const handleOpenConnectionFromNotification = useCallback(
+    (orderCode: string) => {
+      setConnectionOrderCode(orderCode.trim());
+      setDashboardMode("actions");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    []
+  );
 
   useEffect(() => {
     setSelectedKey((prev) => {
@@ -543,6 +575,11 @@ function AppShell() {
           kind={coordinatorView ? "coordinator" : "initiator"}
           session={session}
           initiationCount={intents.length}
+        />
+
+        <DashboardNotificationsBanner
+          notifications={dashboardNotifications}
+          onOpenConnection={handleOpenConnectionFromNotification}
         />
 
         {error ? (
@@ -783,6 +820,7 @@ function AppShell() {
             session={session}
             refreshKey={demandRefreshKey}
             scopeQuery={coordinatorDemandQuery}
+            connectionOrderCode={connectionOrderCode}
             onSessionInvalid={handleSessionInvalid}
             onBoundariesChange={handleDemandBoundariesChange}
           />

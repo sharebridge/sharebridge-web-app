@@ -45,6 +45,7 @@ type Props = {
   session: AuthSession;
   refreshKey?: number;
   scopeQuery?: OrderListQuery;
+  connectionOrderCode?: string | null;
   onSessionInvalid?: () => void;
   onBoundariesChange?: (
     meta: OrderFeedMeta,
@@ -56,6 +57,7 @@ export function DemandBoardPanel({
   session,
   refreshKey = 0,
   scopeQuery = EMPTY_ORDER_LIST_QUERY,
+  connectionOrderCode = null,
   onSessionInvalid,
   onBoundariesChange
 }: Props) {
@@ -338,6 +340,7 @@ export function DemandBoardPanel({
         session={session}
         snapshot={snapshot}
         onSessionInvalid={onSessionInvalid}
+        autoLoadOrderCode={connectionOrderCode}
       />
 
       <div

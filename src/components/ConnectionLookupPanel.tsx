@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AuthSession } from "../authSession";
 import { fetchOrderConnection, type OrderConnection } from "../api/connections";
 import type { DemandBoardSnapshot } from "../api/demandBoard";
@@ -11,6 +11,7 @@ type Props = {
   session: AuthSession;
   snapshot: DemandBoardSnapshot | null;
   onSessionInvalid?: () => void;
+  autoLoadOrderCode?: string | null;
 };
 
 function collectOrderCodes(snapshot: DemandBoardSnapshot | null): string[] {
@@ -32,7 +33,8 @@ function collectOrderCodes(snapshot: DemandBoardSnapshot | null): string[] {
 export function ConnectionLookupPanel({
   session,
   snapshot,
-  onSessionInvalid
+  onSessionInvalid,
+  autoLoadOrderCode = null
 }: Props) {
   const [orderCodeInput, setOrderCodeInput] = useState("");
   const [connection, setConnection] = useState<OrderConnection | null>(null);
@@ -77,6 +79,14 @@ export function ConnectionLookupPanel({
     },
     [session, onSessionInvalid]
   );
+
+  useEffect(() => {
+    const code = autoLoadOrderCode?.trim();
+    if (!code) {
+      return;
+    }
+    void loadConnection(code);
+  }, [autoLoadOrderCode, loadConnection]);
 
   return (
     <section
