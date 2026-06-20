@@ -47,6 +47,7 @@ export function DemandLineRow({
 
   return (
     <li
+      data-demand-line-key={lineKey}
       className={`demand-bucket-row${bulkSelected ? " demand-bucket-row-selected" : ""}${detailSelected ? " demand-bucket-row-detail-active" : ""}`}
     >
       <div className="demand-row-grid">

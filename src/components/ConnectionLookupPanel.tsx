@@ -14,18 +14,30 @@ import {
   summarizeOrderContactsFromSnapshot
 } from "../orderContactBoardSummary";
 
+import {
+  actionsDemandLineKey,
+  connectionInitiationSummary,
+  formatDemandStatus,
+  orderContactChipLabel
+} from "../connectionDemandContext";
+import { initiationApiRouteLabel } from "../initiationLabels";
+
 type Props = {
   session: AuthSession;
   snapshot: DemandBoardSnapshot | null;
   onSessionInvalid?: () => void;
   autoLoadOrderCode?: string | null;
+  onOpenInitiation?: (seekerDemandId: string) => void;
+  onOpenActionsLine?: (lineKey: string) => void;
 };
 
 export function ConnectionLookupPanel({
   session,
   snapshot,
   onSessionInvalid,
-  autoLoadOrderCode = null
+  autoLoadOrderCode = null,
+  onOpenInitiation,
+  onOpenActionsLine
 }: Props) {
   const [orderCodeInput, setOrderCodeInput] = useState("");
   const [connection, setConnection] = useState<OrderConnection | null>(null);
@@ -140,9 +152,10 @@ export function ConnectionLookupPanel({
               type="button"
               className="connection-code-chip"
               disabled={loading}
+              title={orderContactChipLabel(code, snapshot)}
               onClick={() => void loadConnection(code)}
             >
-              {code}
+              {orderContactChipLabel(code, snapshot)}
             </button>
           ))}
         </div>
@@ -156,28 +169,96 @@ export function ConnectionLookupPanel({
 
       {connection ? (
         <div className="connection-detail" role="status">
-          <p className="connection-detail-code">
+          <div className="connection-detail-code">
             <strong>{connection.order_code}</strong>
             <span className="badge">
               {connection.status === "ready"
                 ? "Contacts ready"
                 : "Waiting for kitchen"}
             </span>
-          </p>
-          {connection.menu_label ? (
-            <p>
-              {connection.menu_label}
-              {connection.meal_units != null
-                ? ` · ${connection.meal_units} unit${connection.meal_units === 1 ? "" : "s"}`
-                : ""}
-              {connection.price_inr != null
-                ? ` · ₹${connection.price_inr}`
-                : ""}
-            </p>
+            {connection.demand?.status ? (
+              <span className="badge badge-muted">
+                {formatDemandStatus(connection.demand.status)}
+              </span>
+            ) : null}
+          </div>
+
+          {connection.demand || connection.menu_label ? (
+            <section
+              className="connection-demand-context"
+              aria-label="Original initiation"
+            >
+              <h3 className="connection-demand-heading">Original initiation</h3>
+              <p>
+                <span className="initiation-kind-chip">
+                  {initiationApiRouteLabel(connection.initiation_route)}
+                </span>
+              </p>
+              {(() => {
+                const ctx = connectionInitiationSummary(connection);
+                return (
+                  <>
+                    <p className="connection-demand-headline">
+                      <strong>{ctx.headline}</strong>
+                      {connection.meal_units != null
+                        ? ` · ${connection.meal_units} meal unit${connection.meal_units === 1 ? "" : "s"}`
+                        : ""}
+                      {connection.price_inr != null
+                        ? ` · ₹${connection.price_inr}`
+                        : ""}
+                    </p>
+                    {ctx.area ? (
+                      <p className="intent-meta">
+                        <strong>Area:</strong> {ctx.area}
+                      </p>
+                    ) : null}
+                    {ctx.recordedAt ? (
+                      <p className="intent-meta">
+                        <strong>Recorded:</strong> {ctx.recordedAt}
+                      </p>
+                    ) : null}
+                    {ctx.notes ? (
+                      <p className="intent-meta">
+                        <strong>Notes:</strong> {ctx.notes}
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()}
+              <div className="connection-demand-links">
+                {connection.demand?.seeker_demand_id && onOpenInitiation ? (
+                  <button
+                    type="button"
+                    className="btn btn-link btn-compact"
+                    onClick={() =>
+                      onOpenInitiation(connection.demand!.seeker_demand_id)
+                    }
+                  >
+                    View on Initiations
+                  </button>
+                ) : null}
+                {onOpenActionsLine &&
+                actionsDemandLineKey(connection) != null ? (
+                  <button
+                    type="button"
+                    className="btn btn-link btn-compact"
+                    onClick={() =>
+                      onOpenActionsLine(actionsDemandLineKey(connection)!)
+                    }
+                  >
+                    Show on Actions board
+                  </button>
+                ) : null}
+              </div>
+            </section>
           ) : null}
 
           {connection.status === "ready" ? (
-            <>
+            <section
+              className="connection-contacts-block"
+              aria-label="Contact emails"
+            >
+              <h3 className="connection-demand-heading">Contact emails</h3>
               {connection.kitchen?.display_name ? (
                 <p>
                   <strong>Eco kitchen:</strong> {connection.kitchen.display_name}
@@ -212,7 +293,7 @@ export function ConnectionLookupPanel({
                   </ul>
                 </div>
               ) : null}
-            </>
+            </section>
           ) : (
             <p>
               No eco kitchen has committed to this order yet. You will see

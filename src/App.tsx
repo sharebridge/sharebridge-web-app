@@ -413,6 +413,19 @@ function AppShell() {
     []
   );
 
+  const handleOpenInitiationFromConnection = useCallback(
+    (seekerDemandId: string) => {
+      const id = seekerDemandId.trim();
+      if (!id) {
+        return;
+      }
+      setDashboardMode("initiations");
+      setSelectedKey(`meal_need:${id}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    []
+  );
+
   useEffect(() => {
     setSelectedKey((prev) => {
       if (
@@ -897,6 +910,7 @@ function AppShell() {
             connectionOrderCode={connectionOrderCode}
             onSessionInvalid={handleSessionInvalid}
             onBoundariesChange={handleDemandBoundariesChange}
+            onOpenInitiation={handleOpenInitiationFromConnection}
           />
         ) : (
           <OrderIntentsMap

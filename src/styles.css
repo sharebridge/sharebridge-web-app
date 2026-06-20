@@ -1599,6 +1599,52 @@ a {
   align-items: center;
 }
 
+.connection-demand-context,
+.connection-contacts-block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.connection-demand-heading {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.connection-demand-headline {
+  margin: 8px 0;
+}
+
+.connection-demand-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 8px;
+}
+
+.btn-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.btn-link:hover:not(:disabled) {
+  color: var(--accent-strong, var(--accent));
+}
+
+.badge-muted {
+  background: var(--surface-2, #f0f0f0);
+  color: var(--muted);
+}
+
 .connection-pledger-list {
   margin: 6px 0 0;
   padding-left: 1.2rem;

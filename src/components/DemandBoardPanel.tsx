@@ -51,6 +51,7 @@ type Props = {
     meta: OrderFeedMeta,
     coordinator: boolean
   ) => void;
+  onOpenInitiation?: (seekerDemandId: string) => void;
 };
 
 export function DemandBoardPanel({
@@ -59,7 +60,8 @@ export function DemandBoardPanel({
   scopeQuery = EMPTY_ORDER_LIST_QUERY,
   connectionOrderCode = null,
   onSessionInvalid,
-  onBoundariesChange
+  onBoundariesChange,
+  onOpenInitiation
 }: Props) {
   const [snapshot, setSnapshot] = useState<DemandBoardSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
@@ -348,6 +350,16 @@ export function DemandBoardPanel({
         snapshot={snapshot}
         onSessionInvalid={onSessionInvalid}
         autoLoadOrderCode={connectionOrderCode}
+        onOpenInitiation={onOpenInitiation}
+        onOpenActionsLine={(lineKey) => {
+          setDetailLineKey(lineKey);
+          setStatusFilter("all");
+          requestAnimationFrame(() => {
+            document
+              .querySelector(`[data-demand-line-key="${CSS.escape(lineKey)}"]`)
+              ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          });
+        }}
       />
 
       <div

@@ -21,6 +21,15 @@ export type OrderConnection = {
   price_inr: number | null;
   locality_key: string;
   seeker_demand_id: string | null;
+  demand?: {
+    seeker_demand_id: string;
+    status: string;
+    need_description: string;
+    verbal_notes: string;
+    location_label: string;
+    standard_offer_id: string | null;
+    recorded_at: string;
+  } | null;
   kitchen?: {
     display_name: string;
     login_email?: string | null;
