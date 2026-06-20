@@ -7,6 +7,12 @@ import { CONNECTION_SAFETY_COPY } from "../connectionCopy";
 import { formatUserFacingApiError } from "../apiUserMessage";
 import { isSessionExpired } from "../authSession";
 import { CollapsiblePanel } from "./CollapsiblePanel";
+import {
+  orderContactsArrivalSignature,
+  orderContactsCollapsedSummary,
+  orderContactsHighlightCollapsed,
+  summarizeOrderContactsFromSnapshot
+} from "../orderContactBoardSummary";
 
 type Props = {
   session: AuthSession;
@@ -14,58 +20,6 @@ type Props = {
   onSessionInvalid?: () => void;
   autoLoadOrderCode?: string | null;
 };
-
-function collectOrderCodes(snapshot: DemandBoardSnapshot | null): string[] {
-  const codes = new Set<string>();
-  for (const row of snapshot?.seeker_demands ?? []) {
-    const code = row.order_code?.trim();
-    if (code) {
-      codes.add(code);
-    }
-  }
-  for (const row of snapshot?.vendor_bids ?? []) {
-    if (row.order_code?.trim() && row.commitment_status === "committed") {
-      codes.add(row.order_code.trim());
-    }
-  }
-  return [...codes].sort();
-}
-
-function connectionCollapsedSummary(
-  connection: OrderConnection | null,
-  knownCodes: string[],
-  loading: boolean
-): string {
-  if (loading) {
-    return "Loading contacts…";
-  }
-  if (connection) {
-    if (connection.status === "ready") {
-      return `Contacts ready · ${connection.order_code}`;
-    }
-    return `Waiting for kitchen · ${connection.order_code}`;
-  }
-  if (knownCodes.length === 1) {
-    return `1 order code · ${knownCodes[0]}`;
-  }
-  if (knownCodes.length > 1) {
-    const preview = knownCodes.slice(0, 2).join(", ");
-    const extra =
-      knownCodes.length > 2 ? ` +${knownCodes.length - 2} more` : "";
-    return `${knownCodes.length} order codes · ${preview}${extra}`;
-  }
-  return "Open an order code after eco kitchen commit";
-}
-
-function connectionHighlightCollapsed(
-  connection: OrderConnection | null,
-  knownCodes: string[]
-): boolean {
-  if (connection?.status === "ready") {
-    return true;
-  }
-  return knownCodes.length > 0;
-}
 
 export function ConnectionLookupPanel({
   session,
@@ -78,13 +32,15 @@ export function ConnectionLookupPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const knownCodes = useMemo(() => collectOrderCodes(snapshot), [snapshot]);
-  const arrivalSignature =
-    knownCodes.length > 0
-      ? knownCodes.join("|")
-      : connection
-        ? `${connection.order_code}:${connection.status}`
-        : null;
+  const contactBoard = useMemo(
+    () => summarizeOrderContactsFromSnapshot(snapshot),
+    [snapshot]
+  );
+  const knownCodes = useMemo(
+    () => [...contactBoard.readyCodes, ...contactBoard.waitingCodes],
+    [contactBoard]
+  );
+  const arrivalSignature = orderContactsArrivalSignature(contactBoard);
 
   const loadConnection = useCallback(
     async (orderCode: string) => {
@@ -134,12 +90,8 @@ export function ConnectionLookupPanel({
   return (
     <CollapsiblePanel
       title="Order contacts"
-      collapsedSummary={connectionCollapsedSummary(
-        connection,
-        knownCodes,
-        loading
-      )}
-      highlightCollapsed={connectionHighlightCollapsed(connection, knownCodes)}
+      collapsedSummary={orderContactsCollapsedSummary(contactBoard, loading)}
+      highlightCollapsed={orderContactsHighlightCollapsed(contactBoard)}
       arrivalSignature={arrivalSignature}
       expandedRevision={autoLoadOrderCode}
       defaultExpanded={Boolean(autoLoadOrderCode?.trim())}
