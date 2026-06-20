@@ -1783,6 +1783,11 @@ a {
   min-height: 280px;
 }
 
+.supply-lines-panel {
+  container-type: inline-size;
+  container-name: supply-lines;
+}
+
 .supply-lines-panel .panel-head,
 .supply-ledger-panel .panel-head,
 .supply-ledger-panel .panel-lede,
@@ -1843,21 +1848,22 @@ a {
 }
 
 .demand-row-grid {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 8px 10px;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
   width: 100%;
 }
 
 .demand-line-select {
-  grid-row: 1 / span 2;
-  align-self: start;
-  padding-top: 4px;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding-top: 2px;
 }
 
 .demand-row-summary-btn {
+  flex: 1 1 12rem;
+  min-width: min(100%, 12rem);
   text-align: left;
   border: none;
   background: transparent;
@@ -1865,12 +1871,18 @@ a {
   font: inherit;
   color: inherit;
   cursor: pointer;
-  min-width: 0;
+}
+
+.demand-row-summary-btn strong {
+  display: block;
+  line-height: 1.35;
 }
 
 .demand-row-summary-btn .intent-meta {
   display: block;
-  margin-top: 4px;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .demand-row-summary-btn:hover strong {
@@ -1882,11 +1894,13 @@ a {
 }
 
 .demand-row-actions {
-  grid-column: 2;
-  display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
   gap: 8px;
-  align-items: flex-end;
+  align-items: end;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 .demand-action-field {
@@ -1895,18 +1909,52 @@ a {
   gap: 4px;
   font-size: 0.72rem;
   color: var(--muted);
+  min-width: 0;
+}
+
+.demand-action-field--kitchen {
+  grid-column: span 2;
 }
 
 .demand-action-field input {
-  min-width: 72px;
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
   font: inherit;
 }
 
-.demand-action-field input[type="text"] {
-  min-width: 120px;
-  flex: 1 1 120px;
+.demand-row-actions > .btn {
+  justify-self: start;
+  align-self: end;
+}
+
+@container supply-lines (min-width: 34rem) {
+  .demand-row-actions {
+    grid-template-columns: 4.5rem 5.5rem minmax(8rem, 1.4fr) 5.5rem 5.75rem;
+  }
+
+  .demand-action-field--kitchen {
+    grid-column: auto;
+  }
+}
+
+@container supply-lines (max-width: 22rem) {
+  .demand-row-grid {
+    flex-direction: column;
+  }
+
+  .demand-row-summary-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .demand-row-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .demand-action-field--kitchen {
+    grid-column: 1 / -1;
+  }
 }

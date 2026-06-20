@@ -122,7 +122,7 @@ export function DemandLineRow({
           </button>
           {coordinator ? (
             <>
-              <label className="demand-action-field">
+              <label className="demand-action-field demand-action-field--kitchen">
                 <span>Kitchen</span>
                 <input
                   type="text"
