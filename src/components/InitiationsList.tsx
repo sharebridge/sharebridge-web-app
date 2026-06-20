@@ -133,7 +133,7 @@ export function InitiationsList({
               <div className="intent-inline-detail">
                 <p>
                   {isSelfPay
-                    ? "Eco kitchen · I pay — coordinators commit on the Actions tab. After commitment, use Connection with this order code to pay off-platform."
+                    ? "Eco kitchen · I pay — coordinators commit on the Actions tab. After commitment, use Order contacts with this order code to pay off-platform."
                     : "Open for pledging — use the Actions tab to pledge or record a kitchen commitment."}
                 </p>
                 {demand.verbal_notes?.trim() ? (

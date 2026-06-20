@@ -37,11 +37,11 @@ function connectionCollapsedSummary(
   loading: boolean
 ): string {
   if (loading) {
-    return "Loading connection…";
+    return "Loading contacts…";
   }
   if (connection) {
     if (connection.status === "ready") {
-      return `Connection ready · ${connection.order_code}`;
+      return `Contacts ready · ${connection.order_code}`;
     }
     return `Waiting for kitchen · ${connection.order_code}`;
   }
@@ -113,7 +113,7 @@ export function ConnectionLookupPanel({
         setError(
           formatUserFacingApiError(
             err,
-            "Could not load connection for this order."
+            "Could not load order contacts for this order."
           )
         );
       } finally {
@@ -133,7 +133,7 @@ export function ConnectionLookupPanel({
 
   return (
     <CollapsiblePanel
-      title="Connection"
+      title="Order contacts"
       collapsedSummary={connectionCollapsedSummary(
         connection,
         knownCodes,
@@ -145,10 +145,10 @@ export function ConnectionLookupPanel({
       defaultExpanded={Boolean(autoLoadOrderCode?.trim())}
       storageKey="actions-connection"
       className="connection-panel panel"
-      ariaLabel="Order connection"
+      ariaLabel="Order contacts"
     >
       <p className="connection-panel-lede">
-        After an eco kitchen commits, open the connection here to see login
+        After an eco kitchen commits, look up the order code here to see login
         emails for off-platform payment and delivery. We never send payment links
         or QR codes by email.
       </p>
@@ -175,7 +175,7 @@ export function ConnectionLookupPanel({
           disabled={loading || !orderCodeInput.trim()}
           onClick={() => void loadConnection(orderCodeInput)}
         >
-          {loading ? "Loading…" : "Open connection"}
+          {loading ? "Loading…" : "View contacts"}
         </button>
       </div>
 
@@ -208,7 +208,7 @@ export function ConnectionLookupPanel({
             <strong>{connection.order_code}</strong>
             <span className="badge">
               {connection.status === "ready"
-                ? "Connection ready"
+                ? "Contacts ready"
                 : "Waiting for kitchen"}
             </span>
           </p>

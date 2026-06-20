@@ -72,10 +72,15 @@ export function DashboardNotificationsBanner({
             </div>
             <button
               type="button"
-              className="btn btn-secondary btn-compact"
+              className="btn btn-secondary btn-compact dashboard-notification-action"
               onClick={() => onOpenConnection(row.orderCode)}
             >
-              Open Connection
+              <span className="dashboard-notification-action-label">
+                View contacts
+              </span>
+              <span className="dashboard-notification-action-hint">
+                View contacts on Actions
+              </span>
             </button>
           </li>
         ))}

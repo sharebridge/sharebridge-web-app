@@ -149,14 +149,14 @@ export function dashboardNotificationSummary(
   const menuSuffix = menu ? ` (${menu})` : "";
   switch (notification.viewerRole) {
     case "coordinator":
-      return `Order ${notification.orderCode}${menuSuffix} — kitchen committed; connection ready on Actions.`;
+      return `Order ${notification.orderCode}${menuSuffix} — kitchen committed; contacts ready on Actions.`;
     case "initiator":
-      return `Order ${notification.orderCode}${menuSuffix} — your initiation has a kitchen commitment. Open Connection for emails.`;
+      return `Order ${notification.orderCode}${menuSuffix} — your initiation has a kitchen commitment. View contacts on Actions for emails.`;
     case "pledger":
-      return `Order ${notification.orderCode}${menuSuffix} — kitchen committed on a demand you pledged. Open Connection for emails.`;
+      return `Order ${notification.orderCode}${menuSuffix} — kitchen committed on a demand you pledged. View contacts on Actions for emails.`;
     case "kitchen":
-      return `Order ${notification.orderCode}${menuSuffix} — your kitchen commitment is live. Open Connection for payer emails.`;
+      return `Order ${notification.orderCode}${menuSuffix} — your kitchen commitment is live. View contacts on Actions for payer emails.`;
     default:
-      return `Order ${notification.orderCode} — connection ready.`;
+      return `Order ${notification.orderCode} — contacts ready.`;
   }
 }

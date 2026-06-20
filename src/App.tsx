@@ -857,7 +857,7 @@ function AppShell() {
                     <p>
                       {selectedMealNeed.initiation_route ===
                       "eco_kitchen_self_pay"
-                        ? "Eco kitchen · I pay — coordinators commit on Actions. Use Connection with the order code after commitment."
+                        ? "Eco kitchen · I pay — coordinators commit on Actions. Use Order contacts with the order code after commitment."
                         : "Open for pledging — use the Actions tab for pledges and kitchen commits, not direct checkout here."}
                     </p>
                     {selectedMealNeed.verbal_notes?.trim() ? (
