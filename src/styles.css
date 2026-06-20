@@ -1757,8 +1757,8 @@ a {
 .intent-inline-detail,
 .connection-detail p,
 .connection-detail li {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .intent-inline-detail a,
@@ -1781,11 +1781,6 @@ a {
   display: flex;
   flex-direction: column;
   min-height: 280px;
-}
-
-.supply-lines-panel {
-  container-type: inline-size;
-  container-name: supply-lines;
 }
 
 .supply-lines-panel .panel-head,
@@ -1849,17 +1844,16 @@ a {
 
 .demand-row-grid {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
   gap: 8px 10px;
   align-items: start;
   width: 100%;
-  min-width: 0;
 }
 
 .demand-line-select {
   grid-row: 1 / span 2;
-  align-self: center;
+  align-self: start;
   padding-top: 4px;
 }
 
@@ -1872,7 +1866,11 @@ a {
   color: inherit;
   cursor: pointer;
   min-width: 0;
-  width: 100%;
+}
+
+.demand-row-summary-btn .intent-meta {
+  display: block;
+  margin-top: 4px;
 }
 
 .demand-row-summary-btn:hover strong {
@@ -1884,14 +1882,11 @@ a {
 }
 
 .demand-row-actions {
-  grid-column: 1 / -1;
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-end;
-  min-width: 0;
-  width: 100%;
-  padding-left: 28px;
 }
 
 .demand-action-field {
@@ -1904,29 +1899,14 @@ a {
 
 .demand-action-field input {
   min-width: 72px;
+  max-width: 100%;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
   font: inherit;
 }
 
-/* Only use single-row layout when the Demand lines panel itself is wide enough. */
-@container supply-lines (min-width: 40rem) {
-  .demand-row-grid {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: 1fr;
-    align-items: center;
-  }
-
-  .demand-line-select {
-    grid-row: auto;
-  }
-
-  .demand-row-actions {
-    grid-column: 3;
-    width: auto;
-    padding-left: 0;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
+.demand-action-field input[type="text"] {
+  min-width: 120px;
+  flex: 1 1 120px;
 }
