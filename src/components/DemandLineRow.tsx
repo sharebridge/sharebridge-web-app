@@ -150,7 +150,10 @@ export function DemandLineRow({
                 type="button"
                 className="btn btn-secondary btn-compact"
                 disabled={
-                  submitting || !canPledge || !draft.bidVendor.trim()
+                  submitting ||
+                  !canPledge ||
+                  !pledgeEmailConsent ||
+                  !draft.bidVendor.trim()
                 }
                 onClick={onBid}
               >
