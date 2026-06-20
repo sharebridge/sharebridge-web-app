@@ -7,6 +7,7 @@ import {
 } from "./api/orderIntents";
 import {
   fetchDemandBoard,
+  patchSeekerDemandDelivery,
   type DemandBoardSnapshot,
   type SeekerDemandRow
 } from "./api/demandBoard";
@@ -63,6 +64,7 @@ import {
   readViewerLocation
 } from "./viewerLocation";
 import { buildDashboardNotifications } from "./dashboardNotifications";
+import { isConnectionOrderInProgress } from "./connectionOrderProgress";
 
 const appConfig = getAppConfig();
 
@@ -102,7 +104,10 @@ function AppShell() {
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [opsConfirm, setOpsConfirm] = useState<
-    { kind: "payment" | "delivered"; intentId: string } | null
+    | { kind: "payment"; intentId: string }
+    | { kind: "delivered"; intentId: string }
+    | { kind: "meal_delivered"; seekerDemandId: string }
+    | null
   >(null);
   const [opsSuccess, setOpsSuccess] = useState<string | null>(null);
   const [demandRefreshKey, setDemandRefreshKey] = useState(0);
@@ -482,12 +487,54 @@ function AppShell() {
     }
   }, [session, selectedIntentId, coordinatorView]);
 
+  const handleMarkMealNeedDelivered = useCallback(
+    async (seekerDemandId?: string) => {
+      const targetId = seekerDemandId ?? selectedMealNeed?.seeker_demand_id;
+      if (!session || !targetId || !coordinatorView) {
+        return;
+      }
+      setOpsSaving(true);
+      try {
+        const updated = await patchSeekerDemandDelivery(
+          appConfig.apiBaseUrl,
+          session,
+          targetId
+        );
+        setSeekerDemands((rows) =>
+          rows.map((row) =>
+            row.seeker_demand_id === updated.seeker_demand_id ? updated : row
+          )
+        );
+        setDemandRefreshKey((key) => key + 1);
+        setOpsSuccess(
+          updated.delivered_at?.trim()
+            ? `Eco kitchen order marked delivered at ${new Date(updated.delivered_at).toLocaleString()}.`
+            : "Eco kitchen order marked delivered."
+        );
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not mark eco-kitchen delivery complete."
+        );
+      } finally {
+        setOpsSaving(false);
+      }
+    },
+    [session, selectedMealNeed, coordinatorView]
+  );
+
   const requestMarkPaymentDone = useCallback((intentId: string) => {
     setOpsConfirm({ kind: "payment", intentId });
   }, []);
 
   const requestMarkDelivered = useCallback((intentId: string) => {
     setOpsConfirm({ kind: "delivered", intentId });
+  }, []);
+
+  const requestMarkMealNeedDelivered = useCallback((seekerDemandId: string) => {
+    setOpsConfirm({ kind: "meal_delivered", seekerDemandId });
   }, []);
 
   const confirmPendingOps = useCallback(async () => {
@@ -498,10 +545,17 @@ function AppShell() {
     setOpsConfirm(null);
     if (pending.kind === "payment") {
       await handleMarkPaymentDone(pending.intentId);
-    } else {
+    } else if (pending.kind === "delivered") {
       await handleMarkDelivered(pending.intentId);
+    } else {
+      await handleMarkMealNeedDelivered(pending.seekerDemandId);
     }
-  }, [opsConfirm, handleMarkPaymentDone, handleMarkDelivered]);
+  }, [
+    opsConfirm,
+    handleMarkPaymentDone,
+    handleMarkDelivered,
+    handleMarkMealNeedDelivered
+  ]);
 
   function handleSignedIn(next: AuthSession) {
     saveSession(next);
@@ -553,15 +607,21 @@ function AppShell() {
           title={
             opsConfirm.kind === "payment"
               ? "Mark payment done?"
-              : "Mark delivered?"
+              : opsConfirm.kind === "meal_delivered"
+                ? "Mark eco kitchen delivered?"
+                : "Mark delivered?"
           }
           message={
             opsConfirm.kind === "payment"
               ? "Confirm you placed and paid for this meal in the vendor app."
-              : "Confirm handover to the beneficiary is complete. This sets delivery status and stamps Delivered at."
+              : opsConfirm.kind === "meal_delivered"
+                ? "Confirm handover for this eco-kitchen order is complete. The order will leave Updates once marked delivered."
+                : "Confirm handover to the beneficiary is complete. This sets delivery status and stamps Delivered at."
           }
           confirmLabel={
-            opsConfirm.kind === "payment" ? "Mark payment done" : "Mark delivered"
+            opsConfirm.kind === "payment"
+              ? "Mark payment done"
+              : "Mark delivered"
           }
           confirming={opsSaving}
           onCancel={() => setOpsConfirm(null)}
@@ -804,6 +864,21 @@ function AppShell() {
                       <p className="intent-meta">
                         {selectedMealNeed.verbal_notes}
                       </p>
+                    ) : null}
+                    {coordinatorView &&
+                    isConnectionOrderInProgress(selectedMealNeed) ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={opsSaving}
+                        onClick={() =>
+                          requestMarkMealNeedDelivered(
+                            selectedMealNeed.seeker_demand_id
+                          )
+                        }
+                      >
+                        {opsSaving ? "Saving…" : "Mark delivered"}
+                      </button>
                     ) : null}
                   </div>
                 ) : (

@@ -146,6 +146,44 @@ describe("buildDashboardNotifications", () => {
       buildDashboardNotifications(snapshot, "k1", { coordinator: false })
     ).toEqual([]);
   });
+
+  it("drops updates after eco-kitchen delivery is complete", () => {
+    const snapshot = baseSnapshot({
+      seeker_demands: [
+        {
+          seeker_demand_id: "d1",
+          order_code: "SB-DONE-1",
+          reported_by_user_id: "alice",
+          status: "fulfilled",
+          meal_units: 1,
+          standard_offer_id: "o1",
+          need_description: "x",
+          locality_key: "IN:TN:600115",
+          created_at: "2026-06-01T10:00:00Z",
+          updated_at: "2026-06-02T12:00:00Z"
+        }
+      ],
+      vendor_bids: [
+        {
+          vendor_bid_id: "b1",
+          submitted_by_user_id: "k1",
+          locality_key: "IN:TN:600115",
+          standard_offer_id: "o1",
+          vendor_name: "Kitchen",
+          portions: 1,
+          status: "active",
+          commitment_status: "committed",
+          order_code: "SB-DONE-1",
+          seeker_demand_id: "d1",
+          created_at: "2026-06-01T12:00:00Z"
+        }
+      ]
+    });
+
+    expect(
+      buildDashboardNotifications(snapshot, "alice", { coordinator: false })
+    ).toEqual([]);
+  });
 });
 
 describe("dashboardNotificationSummary", () => {

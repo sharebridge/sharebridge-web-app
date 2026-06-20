@@ -51,6 +51,8 @@ export type SeekerDemandRow = {
   locality_key?: string;
   created_at: string;
   updated_at: string;
+  /** Set when coordinators mark eco-kitchen delivery complete. */
+  delivered_at?: string | null;
 };
 
 export type PledgeRow = {
@@ -263,4 +265,36 @@ export async function fetchDemandBoard(
     );
   }
   return (await response.json()) as DemandBoardSnapshot;
+}
+
+export async function patchSeekerDemandDelivery(
+  apiBaseUrl: string,
+  session: AuthSession,
+  seekerDemandId: string
+): Promise<SeekerDemandRow> {
+  const response = await fetch(
+    `${apiBaseUrl}/v1/seeker-demands/${encodeURIComponent(seekerDemandId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        authorization: `Bearer ${session.token}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ delivery_status: "delivered" })
+    }
+  );
+  if (!response.ok) {
+    let message = "Could not mark eco-kitchen delivery complete.";
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) {
+        message = body.message;
+      }
+    } catch {
+      // ignore
+    }
+    throw new ApiError(message, response.status);
+  }
+  const data = (await response.json()) as { seeker_demand: SeekerDemandRow };
+  return data.seeker_demand;
 }

@@ -4,6 +4,7 @@ import type {
   SeekerDemandRow,
   VendorBidRow
 } from "./api/demandBoard";
+import { isConnectionOrderInProgress } from "./connectionOrderProgress";
 
 export type DashboardNotificationRole =
   | "coordinator"
@@ -103,6 +104,9 @@ export function buildDashboardNotifications(
       continue;
     }
     const demand = findSeekerDemand(snapshot, bid);
+    if (!isConnectionOrderInProgress(demand)) {
+      continue;
+    }
     const pledges = demand ? pledgesForDemand(snapshot, demand) : [];
     const viewerRole = resolveViewerRole(
       userId,
