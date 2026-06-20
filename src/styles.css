@@ -16,6 +16,11 @@
   --header-h: 64px;
   --radius: 12px;
   --shadow: 0 1px 3px rgb(15 23 42 / 8%), 0 8px 24px rgb(15 23 42 / 6%);
+  /* Scrollable panel bodies — tuned per breakpoint below */
+  --panel-scroll-sm: min(24dvh, 12rem);
+  --panel-scroll-md: min(34dvh, 20rem);
+  --panel-scroll-lg: min(42dvh, 26rem);
+  --panel-scroll-xl: min(52dvh, 32rem);
   font-family:
     "Segoe UI",
     system-ui,
@@ -543,6 +548,29 @@ body {
   .feed-toolbar {
     padding: 0 12px;
   }
+
+  :root {
+    --panel-scroll-sm: min(20dvh, 10rem);
+    --panel-scroll-md: min(28dvh, 16rem);
+    --panel-scroll-lg: min(36dvh, 22rem);
+    --panel-scroll-xl: min(44dvh, 28rem);
+  }
+}
+
+@media (min-width: 901px) {
+  :root {
+    --panel-scroll-sm: min(22vh, 13rem);
+    --panel-scroll-md: min(30vh, 19rem);
+    --panel-scroll-lg: min(38vh, 25rem);
+    --panel-scroll-xl: min(46vh, 31rem);
+  }
+}
+
+.panel-scroll-region {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .panel {
@@ -1194,6 +1222,23 @@ a {
   border-top: 1px solid var(--border);
 }
 
+.collapsible-panel.is-expanded .collapsible-panel-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  max-height: var(--panel-body-max-height, var(--panel-scroll-md));
+}
+
+.collapsible-panel.dashboard-notifications.is-expanded .collapsible-panel-body,
+.collapsible-panel.connection-consent.is-expanded .collapsible-panel-body {
+  --panel-body-max-height: var(--panel-scroll-sm);
+}
+
+.collapsible-panel.connection-panel.is-expanded .collapsible-panel-body {
+  --panel-body-max-height: var(--panel-scroll-lg);
+}
+
 .collapsible-panel.is-collapsed .collapsible-panel-body {
   display: none;
 }
@@ -1361,6 +1406,44 @@ a {
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.list-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.list-panel .panel-head,
+.list-panel .panel-lede {
+  flex-shrink: 0;
+}
+
+.list-panel .intent-list.initiation-timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: var(--panel-scroll-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.detail-panel.detail-panel-desktop {
+  max-height: var(--panel-scroll-xl);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.detail-panel.detail-panel-desktop > h2 {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  margin-bottom: 12px;
+  padding-bottom: 4px;
 }
 
 .initiation-kind-chip {
@@ -1661,12 +1744,44 @@ a {
   align-items: start;
 }
 
-.supply-lines-panel {
+.supply-lines-panel,
+.supply-ledger-panel {
+  display: flex;
+  flex-direction: column;
   min-height: 280px;
 }
 
-.supply-ledger-panel {
-  min-height: 280px;
+.supply-lines-panel .panel-head,
+.supply-ledger-panel .panel-head,
+.supply-ledger-panel .panel-lede,
+.supply-ledger-panel .supply-ledger-tabs {
+  flex-shrink: 0;
+}
+
+.supply-lines-panel .demand-bucket-list,
+.supply-ledger-panel .supply-ledger-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: var(--panel-scroll-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.supply-ledger-panel .supply-ledger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demand-bucket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .supply-ledger-tabs {
