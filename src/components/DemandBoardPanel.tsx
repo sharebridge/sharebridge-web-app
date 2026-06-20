@@ -83,6 +83,12 @@ export function DemandBoardPanel({
   const scopeQueryKey = orderListQueryKey(scopeQuery);
   const onBoundariesChangeRef = useRef(onBoundariesChange);
   onBoundariesChangeRef.current = onBoundariesChange;
+  const onSessionInvalidRef = useRef(onSessionInvalid);
+  onSessionInvalidRef.current = onSessionInvalid;
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const scopeQueryRef = useRef(scopeQuery);
+  scopeQueryRef.current = scopeQuery;
 
   const getDraft = useCallback(
     (lineKey: string): DemandLineDraft =>
@@ -103,9 +109,10 @@ export function DemandBoardPanel({
   }, []);
 
   const load = useCallback(async () => {
-    if (isSessionExpired(session)) {
+    const activeSession = sessionRef.current;
+    if (isSessionExpired(activeSession)) {
       setError("Your sign-in has expired. Please sign out and sign in again.");
-      onSessionInvalid?.();
+      onSessionInvalidRef.current?.();
       return;
     }
     setLoading(true);
@@ -113,18 +120,18 @@ export function DemandBoardPanel({
     try {
       const data = await fetchDemandBoard(
         getAppConfig().apiBaseUrl,
-        session,
-        scopeQuery
+        activeSession,
+        scopeQueryRef.current
       );
       setSnapshot(data);
       onBoundariesChangeRef.current?.(
         demandBoardFeedMeta(data),
-        isCoordinatorSession(session)
+        isCoordinatorSession(activeSession)
       );
     } catch (err) {
       setSnapshot(null);
       if (err instanceof ApiError && err.status === 401) {
-        onSessionInvalid?.();
+        onSessionInvalidRef.current?.();
       }
       setError(
         formatUserFacingApiError(err, "Could not load the Actions board.")
@@ -132,7 +139,7 @@ export function DemandBoardPanel({
     } finally {
       setLoading(false);
     }
-  }, [session, scopeQuery, scopeQueryKey, refreshKey, onSessionInvalid]);
+  }, [scopeQueryKey, refreshKey]);
 
   useEffect(() => {
     void load();

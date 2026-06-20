@@ -250,6 +250,14 @@ function AppShell() {
     []
   );
 
+  const handleSessionInvalid = useCallback(() => {
+    clearSession();
+    setSession(null);
+    setIntents([]);
+    setSelectedKey(null);
+    setError("Your sign-in has expired. Please sign in again.");
+  }, []);
+
   const handleApplyCoordinatorScope = useCallback(async () => {
     if (!session) {
       return;
@@ -510,14 +518,6 @@ function AppShell() {
     setIntents([]);
     setSelectedKey(null);
     setError(null);
-  }
-
-  function handleSessionInvalid() {
-    clearSession();
-    setSession(null);
-    setIntents([]);
-    setSelectedKey(null);
-    setError("Your sign-in has expired. Please sign in again.");
   }
 
   function handleHome() {
