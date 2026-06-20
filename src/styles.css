@@ -38,6 +38,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 .site {
@@ -338,6 +339,10 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+.layout > * {
+  min-width: 0;
 }
 
 .layout-mobile-inline .detail-panel-desktop {
@@ -1224,6 +1229,7 @@ a {
 
 .collapsible-panel.is-expanded .collapsible-panel-body {
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
@@ -1424,6 +1430,7 @@ a {
   min-height: 0;
   max-height: var(--panel-scroll-lg);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
@@ -1432,6 +1439,7 @@ a {
 .detail-panel.detail-panel-desktop {
   max-height: var(--panel-scroll-xl);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
@@ -1700,6 +1708,8 @@ a {
 
 .connection-demand-headline {
   margin: 8px 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .connection-demand-links {
@@ -1738,10 +1748,32 @@ a {
   font-size: 0.85rem;
   color: var(--muted);
   font-style: italic;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.intent-meta,
+.detail-grid dd,
+.intent-inline-detail,
+.connection-detail p,
+.connection-detail li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.intent-inline-detail a,
+.connection-detail a,
+.detail-grid a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .supply-split {
   align-items: start;
+}
+
+.supply-split > * {
+  min-width: 0;
 }
 
 .supply-lines-panel,
@@ -1764,6 +1796,7 @@ a {
   min-height: 0;
   max-height: var(--panel-scroll-lg);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
