@@ -1900,7 +1900,7 @@ a {
 
 @media (min-width: 900px) {
   .demand-row-grid {
-    grid-template-columns: auto minmax(180px, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-rows: 1fr;
     align-items: center;
   }
@@ -1911,6 +1911,13 @@ a {
 
   .demand-row-actions {
     grid-column: 3;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 1280px) {
+  .demand-row-actions {
     flex-wrap: nowrap;
   }
 }
