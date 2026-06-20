@@ -1,5 +1,6 @@
 import type { DashboardNotification } from "../dashboardNotifications";
 import { dashboardNotificationSummary } from "../dashboardNotifications";
+import { CollapsiblePanel } from "./CollapsiblePanel";
 
 type Props = {
   notifications: DashboardNotification[];
@@ -13,6 +14,34 @@ const ROLE_LABELS: Record<DashboardNotification["viewerRole"], string> = {
   kitchen: "Your kitchen commit"
 };
 
+function updatesCollapsedSummary(
+  notifications: DashboardNotification[]
+): string {
+  if (notifications.length === 0) {
+    return "";
+  }
+  const latest = notifications[0];
+  const preview = dashboardNotificationSummary(latest);
+  const countLabel =
+    notifications.length === 1
+      ? "1 update"
+      : `${notifications.length} updates`;
+  const shortPreview =
+    preview.length > 72 ? `${preview.slice(0, 69).trim()}…` : preview;
+  return `${countLabel} · ${shortPreview}`;
+}
+
+function updatesArrivalSignature(
+  notifications: DashboardNotification[]
+): string | null {
+  if (notifications.length === 0) {
+    return null;
+  }
+  return notifications
+    .map((row) => `${row.id}:${row.committedAt}`)
+    .join("|");
+}
+
 export function DashboardNotificationsBanner({
   notifications,
   onOpenConnection
@@ -22,13 +51,16 @@ export function DashboardNotificationsBanner({
   }
 
   return (
-    <section
+    <CollapsiblePanel
+      title="Updates"
+      collapsedSummary={updatesCollapsedSummary(notifications)}
+      highlightCollapsed
+      arrivalSignature={updatesArrivalSignature(notifications)}
+      defaultExpanded
+      storageKey="dashboard-updates"
       className="dashboard-notifications"
-      aria-label="Connection updates"
+      ariaLabel="Dashboard updates"
     >
-      <p className="dashboard-notifications-title">
-        Updates ({notifications.length})
-      </p>
       <ul className="dashboard-notifications-list">
         {notifications.map((row) => (
           <li key={row.id} className="dashboard-notification-item">
@@ -48,6 +80,6 @@ export function DashboardNotificationsBanner({
           </li>
         ))}
       </ul>
-    </section>
+    </CollapsiblePanel>
   );
 }

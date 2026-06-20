@@ -3,6 +3,7 @@ import {
   readPledgeEmailConsent,
   writePledgeEmailConsent
 } from "../connectionConsent";
+import { CollapsiblePanel } from "./CollapsiblePanel";
 
 type Props = {
   checked: boolean;
@@ -12,14 +13,20 @@ type Props = {
 /** Upfront consent before pledging on the Actions tab. */
 export function ConnectionEmailConsent({ checked, onChange }: Props) {
   const { heading, body, bullets, checkbox } = PLEDGE_EMAIL_CONSENT_COPY;
+  const collapsedSummary = checked
+    ? "Consent accepted — login email may be shared for pledges and kitchen commits"
+    : "Required before pledging — review email sharing terms";
 
   return (
-    <section
-      className="connection-consent panel"
-      role="region"
-      aria-labelledby="connection-consent-heading"
+    <CollapsiblePanel
+      title={heading}
+      collapsedSummary={collapsedSummary}
+      highlightCollapsed={!checked}
+      defaultExpanded={!checked}
+      storageKey="actions-email-consent"
+      className="connection-consent"
+      ariaLabel="Email sharing consent"
     >
-      <h3 id="connection-consent-heading">{heading}</h3>
       <p className="panel-lede">{body}</p>
       <ul className="connection-consent-list">
         {bullets.map((line) => (
@@ -38,7 +45,7 @@ export function ConnectionEmailConsent({ checked, onChange }: Props) {
         />
         {checkbox}
       </label>
-    </section>
+    </CollapsiblePanel>
   );
 }
 

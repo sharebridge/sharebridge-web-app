@@ -6,6 +6,7 @@ import { getAppConfig } from "../config";
 import { CONNECTION_SAFETY_COPY } from "../connectionCopy";
 import { formatUserFacingApiError } from "../apiUserMessage";
 import { isSessionExpired } from "../authSession";
+import { CollapsiblePanel } from "./CollapsiblePanel";
 
 type Props = {
   session: AuthSession;
@@ -30,6 +31,42 @@ function collectOrderCodes(snapshot: DemandBoardSnapshot | null): string[] {
   return [...codes].sort();
 }
 
+function connectionCollapsedSummary(
+  connection: OrderConnection | null,
+  knownCodes: string[],
+  loading: boolean
+): string {
+  if (loading) {
+    return "Loading connection…";
+  }
+  if (connection) {
+    if (connection.status === "ready") {
+      return `Connection ready · ${connection.order_code}`;
+    }
+    return `Waiting for kitchen · ${connection.order_code}`;
+  }
+  if (knownCodes.length === 1) {
+    return `1 order code · ${knownCodes[0]}`;
+  }
+  if (knownCodes.length > 1) {
+    const preview = knownCodes.slice(0, 2).join(", ");
+    const extra =
+      knownCodes.length > 2 ? ` +${knownCodes.length - 2} more` : "";
+    return `${knownCodes.length} order codes · ${preview}${extra}`;
+  }
+  return "Open an order code after eco kitchen commit";
+}
+
+function connectionHighlightCollapsed(
+  connection: OrderConnection | null,
+  knownCodes: string[]
+): boolean {
+  if (connection?.status === "ready") {
+    return true;
+  }
+  return knownCodes.length > 0;
+}
+
 export function ConnectionLookupPanel({
   session,
   snapshot,
@@ -42,6 +79,12 @@ export function ConnectionLookupPanel({
   const [error, setError] = useState<string | null>(null);
 
   const knownCodes = useMemo(() => collectOrderCodes(snapshot), [snapshot]);
+  const arrivalSignature =
+    knownCodes.length > 0
+      ? knownCodes.join("|")
+      : connection
+        ? `${connection.order_code}:${connection.status}`
+        : null;
 
   const loadConnection = useCallback(
     async (orderCode: string) => {
@@ -89,11 +132,21 @@ export function ConnectionLookupPanel({
   }, [autoLoadOrderCode, loadConnection]);
 
   return (
-    <section
+    <CollapsiblePanel
+      title="Connection"
+      collapsedSummary={connectionCollapsedSummary(
+        connection,
+        knownCodes,
+        loading
+      )}
+      highlightCollapsed={connectionHighlightCollapsed(connection, knownCodes)}
+      arrivalSignature={arrivalSignature}
+      expandedRevision={autoLoadOrderCode}
+      defaultExpanded={Boolean(autoLoadOrderCode?.trim())}
+      storageKey="actions-connection"
       className="connection-panel panel"
-      aria-label="Order connection"
+      ariaLabel="Order connection"
     >
-      <h3>Connection</h3>
       <p className="connection-panel-lede">
         After an eco kitchen commits, open the connection here to see login
         emails for off-platform payment and delivery. We never send payment links
@@ -218,6 +271,6 @@ export function ConnectionLookupPanel({
           <p className="connection-safety">{CONNECTION_SAFETY_COPY}</p>
         </div>
       ) : null}
-    </section>
+    </CollapsiblePanel>
   );
 }
