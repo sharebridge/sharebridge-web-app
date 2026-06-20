@@ -1898,9 +1898,10 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
   gap: 8px;
-  align-items: end;
+  align-items: start;
   padding-top: 10px;
   border-top: 1px solid var(--border);
+  --demand-action-label-offset: calc(0.72rem * 1.25 + 4px);
 }
 
 .demand-action-field {
@@ -1927,7 +1928,8 @@ a {
 
 .demand-row-actions > .btn {
   justify-self: start;
-  align-self: end;
+  align-self: start;
+  margin-top: var(--demand-action-label-offset);
 }
 
 @container supply-lines (min-width: 34rem) {
