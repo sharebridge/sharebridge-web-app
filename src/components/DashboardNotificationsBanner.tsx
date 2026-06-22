@@ -5,6 +5,7 @@ import { CollapsiblePanel } from "./CollapsiblePanel";
 type Props = {
   notifications: DashboardNotification[];
   onOpenConnection: (orderCode: string) => void;
+  defaultExpanded?: boolean;
 };
 
 const ROLE_LABELS: Record<DashboardNotification["viewerRole"], string> = {
@@ -44,7 +45,8 @@ function updatesArrivalSignature(
 
 export function DashboardNotificationsBanner({
   notifications,
-  onOpenConnection
+  onOpenConnection,
+  defaultExpanded = true
 }: Props) {
   if (notifications.length === 0) {
     return null;
@@ -56,7 +58,7 @@ export function DashboardNotificationsBanner({
       collapsedSummary={updatesCollapsedSummary(notifications)}
       highlightCollapsed
       arrivalSignature={updatesArrivalSignature(notifications)}
-      defaultExpanded
+      defaultExpanded={defaultExpanded}
       storageKey="dashboard-updates"
       className="dashboard-notifications"
       ariaLabel="Dashboard updates"

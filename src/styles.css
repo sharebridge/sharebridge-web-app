@@ -47,6 +47,16 @@ body {
   flex-direction: column;
 }
 
+.site--app {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.site--app .footer {
+  display: none;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -159,43 +169,45 @@ body {
 .main-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  flex: 1;
+  gap: 0;
   min-height: 0;
-  padding-top: 16px;
-  padding-bottom: 24px;
+  padding: 8px 16px 12px;
+  overflow: hidden;
 }
 
-.dashboard-chrome {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: sticky;
-  top: var(--header-h);
-  z-index: 8;
-  background: var(--bg);
+.dashboard-nav-bar {
+  flex-shrink: 0;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.dashboard-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .dashboard-nav {
   margin-bottom: 0;
 }
 
-.view-page-head {
-  padding: 8px 4px 4px;
-}
-
-.view-page-title {
+.dashboard-scope-panel.collapsible-panel {
   margin: 0;
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
 }
 
-.view-page-lede {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.95rem;
+.dashboard-scope-panel .coordinator-scope-toolbar {
+  margin-bottom: 12px;
+}
+
+.dashboard-scope-panel .dashboard-boundaries {
+  margin-bottom: 0;
 }
 
 .dashboard-view {
@@ -203,17 +215,52 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-view--initiations {
+  overflow-y: auto;
 }
 
 .dashboard-view--initiations .dashboard.layout {
   flex: 1;
+  min-height: min(28rem, 100%);
+}
+
+.dashboard-view--actions,
+.dashboard-view--map {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dashboard-view--actions .supply-workspace {
+  flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.dashboard-view--actions .supply-split {
+  flex: 1;
+  min-height: min(32rem, 100%);
 }
 
 .dashboard-view--actions .supply-lines-panel,
+.dashboard-view--actions .supply-ledger-panel {
+  min-height: min(28rem, 100%);
+}
+
+.dashboard-view--actions .supply-lines-panel .demand-bucket-list,
+.dashboard-view--actions .supply-ledger-panel .supply-ledger-list {
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 14rem;
+}
+
 .dashboard-view--map .map-panel {
   flex: 1;
-  min-height: 0;
+  min-height: min(24rem, 100%);
 }
 
 .hero {
@@ -1140,8 +1187,8 @@ a {
 }
 
 .dashboard-boundaries {
-  margin: 0 0 16px;
-  padding: 14px 16px;
+  margin: 0;
+  padding: 12px 14px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -1178,7 +1225,7 @@ a {
 }
 
 .dashboard-notifications {
-  margin: 0 0 16px;
+  margin: 0;
   padding: 0;
   border-radius: var(--radius);
   border: 1px solid #bfdbfe;
@@ -1384,8 +1431,8 @@ a {
 }
 
 .coordinator-scope-toolbar {
-  margin: 0 0 16px;
-  padding: 14px 16px;
+  margin: 0;
+  padding: 12px 14px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--accent-soft);

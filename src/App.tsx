@@ -57,9 +57,8 @@ import {
   type OrderListQuery
 } from "./coordinatorScope";
 import { GroupModeToolbar } from "./components/GroupModeToolbar";
-import { DashboardBoundariesBanner } from "./components/DashboardBoundariesBanner";
 import { DashboardNotificationsBanner } from "./components/DashboardNotificationsBanner";
-import { CoordinatorScopeToolbar } from "./components/CoordinatorScopeToolbar";
+import { DashboardScopePanel } from "./components/DashboardScopePanel";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { LocationRequiredDialog } from "./components/LocationRequiredDialog";
 import {
@@ -614,8 +613,11 @@ function AppShell() {
     return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
   }
 
+  const compactWorkspaceChrome =
+    dashboardMode === "actions" || dashboardMode === "map";
+
   return (
-    <div className="site">
+    <div className="site site--app">
       <SiteHeader
         config={appConfig}
         session={session}
@@ -660,31 +662,23 @@ function AppShell() {
       ) : null}
 
       <main className="main main-dashboard">
-        <div className="dashboard-chrome">
+        <div className="dashboard-nav-bar">
           <DashboardNav activeView={dashboardMode} />
+        </div>
 
+        <div className="dashboard-body">
           {dashboardMode === "initiations" ? (
             <DashboardHero
               kind={coordinatorView ? "coordinator" : "initiator"}
               session={session}
               initiationCount={intents.length}
             />
-          ) : (
-            <header className="view-page-head">
-              <h1 className="view-page-title">
-                {dashboardMode === "actions" ? "Actions" : "Map"}
-              </h1>
-              <p className="view-page-lede">
-                {dashboardMode === "actions"
-                  ? "Pledge portions, record kitchen commits, and open order contacts."
-                  : "Pins for your own initiations with GPS from the mobile app."}
-              </p>
-            </header>
-          )}
+          ) : null}
 
           <DashboardNotificationsBanner
             notifications={dashboardNotifications}
             onOpenConnection={handleOpenConnectionFromNotification}
+            defaultExpanded={!compactWorkspaceChrome}
           />
 
           {error ? (
@@ -739,12 +733,21 @@ function AppShell() {
           ) : null}
 
           {coordinatorView || apiDashboard === "limited" ? (
-            <CoordinatorScopeToolbar
+            <DashboardScopePanel
               variant={coordinatorView ? "coordinator" : "initiator"}
               draft={coordinatorScopeDraft}
               onDraftChange={setCoordinatorScopeDraft}
               onApply={() => void handleApplyCoordinatorScope()}
               applying={scopeApplying}
+              boundaries={dashboardBoundaries}
+              viewLabel={
+                dashboardMode === "initiations"
+                  ? "Initiations"
+                  : dashboardMode === "actions"
+                    ? "Actions"
+                    : "Map"
+              }
+              defaultExpanded={!compactWorkspaceChrome}
             />
           ) : null}
 
@@ -757,19 +760,7 @@ function AppShell() {
             />
           ) : null}
 
-          <DashboardBoundariesBanner
-            boundaries={dashboardBoundaries}
-            viewLabel={
-              dashboardMode === "initiations"
-                ? "Initiations"
-                : dashboardMode === "actions"
-                  ? "Actions"
-                  : "Map"
-            }
-          />
-        </div>
-
-        <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
+          <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
           {dashboardMode === "initiations" ? (
             <InitiationsView
               isMobileLayout={isMobileLayout}
@@ -811,6 +802,7 @@ function AppShell() {
               viewerUserId={session.userId}
             />
           )}
+          </div>
         </div>
       </main>
 
