@@ -1,5 +1,8 @@
 import type { DashboardBoundaries } from "../feedScope";
-import type { CoordinatorScopeFilters } from "../coordinatorScope";
+import {
+  coordinatorScopeCollapsedSummary,
+  type CoordinatorScopeFilters
+} from "../coordinatorScope";
 import { CoordinatorScopeToolbar } from "./CoordinatorScopeToolbar";
 import { DashboardBoundariesBanner } from "./DashboardBoundariesBanner";
 import { CollapsiblePanel } from "./CollapsiblePanel";
@@ -7,6 +10,7 @@ import { CollapsiblePanel } from "./CollapsiblePanel";
 type Props = {
   variant: "coordinator" | "initiator";
   draft: CoordinatorScopeFilters;
+  applied: CoordinatorScopeFilters;
   onDraftChange: (next: CoordinatorScopeFilters) => void;
   onApply: () => void;
   applying?: boolean;
@@ -15,17 +19,11 @@ type Props = {
   defaultExpanded?: boolean;
 };
 
-function scopeCollapsedSummary(boundaries: DashboardBoundaries | null): string {
-  if (!boundaries) {
-    return "Time window and geographic area";
-  }
-  return `${boundaries.timeLabel} · ${boundaries.areaLabel}`;
-}
-
 /** Scope filters + data boundaries — collapsible so Actions content keeps room. */
 export function DashboardScopePanel({
   variant,
   draft,
+  applied,
   onDraftChange,
   onApply,
   applying = false,
@@ -36,7 +34,7 @@ export function DashboardScopePanel({
   return (
     <CollapsiblePanel
       title="Scope & filters"
-      collapsedSummary={scopeCollapsedSummary(boundaries)}
+      collapsedSummary={coordinatorScopeCollapsedSummary(applied)}
       defaultExpanded={defaultExpanded}
       storageKey="dashboard-scope"
       className="dashboard-scope-panel"

@@ -106,11 +106,23 @@ function parseFeedWindowHours(meta: OrderFeedMeta): number | null {
 }
 
 function formatSinceLabel(since: string | undefined): string | null {
-  const hours = parseSinceHours(since);
-  if (hours == null) {
+  if (!since?.trim()) {
     return null;
   }
-  return hoursPhrase(hours);
+  const trimmed = since.trim();
+  const hours = parseSinceHours(trimmed);
+  if (hours != null) {
+    return hoursPhrase(hours);
+  }
+  const daysMatch = /^(\d+)d$/i.exec(trimmed);
+  if (daysMatch) {
+    const days = Number(daysMatch[1]);
+    if (!Number.isFinite(days) || days <= 0) {
+      return null;
+    }
+    return days === 1 ? "the last day" : `the last ${days} days`;
+  }
+  return null;
 }
 
 function areaLabelFromNeighbourhood(

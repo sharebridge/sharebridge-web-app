@@ -737,6 +737,7 @@ function AppShell() {
             <DashboardScopePanel
               variant={coordinatorView ? "coordinator" : "initiator"}
               draft={coordinatorScopeDraft}
+              applied={coordinatorScopeApplied}
               onDraftChange={setCoordinatorScopeDraft}
               onApply={() => void handleApplyCoordinatorScope()}
               applying={scopeApplying}
@@ -770,6 +771,7 @@ function AppShell() {
                   <DashboardScopePanel
                     variant={coordinatorView ? "coordinator" : "initiator"}
                     draft={coordinatorScopeDraft}
+                    applied={coordinatorScopeApplied}
                     onDraftChange={setCoordinatorScopeDraft}
                     onApply={() => void handleApplyCoordinatorScope()}
                     applying={scopeApplying}

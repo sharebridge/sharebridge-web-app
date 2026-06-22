@@ -91,6 +91,12 @@ describe("feedScopeFromApi", () => {
     expect(scoped?.timeLabel).toBe("the last 24 hours");
     expect(scoped?.areaLabel).toContain("IN:TN:600001");
     expect(scoped?.maxRowsLabel).toBe("Up to 50 rows");
+
+    const week = dashboardBoundariesFromApi(
+      { since: "7d", feed: { since: "7d", location_mode: "all", max_rows: 100 } },
+      { coordinator: true }
+    );
+    expect(week?.timeLabel).toBe("the last 7 days");
   });
 
   it("empty list message distinguishes neighbourhood vs own-only", () => {

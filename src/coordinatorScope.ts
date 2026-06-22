@@ -16,6 +16,42 @@ export const DEFAULT_COORDINATOR_SCOPE: CoordinatorScopeFilters = {
   localityKey: ""
 };
 
+export const COORDINATOR_SINCE_OPTIONS: {
+  value: CoordinatorSincePreset;
+  label: string;
+}[] = [
+  { value: "", label: "All time" },
+  { value: "2h", label: "Last 2 hours" },
+  { value: "24h", label: "Last 24 hours" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" }
+];
+
+export const COORDINATOR_AREA_OPTIONS: {
+  value: CoordinatorAreaMode;
+  label: string;
+}[] = [
+  { value: "all", label: "All areas" },
+  { value: "near", label: "Near my location" },
+  { value: "locality", label: "Postal area key" }
+];
+
+export function coordinatorScopeCollapsedSummary(
+  filters: CoordinatorScopeFilters
+): string {
+  const timeLabel =
+    COORDINATOR_SINCE_OPTIONS.find((option) => option.value === filters.since)
+      ?.label ?? "All time";
+  let areaLabel =
+    COORDINATOR_AREA_OPTIONS.find((option) => option.value === filters.areaMode)
+      ?.label ?? "All areas";
+  if (filters.areaMode === "locality") {
+    const key = normalizeLocalityKey(filters.localityKey);
+    areaLabel = key ? `Postal area ${key}` : "Postal area key";
+  }
+  return `${timeLabel} · ${areaLabel}`;
+}
+
 export type OrderListQuery = {
   since?: string;
   near_lat?: number;

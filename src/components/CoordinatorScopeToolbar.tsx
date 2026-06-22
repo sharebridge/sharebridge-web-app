@@ -1,4 +1,6 @@
 import {
+  COORDINATOR_AREA_OPTIONS,
+  COORDINATOR_SINCE_OPTIONS,
   DEFAULT_COORDINATOR_SCOPE,
   normalizeLocalityKey,
   type CoordinatorAreaMode,
@@ -13,20 +15,6 @@ type Props = {
   applying?: boolean;
   variant?: "coordinator" | "initiator";
 };
-
-const SINCE_OPTIONS: { value: CoordinatorSincePreset; label: string }[] = [
-  { value: "", label: "All time" },
-  { value: "2h", label: "Last 2 hours" },
-  { value: "24h", label: "Last 24 hours" },
-  { value: "7d", label: "Last 7 days" },
-  { value: "30d", label: "Last 30 days" }
-];
-
-const AREA_OPTIONS: { value: CoordinatorAreaMode; label: string }[] = [
-  { value: "all", label: "All areas" },
-  { value: "near", label: "Near my location" },
-  { value: "locality", label: "Postal area key" }
-];
 
 export function CoordinatorScopeToolbar({
   draft,
@@ -62,7 +50,7 @@ export function CoordinatorScopeToolbar({
               })
             }
           >
-            {SINCE_OPTIONS.map((option) => (
+            {COORDINATOR_SINCE_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
                 {option.label}
               </option>
@@ -81,7 +69,7 @@ export function CoordinatorScopeToolbar({
               })
             }
           >
-            {AREA_OPTIONS.map((option) => (
+            {COORDINATOR_AREA_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
