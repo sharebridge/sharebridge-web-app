@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   coordinatorScopeCollapsedSummary,
+  coordinatorScopedEmptyListMessage,
   DEFAULT_COORDINATOR_SCOPE,
-  isValidLocalityKey,
-  normalizeLocalityKey,
-  sanitizeLocalityKeyInput,
-  coordinatorScopedEmptyListMessage
+  normalizeLocalityKey
 } from "./coordinatorScope";
 
 describe("coordinatorScopeCollapsedSummary", () => {
@@ -35,20 +33,9 @@ describe("coordinatorScopeCollapsedSummary", () => {
     ).toBe("Last 7 days · Postal area IN:TN:600001");
   });
 
-  it("sanitizeLocalityKeyInput keeps colons while typing", () => {
-    expect(sanitizeLocalityKeyInput("in:tn:")).toBe("IN:TN:");
-    expect(sanitizeLocalityKeyInput("IN:TN:600001")).toBe("IN:TN:600001");
-  });
-
-  it("normalizeLocalityKey trims empty segments on apply", () => {
+  it("normalizeLocalityKey uppercases on apply", () => {
     expect(normalizeLocalityKey("IN:TN:600001")).toBe("IN:TN:600001");
     expect(normalizeLocalityKey(" in : tn : 600001 ")).toBe("IN:TN:600001");
-  });
-
-  it("isValidLocalityKey accepts hierarchical postal keys", () => {
-    expect(isValidLocalityKey("IN:TN:600001")).toBe(true);
-    expect(isValidLocalityKey("IN:TN")).toBe(true);
-    expect(isValidLocalityKey("INTN600001")).toBe(false);
   });
 
   it("coordinatorScopedEmptyListMessage reflects postal filter", () => {

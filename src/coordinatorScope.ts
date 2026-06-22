@@ -52,25 +52,6 @@ export function coordinatorScopeCollapsedSummary(
   return `${timeLabel} · ${areaLabel}`;
 }
 
-const LOCALITY_KEY_PART = /^[A-Z0-9]{2,10}$/;
-
-/** Preserve in-progress typing (including trailing colons) for the postal key field. */
-export function sanitizeLocalityKeyInput(key: string): string {
-  return key.replace(/[^a-zA-Z0-9:]/g, "").toUpperCase();
-}
-
-export function isValidLocalityKey(key: string): boolean {
-  const normalized = normalizeLocalityKey(key);
-  if (!normalized) {
-    return false;
-  }
-  const parts = normalized.split(":");
-  if (parts.length < 2 || parts.length > 3) {
-    return false;
-  }
-  return parts.every((part) => LOCALITY_KEY_PART.test(part));
-}
-
 export function coordinatorScopedEmptyListMessage(
   applied: CoordinatorScopeFilters
 ): string {

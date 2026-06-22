@@ -2,7 +2,6 @@ import {
   COORDINATOR_AREA_OPTIONS,
   COORDINATOR_SINCE_OPTIONS,
   DEFAULT_COORDINATOR_SCOPE,
-  sanitizeLocalityKeyInput,
   type CoordinatorAreaMode,
   type CoordinatorScopeFilters,
   type CoordinatorSincePreset
@@ -87,7 +86,7 @@ export function CoordinatorScopeToolbar({
               onChange={(event) =>
                 onDraftChange({
                   ...draft,
-                  localityKey: sanitizeLocalityKeyInput(event.target.value)
+                  localityKey: event.target.value
                 })
               }
             />

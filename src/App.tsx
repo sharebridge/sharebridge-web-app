@@ -53,7 +53,6 @@ import {
   DEFAULT_COORDINATOR_SCOPE,
   demandBoardQueryFromScope,
   EMPTY_ORDER_LIST_QUERY,
-  isValidLocalityKey,
   normalizeLocalityKey,
   type CoordinatorScopeFilters,
   type OrderListQuery
@@ -273,23 +272,16 @@ function AppShell() {
     try {
       if (coordinatorScopeDraft.areaMode === "locality") {
         const key = normalizeLocalityKey(coordinatorScopeDraft.localityKey);
-        if (!key || !isValidLocalityKey(key)) {
+        if (!key) {
           setLocationDialogMessage(
-            "Enter a valid postal area key (e.g. IN:TN:600001) before applying scope."
+            "Enter a postal area key (e.g. IN:TN:600001) before applying scope."
           );
           return;
         }
       }
-      const scopeToApply =
-        coordinatorScopeDraft.areaMode === "locality"
-          ? {
-              ...coordinatorScopeDraft,
-              localityKey: normalizeLocalityKey(coordinatorScopeDraft.localityKey)
-            }
-          : coordinatorScopeDraft;
       let nearCoords: { near_lat: number; near_lng: number } | null = null;
-      let query = coordinatorScopeToQuery(scopeToApply, null);
-      if (scopeToApply.areaMode === "near") {
+      let query = coordinatorScopeToQuery(coordinatorScopeDraft, null);
+      if (coordinatorScopeDraft.areaMode === "near") {
         const location = await readViewerLocation();
         if (location.status !== "granted") {
           setLocationDialogMessage(
@@ -301,11 +293,10 @@ function AppShell() {
           near_lat: location.coords.lat,
           near_lng: location.coords.lng
         };
-        query = coordinatorScopeToQuery(scopeToApply, nearCoords);
+        query = coordinatorScopeToQuery(coordinatorScopeDraft, nearCoords);
       }
       setCoordinatorNearCoords(nearCoords);
-      setCoordinatorScopeDraft(scopeToApply);
-      setCoordinatorScopeApplied({ ...scopeToApply });
+      setCoordinatorScopeApplied({ ...coordinatorScopeDraft });
       await loadHistory(session, query);
       setDemandRefreshKey((key) => key + 1);
     } finally {
