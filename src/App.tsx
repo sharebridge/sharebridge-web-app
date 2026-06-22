@@ -20,7 +20,8 @@ import {
   saveSession,
   type AuthSession
 } from "./authSession";
-import { DashboardHero } from "./components/DashboardHero";
+import { DashboardHeroPanel } from "./components/DashboardHeroPanel";
+import { DashboardGroupPanel } from "./components/DashboardGroupPanel";
 import { getAppConfig } from "./config";
 import { sessionHeaderLabel } from "./sessionRole";
 import type { OrderGroupMode } from "./groupOrderIntents";
@@ -56,7 +57,6 @@ import {
   type CoordinatorScopeFilters,
   type OrderListQuery
 } from "./coordinatorScope";
-import { GroupModeToolbar } from "./components/GroupModeToolbar";
 import { DashboardNotificationsBanner } from "./components/DashboardNotificationsBanner";
 import { DashboardScopePanel } from "./components/DashboardScopePanel";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -613,8 +613,12 @@ function AppShell() {
     return <SignInPage config={appConfig} onSignedIn={handleSignedIn} />;
   }
 
-  const compactWorkspaceChrome =
-    dashboardMode === "actions" || dashboardMode === "map";
+  const viewLabel =
+    dashboardMode === "initiations"
+      ? "Initiations"
+      : dashboardMode === "actions"
+        ? "Actions"
+        : "Map";
 
   return (
     <div className="site site--app">
@@ -667,8 +671,9 @@ function AppShell() {
         </div>
 
         <div className="dashboard-body">
+          <div className="dashboard-meta">
           {dashboardMode === "initiations" ? (
-            <DashboardHero
+            <DashboardHeroPanel
               kind={coordinatorView ? "coordinator" : "initiator"}
               session={session}
               initiationCount={intents.length}
@@ -678,7 +683,7 @@ function AppShell() {
           <DashboardNotificationsBanner
             notifications={dashboardNotifications}
             onOpenConnection={handleOpenConnectionFromNotification}
-            defaultExpanded={!compactWorkspaceChrome}
+            defaultExpanded={false}
           />
 
           {error ? (
@@ -740,25 +745,20 @@ function AppShell() {
               onApply={() => void handleApplyCoordinatorScope()}
               applying={scopeApplying}
               boundaries={dashboardBoundaries}
-              viewLabel={
-                dashboardMode === "initiations"
-                  ? "Initiations"
-                  : dashboardMode === "actions"
-                    ? "Actions"
-                    : "Map"
-              }
-              defaultExpanded={!compactWorkspaceChrome}
+              viewLabel={viewLabel}
+              defaultExpanded={false}
             />
           ) : null}
 
           {showGroupToolbar && dashboardMode === "initiations" ? (
-            <GroupModeToolbar
+            <DashboardGroupPanel
               coordinatorView={coordinatorView}
               groupMode={groupMode}
               areaLoading={areaLoading}
               onSelect={(mode) => void handleGroupModeClick(mode)}
             />
           ) : null}
+          </div>
 
           <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
           {dashboardMode === "initiations" ? (

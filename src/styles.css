@@ -188,10 +188,28 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 10px;
+  gap: 8px;
+  padding-top: 8px;
+  overflow: hidden;
+}
+
+.dashboard-meta {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(34dvh, 18rem);
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.dashboard-hero-panel.collapsible-panel,
+.dashboard-group-panel.collapsible-panel {
+  margin: 0;
+}
+
+.dashboard-group-panel .feed-toolbar {
+  margin: 0;
 }
 
 .dashboard-nav {
@@ -219,12 +237,33 @@ body {
 }
 
 .dashboard-view--initiations {
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.dashboard-view--initiations .dashboard-view-initiations {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
 }
 
 .dashboard-view--initiations .dashboard.layout {
   flex: 1;
-  min-height: min(28rem, 100%);
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+}
+
+.dashboard-view--initiations .list-panel,
+.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+  min-height: 0;
+  max-height: none;
+}
+
+.dashboard-view--initiations .list-panel .intent-list.initiation-timeline,
+.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  max-height: none;
 }
 
 .dashboard-view--actions,
@@ -268,11 +307,25 @@ body {
   flex-direction: column;
   gap: 10px;
   padding: 28px 28px 24px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   border-radius: var(--radius);
   background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
   color: #fff;
   box-shadow: var(--shadow);
+}
+
+.hero-compact {
+  padding: 16px 18px 14px;
+  gap: 8px;
+  box-shadow: none;
+}
+
+.hero-compact .hero-headline-row h1 {
+  font-size: 1.35rem;
+}
+
+.hero-compact .hero-eyebrow {
+  margin-bottom: 2px;
 }
 
 .hero-headline-row {
@@ -424,9 +477,9 @@ body {
 }
 
 .banner {
-  padding: 14px 18px;
+  padding: 12px 14px;
   border-radius: var(--radius);
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .banner-error {

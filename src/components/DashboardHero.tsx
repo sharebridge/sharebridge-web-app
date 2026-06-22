@@ -20,6 +20,8 @@ type Props = {
   initiationCount: number;
   /** From API after load — describes the applied time/area window. */
   feedLede?: string;
+  /** Slimmer padding when nested in a collapsible panel. */
+  compact?: boolean;
 };
 
 /** Shared green banner header for coordinator and initiator dashboards (same DOM + CSS). */
@@ -27,7 +29,8 @@ export function DashboardHero({
   kind,
   session,
   initiationCount,
-  feedLede
+  feedLede,
+  compact = false
 }: Props) {
   const { eyebrow, roleLabel } = COPY[kind];
   const signedIn = sessionHeaderLabel(session);
@@ -35,7 +38,7 @@ export function DashboardHero({
     initiationCount === 1 ? "initiation" : "initiations";
 
   return (
-    <section className="hero">
+    <section className={compact ? "hero hero-compact" : "hero"}>
       <p className="hero-eyebrow">{eyebrow}</p>
       <div className="hero-headline-row">
         <h1>Initiations</h1>
