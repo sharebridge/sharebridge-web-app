@@ -186,21 +186,27 @@ body {
 .dashboard-body {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
   padding-top: 8px;
   overflow: hidden;
 }
 
 .dashboard-meta {
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: min(34dvh, 18rem);
+  min-height: 0;
+  max-height: min(42dvh, 22rem);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
+}
+
+.dashboard-meta .collapsible-panel.is-expanded .collapsible-panel-body {
+  max-height: min(32dvh, 18rem);
+  overflow-y: auto;
 }
 
 .dashboard-hero-panel.collapsible-panel,
@@ -228,48 +234,52 @@ body {
   margin-bottom: 0;
 }
 
+.dashboard-scope-panel.collapsible-panel.is-expanded .collapsible-panel-body {
+  max-height: min(38dvh, 20rem);
+}
+
 .dashboard-view {
-  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.dashboard-view--initiations {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 .dashboard-view--initiations .dashboard-view-initiations {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: min(32rem, 100%);
 }
 
 .dashboard-view--initiations .dashboard.layout {
-  flex: 1;
-  min-height: 0;
-  height: 100%;
+  min-height: min(32rem, 100%);
   align-items: stretch;
 }
 
 .dashboard-view--initiations .list-panel,
 .dashboard-view--initiations .detail-panel.detail-panel-desktop {
-  min-height: 0;
-  max-height: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 18rem;
 }
 
-.dashboard-view--initiations .list-panel .intent-list.initiation-timeline,
-.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+.dashboard-view--initiations .list-panel .intent-list.initiation-timeline {
   flex: 1 1 auto;
-  min-height: 12rem;
+  min-height: 14rem;
   max-height: none;
+  overflow-y: auto;
+}
+
+.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+  min-height: 18rem;
+  max-height: none;
+  overflow-y: auto;
 }
 
 .dashboard-view--actions,
 .dashboard-view--map {
   overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .dashboard-view--actions .supply-workspace {
@@ -281,13 +291,13 @@ body {
 }
 
 .dashboard-view--actions .supply-split {
-  flex: 1;
-  min-height: min(32rem, 100%);
+  flex: 1 1 auto;
+  min-height: 24rem;
 }
 
 .dashboard-view--actions .supply-lines-panel,
 .dashboard-view--actions .supply-ledger-panel {
-  min-height: min(28rem, 100%);
+  min-height: 20rem;
 }
 
 .dashboard-view--actions .supply-lines-panel .demand-bucket-list,
