@@ -672,14 +672,6 @@ function AppShell() {
 
         <div className="dashboard-body">
           <div className="dashboard-meta">
-          {dashboardMode === "initiations" ? (
-            <DashboardHeroPanel
-              kind={coordinatorView ? "coordinator" : "initiator"}
-              session={session}
-              initiationCount={intents.length}
-            />
-          ) : null}
-
           <DashboardNotificationsBanner
             notifications={dashboardNotifications}
             onOpenConnection={handleOpenConnectionFromNotification}
@@ -737,7 +729,8 @@ function AppShell() {
             </div>
           ) : null}
 
-          {coordinatorView || apiDashboard === "limited" ? (
+          {dashboardMode !== "initiations" &&
+          (coordinatorView || apiDashboard === "limited") ? (
             <DashboardScopePanel
               variant={coordinatorView ? "coordinator" : "initiator"}
               draft={coordinatorScopeDraft}
@@ -749,20 +742,40 @@ function AppShell() {
               defaultExpanded={false}
             />
           ) : null}
-
-          {showGroupToolbar && dashboardMode === "initiations" ? (
-            <DashboardGroupPanel
-              coordinatorView={coordinatorView}
-              groupMode={groupMode}
-              areaLoading={areaLoading}
-              onSelect={(mode) => void handleGroupModeClick(mode)}
-            />
-          ) : null}
           </div>
 
           <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
           {dashboardMode === "initiations" ? (
-            <InitiationsView
+            <>
+              <div className="dashboard-view-tools">
+                <DashboardHeroPanel
+                  kind={coordinatorView ? "coordinator" : "initiator"}
+                  session={session}
+                  initiationCount={intents.length}
+                />
+                {coordinatorView || apiDashboard === "limited" ? (
+                  <DashboardScopePanel
+                    variant={coordinatorView ? "coordinator" : "initiator"}
+                    draft={coordinatorScopeDraft}
+                    onDraftChange={setCoordinatorScopeDraft}
+                    onApply={() => void handleApplyCoordinatorScope()}
+                    applying={scopeApplying}
+                    boundaries={dashboardBoundaries}
+                    viewLabel={viewLabel}
+                    defaultExpanded={false}
+                  />
+                ) : null}
+                {showGroupToolbar ? (
+                  <DashboardGroupPanel
+                    coordinatorView={coordinatorView}
+                    groupMode={groupMode}
+                    areaLoading={areaLoading}
+                    onSelect={(mode) => void handleGroupModeClick(mode)}
+                  />
+                ) : null}
+              </div>
+              <div className="dashboard-workspace">
+                <InitiationsView
               isMobileLayout={isMobileLayout}
               loading={loading}
               apiDashboard={apiDashboard}
@@ -779,8 +792,11 @@ function AppShell() {
               onMarkPaymentDone={requestMarkPaymentDone}
               onMarkDelivered={requestMarkDelivered}
               onMarkMealNeedDelivered={requestMarkMealNeedDelivered}
-            />
+                />
+              </div>
+            </>
           ) : dashboardMode === "actions" ? (
+            <div className="dashboard-workspace">
             <DemandBoardPanel
               session={session}
               refreshKey={demandRefreshKey}
@@ -790,7 +806,9 @@ function AppShell() {
               onBoundariesChange={handleDemandBoundariesChange}
               onOpenInitiation={handleOpenInitiationFromConnection}
             />
+            </div>
           ) : (
+            <div className="dashboard-workspace">
             <OrderIntentsMap
               intents={intents}
               seekerDemands={seekerDemands}
@@ -801,6 +819,7 @@ function AppShell() {
               coordinatorView={coordinatorView}
               viewerUserId={session.userId}
             />
+            </div>
           )}
           </div>
         </div>

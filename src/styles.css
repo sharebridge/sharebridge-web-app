@@ -198,15 +198,88 @@ body {
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  max-height: min(42dvh, 22rem);
+  max-height: min(28dvh, 12rem);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
 }
 
 .dashboard-meta .collapsible-panel.is-expanded .collapsible-panel-body {
-  max-height: min(32dvh, 18rem);
+  max-height: min(24dvh, 14rem);
   overflow-y: auto;
+}
+
+.dashboard-view {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-view-tools {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(26dvh, 11.5rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  margin-bottom: 6px;
+}
+
+.dashboard-view-tools .collapsible-panel.is-expanded .collapsible-panel-body {
+  max-height: min(22dvh, 12rem);
+  overflow-y: auto;
+}
+
+.dashboard-workspace {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-workspace > .dashboard-view-initiations,
+.dashboard-workspace > .dashboard.layout {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.dashboard-workspace > .supply-workspace {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-view--initiations .dashboard.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.dashboard-view--initiations .list-panel,
+.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-view--initiations .list-panel .intent-list.initiation-timeline,
+.dashboard-view--initiations .detail-panel.detail-panel-desktop {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dashboard-hero-panel.collapsible-panel,
@@ -234,77 +307,41 @@ body {
   margin-bottom: 0;
 }
 
-.dashboard-scope-panel.collapsible-panel.is-expanded .collapsible-panel-body {
-  max-height: min(38dvh, 20rem);
-}
-
-.dashboard-view {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
-}
-
-.dashboard-view--initiations .dashboard-view-initiations {
-  flex: 1 1 auto;
-  min-height: min(32rem, 100%);
-}
-
-.dashboard-view--initiations .dashboard.layout {
-  min-height: min(32rem, 100%);
-  align-items: stretch;
-}
-
-.dashboard-view--initiations .list-panel,
-.dashboard-view--initiations .detail-panel.detail-panel-desktop {
-  display: flex;
-  flex-direction: column;
-  min-height: 18rem;
-}
-
-.dashboard-view--initiations .list-panel .intent-list.initiation-timeline {
-  flex: 1 1 auto;
-  min-height: 14rem;
-  max-height: none;
-  overflow-y: auto;
-}
-
-.dashboard-view--initiations .detail-panel.detail-panel-desktop {
-  min-height: 18rem;
-  max-height: none;
-  overflow-y: auto;
-}
-
 .dashboard-view--actions,
 .dashboard-view--map {
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .dashboard-view--actions .supply-workspace {
-  flex: 1;
+  margin-top: 0;
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin-top: 0;
+  overflow: hidden;
+}
+
+.dashboard-view--actions .supply-workspace > :not(.supply-split) {
+  flex-shrink: 0;
 }
 
 .dashboard-view--actions .supply-split {
-  flex: 1 1 auto;
-  min-height: 24rem;
+  flex: 1 1 0;
+  min-height: 0;
+  align-items: stretch;
 }
 
 .dashboard-view--actions .supply-lines-panel,
 .dashboard-view--actions .supply-ledger-panel {
-  min-height: 20rem;
+  min-height: 0;
+  height: 100%;
 }
 
 .dashboard-view--actions .supply-lines-panel .demand-bucket-list,
 .dashboard-view--actions .supply-ledger-panel .supply-ledger-list {
   max-height: none;
-  flex: 1 1 auto;
-  min-height: 14rem;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .dashboard-view--map .map-panel {
