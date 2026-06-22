@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   dashboardBoundariesFromApi,
-  donorEmptyListMessage,
-  donorFeedLede,
-  donorLocationUnavailableNotice,
+  initiatorEmptyListMessage,
+  initiatorFeedLede,
+  initiatorLocationUnavailableNotice,
   feedScopeFromApi
 } from "./feedScope";
 
@@ -24,7 +24,7 @@ describe("feedScopeFromApi", () => {
       radiusM: 5000,
       locationMode: "near"
     });
-    expect(donorFeedLede(scope)).toBe(
+    expect(initiatorFeedLede(scope)).toBe(
       "Showing data captured in the last 2 hours · within 5 km of your location."
     );
   });
@@ -38,7 +38,7 @@ describe("feedScopeFromApi", () => {
         location_mode: "own_only"
       }
     });
-    expect(donorFeedLede(scope)).toBe(
+    expect(initiatorFeedLede(scope)).toBe(
       "Showing data captured in the last 2 hours · Your initiations only — use By area for nearby orders from others."
     );
   });
@@ -48,10 +48,10 @@ describe("feedScopeFromApi", () => {
       since: "2h",
       feed: { window_hours: 2, radius_m: 5000, location_mode: "own_only" }
     });
-    expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
+    expect(initiatorLocationUnavailableNotice(scope, "denied")).toContain(
       "permission"
     );
-    expect(donorLocationUnavailableNotice(scope, "denied")).toContain(
+    expect(initiatorLocationUnavailableNotice(scope, "denied")).toContain(
       "only your initiations"
     );
   });
@@ -98,7 +98,7 @@ describe("feedScopeFromApi", () => {
       since: "2h",
       feed: { window_hours: 2, radius_m: 5000, location_mode: "near" }
     });
-    expect(donorEmptyListMessage(scope, true)).toContain("anyone");
-    expect(donorEmptyListMessage(scope, false)).not.toContain("By area");
+    expect(initiatorEmptyListMessage(scope, true)).toContain("anyone");
+    expect(initiatorEmptyListMessage(scope, false)).not.toContain("By area");
   });
 });

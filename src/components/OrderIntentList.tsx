@@ -17,7 +17,7 @@ type Props = {
   intents: OrderInitiation[];
   groupMode: OrderGroupMode;
   selectedId: string | null;
-  showDonorInList: boolean;
+  showInitiatorInList: boolean;
   coordinatorView: boolean;
   showInlineDetail: boolean;
   viewerUserId: string;
@@ -31,7 +31,7 @@ export function OrderIntentList({
   intents,
   groupMode,
   selectedId,
-  showDonorInList,
+  showInitiatorInList,
   coordinatorView,
   showInlineDetail,
   viewerUserId,
@@ -63,7 +63,7 @@ export function OrderIntentList({
                 <li key={intent.order_intent_id} className="intent-row-wrap">
                   <IntentRow
                     intent={intent}
-                    showDonorInList={showDonorInList}
+                    showInitiatorInList={showInitiatorInList}
                     selected={selected}
                     onSelect={() => onSelect(intent.order_intent_id)}
                   />
@@ -164,18 +164,18 @@ function IntentMetrics({ intent }: { intent: OrderInitiation }) {
 
 function IntentRow({
   intent,
-  showDonorInList,
+  showInitiatorInList,
   selected,
   onSelect
 }: {
   intent: OrderInitiation;
-  showDonorInList: boolean;
+  showInitiatorInList: boolean;
   selected: boolean;
   onSelect: () => void;
 }) {
   const restaurant = primaryRestaurant(intent);
   const meta = [
-    showDonorInList
+    showInitiatorInList
       ? formatInitiatorMeta(
           intent.user_id,
           intent.initiator_email ?? intent.donor_email

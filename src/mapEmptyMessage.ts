@@ -37,7 +37,7 @@ export function mapEmptyMessage(
   const ownWithGeo = own.filter(hasGeo);
 
   if (own.length > 0 && ownWithGeo.length === 0) {
-    return "None of your initiations include GPS coordinates. On mobile, allow location when you copy AI instructions (Help a seeker).";
+    return "None of your initiations include GPS coordinates. On mobile, allow location when you start an initiation.";
   }
   if (intents.length > 0) {
     return "Map shows pins for your own initiations only. Other initiators' orders appear in List with distance (m); their exact locations are not shown here.";

@@ -245,7 +245,7 @@ export function dashboardBoundariesFromApi(
   };
 }
 
-export function donorFeedLede(scope: FeedScope | null): string | undefined {
+export function initiatorFeedLede(scope: FeedScope | null): string | undefined {
   const boundaries = scope
     ? dashboardBoundariesFromApi(
         {
@@ -266,16 +266,16 @@ export function donorFeedLede(scope: FeedScope | null): string | undefined {
   return `Showing data captured in ${boundaries.timeLabel} · ${boundaries.areaLabel}.`;
 }
 
-export function donorFeedWindowPhrase(scope: FeedScope | null): string {
+export function initiatorFeedWindowPhrase(scope: FeedScope | null): string {
   return scope ? hoursPhrase(scope.windowHours) : "the configured time window";
 }
 
 /** Why the neighbourhood feed could not be loaded (browser location, not missing orders). */
-export function donorLocationUnavailableNotice(
+export function initiatorLocationUnavailableNotice(
   scope: FeedScope | null,
   reason: "unsupported" | "denied" | "timeout" | "error"
 ): string {
-  const time = donorFeedWindowPhrase(scope);
+  const time = initiatorFeedWindowPhrase(scope);
   const reasonText =
     reason === "denied"
       ? "This page does not have permission to use your location."
@@ -288,11 +288,11 @@ export function donorLocationUnavailableNotice(
 }
 
 /** Empty list — separate from location errors. */
-export function donorEmptyListMessage(
+export function initiatorEmptyListMessage(
   scope: FeedScope | null,
   viewerLocationShared: boolean
 ): string {
-  const time = donorFeedWindowPhrase(scope);
+  const time = initiatorFeedWindowPhrase(scope);
   if (viewerLocationShared && scope?.radiusM) {
     const radius = radiusPhraseMetres(scope.radiusM);
     return `No order initiations from anyone ${time} ${radius}.`;
@@ -304,6 +304,6 @@ export function donorEmptyListMessage(
 }
 
 /** Shown when neighbourhood rows lack handover GPS (distance unknown). */
-export function donorNoHandoverLocationNotice(): string {
-  return "Orders without handover GPS from the mobile app appear here without distance; they are not filtered by the neighbourhood radius. Enable location on Help a seeker so new orders sort by distance.";
+export function initiatorNoHandoverLocationNotice(): string {
+  return "Orders without handover GPS from the mobile app appear here without distance; they are not filtered by the neighbourhood radius. Enable location when you start an initiation so new orders sort by distance.";
 }

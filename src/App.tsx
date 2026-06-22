@@ -26,20 +26,23 @@ import { sessionHeaderLabel } from "./sessionRole";
 import type { OrderGroupMode } from "./groupOrderIntents";
 import type { OrderFeedMeta } from "./feedScope";
 import type { OrderInitiation } from "./types";
-import { InitiationsList } from "./components/InitiationsList";
+import { InitiationsView } from "./components/InitiationsView";
+import { DashboardNav } from "./components/DashboardNav";
+import {
+  navigateDashboardView,
+  readDashboardViewFromHash,
+  type DashboardView
+} from "./dashboardNavigation";
 import {
   initiationSelectionId,
   mergeInitiationFeed
 } from "./initiationFeed";
-import { initiationApiRouteLabel } from "./initiationLabels";
-import { OrderIntentDetail } from "./components/OrderIntentDetail";
 import { OrderIntentsMap } from "./components/OrderIntentsMap";
 import { DemandBoardPanel } from "./components/DemandBoardPanel";
 import { useMobileLayout } from "./hooks/useMobileLayout";
 import {
   dashboardBoundariesFromApi,
-  donorEmptyListMessage,
-  donorNoHandoverLocationNotice,
+  initiatorNoHandoverLocationNotice,
   feedScopeFromApi,
   type DashboardBoundaries,
   type FeedScope
@@ -64,7 +67,6 @@ import {
   readViewerLocation
 } from "./viewerLocation";
 import { buildDashboardNotifications } from "./dashboardNotifications";
-import { isConnectionOrderInProgress } from "./connectionOrderProgress";
 
 const appConfig = getAppConfig();
 
@@ -98,9 +100,9 @@ function AppShell() {
   const [locationDialogMessage, setLocationDialogMessage] = useState<
     string | null
   >(null);
-  const [dashboardMode, setDashboardMode] = useState<
-    "initiations" | "actions" | "map"
-  >("initiations");
+  const [dashboardMode, setDashboardMode] = useState<DashboardView>(() =>
+    readDashboardViewFromHash()
+  );
   const [seekerDemands, setSeekerDemands] = useState<SeekerDemandRow[]>([]);
   const [opsSaving, setOpsSaving] = useState(false);
   const [opsConfirm, setOpsConfirm] = useState<
@@ -377,6 +379,20 @@ function AppShell() {
   }, [session, loadHistory]);
 
   useEffect(() => {
+    const syncViewFromHash = () => {
+      setDashboardMode(readDashboardViewFromHash());
+    };
+    window.addEventListener("hashchange", syncViewFromHash);
+    return () => window.removeEventListener("hashchange", syncViewFromHash);
+  }, []);
+
+  useEffect(() => {
+    if (!window.location.hash.replace(/^#\/?/, "").trim()) {
+      navigateDashboardView("initiations");
+    }
+  }, []);
+
+  useEffect(() => {
     if (!session) {
       setDemandBoardSnapshot(null);
       return;
@@ -407,7 +423,7 @@ function AppShell() {
   const handleOpenConnectionFromNotification = useCallback(
     (orderCode: string) => {
       setConnectionOrderCode(orderCode.trim());
-      setDashboardMode("actions");
+      navigateDashboardView("actions");
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     []
@@ -419,7 +435,7 @@ function AppShell() {
       if (!id) {
         return;
       }
-      setDashboardMode("initiations");
+      navigateDashboardView("initiations");
       setSelectedKey(`meal_need:${id}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
@@ -590,6 +606,7 @@ function AppShell() {
   function handleHome() {
     setSelectedKey(null);
     setError(null);
+    navigateDashboardView("initiations");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -642,288 +659,159 @@ function AppShell() {
         />
       ) : null}
 
-      <main className="main">
-        <DashboardHero
-          kind={coordinatorView ? "coordinator" : "initiator"}
-          session={session}
-          initiationCount={intents.length}
-        />
+      <main className="main main-dashboard">
+        <div className="dashboard-chrome">
+          <DashboardNav activeView={dashboardMode} />
 
-        <DashboardNotificationsBanner
-          notifications={dashboardNotifications}
-          onOpenConnection={handleOpenConnectionFromNotification}
-        />
+          {dashboardMode === "initiations" ? (
+            <DashboardHero
+              kind={coordinatorView ? "coordinator" : "initiator"}
+              session={session}
+              initiationCount={intents.length}
+            />
+          ) : (
+            <header className="view-page-head">
+              <h1 className="view-page-title">
+                {dashboardMode === "actions" ? "Actions" : "Map"}
+              </h1>
+              <p className="view-page-lede">
+                {dashboardMode === "actions"
+                  ? "Pledge portions, record kitchen commits, and open order contacts."
+                  : "Pins for your own initiations with GPS from the mobile app."}
+              </p>
+            </header>
+          )}
 
-        {error ? (
-          <div className="banner banner-error" role="alert">
-            {error}
-          </div>
-        ) : null}
-
-        {opsSuccess ? (
-          <div className="banner banner-success" role="status">
-            {opsSuccess}
-            <button
-              type="button"
-              className="banner-dismiss"
-              onClick={() => setOpsSuccess(null)}
-            >
-              Dismiss
-            </button>
-          </div>
-        ) : null}
-
-        {locationNotice ? (
-          <div className="banner" role="status">
-            {locationNotice}
-          </div>
-        ) : null}
-
-        {apiDashboard === "limited" &&
-        viewerLocationShared &&
-        intents.some(
-          (row) =>
-            row.distance_m == null &&
-            row.user_id !== session.userId
-        ) ? (
-          <div className="banner banner-info" role="status">
-            {donorNoHandoverLocationNotice()}
-          </div>
-        ) : null}
-
-        {coordinatorView &&
-        intents.length > 0 &&
-        !intents.some(
-          (row) => (row.initiator_email ?? row.donor_email)?.trim()
-        ) ? (
-          <div className="banner" role="status">
-            No initiator emails on these rows yet — usually because those initiators
-            never signed in with Google (only user ids in the database), or
-            integration-service needs the latest deploy with email lookup.
-          </div>
-        ) : null}
-
-        {coordinatorView || apiDashboard === "limited" ? (
-          <CoordinatorScopeToolbar
-            variant={coordinatorView ? "coordinator" : "initiator"}
-            draft={coordinatorScopeDraft}
-            onDraftChange={setCoordinatorScopeDraft}
-            onApply={() => void handleApplyCoordinatorScope()}
-            applying={scopeApplying}
+          <DashboardNotificationsBanner
+            notifications={dashboardNotifications}
+            onOpenConnection={handleOpenConnectionFromNotification}
           />
-        ) : null}
 
-        {showGroupToolbar && dashboardMode === "initiations" ? (
-          <GroupModeToolbar
-            coordinatorView={coordinatorView}
-            groupMode={groupMode}
-            areaLoading={areaLoading}
-            onSelect={(mode) => void handleGroupModeClick(mode)}
-          />
-        ) : null}
+          {error ? (
+            <div className="banner banner-error" role="alert">
+              {error}
+            </div>
+          ) : null}
 
-        <DashboardBoundariesBanner
-          boundaries={dashboardBoundaries}
-          viewLabel={
-            dashboardMode === "initiations"
-              ? "Initiations"
-              : dashboardMode === "actions"
-                ? "Actions"
-                : "Map"
-          }
-        />
+          {opsSuccess ? (
+            <div className="banner banner-success" role="status">
+              {opsSuccess}
+              <button
+                type="button"
+                className="banner-dismiss"
+                onClick={() => setOpsSuccess(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          ) : null}
 
-        <div className="view-mode-toolbar" role="tablist" aria-label="Dashboard view">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={dashboardMode === "initiations"}
-            className={
+          {locationNotice ? (
+            <div className="banner" role="status">
+              {locationNotice}
+            </div>
+          ) : null}
+
+          {apiDashboard === "limited" &&
+          dashboardMode === "initiations" &&
+          viewerLocationShared &&
+          intents.some(
+            (row) =>
+              row.distance_m == null && row.user_id !== session.userId
+          ) ? (
+            <div className="banner banner-info" role="status">
+              {initiatorNoHandoverLocationNotice()}
+            </div>
+          ) : null}
+
+          {coordinatorView &&
+          dashboardMode === "initiations" &&
+          intents.length > 0 &&
+          !intents.some(
+            (row) => (row.initiator_email ?? row.donor_email)?.trim()
+          ) ? (
+            <div className="banner" role="status">
+              No initiator emails on these rows yet — usually because those
+              initiators never signed in with Google (only user ids in the
+              database), or integration-service needs the latest deploy with
+              email lookup.
+            </div>
+          ) : null}
+
+          {coordinatorView || apiDashboard === "limited" ? (
+            <CoordinatorScopeToolbar
+              variant={coordinatorView ? "coordinator" : "initiator"}
+              draft={coordinatorScopeDraft}
+              onDraftChange={setCoordinatorScopeDraft}
+              onApply={() => void handleApplyCoordinatorScope()}
+              applying={scopeApplying}
+            />
+          ) : null}
+
+          {showGroupToolbar && dashboardMode === "initiations" ? (
+            <GroupModeToolbar
+              coordinatorView={coordinatorView}
+              groupMode={groupMode}
+              areaLoading={areaLoading}
+              onSelect={(mode) => void handleGroupModeClick(mode)}
+            />
+          ) : null}
+
+          <DashboardBoundariesBanner
+            boundaries={dashboardBoundaries}
+            viewLabel={
               dashboardMode === "initiations"
-                ? "view-mode-btn active"
-                : "view-mode-btn"
+                ? "Initiations"
+                : dashboardMode === "actions"
+                  ? "Actions"
+                  : "Map"
             }
-            onClick={() => setDashboardMode("initiations")}
-          >
-            Initiations
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={dashboardMode === "actions"}
-            className={
-              dashboardMode === "actions"
-                ? "view-mode-btn active"
-                : "view-mode-btn"
-            }
-            onClick={() => setDashboardMode("actions")}
-          >
-            Actions
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={dashboardMode === "map"}
-            className={
-              dashboardMode === "map" ? "view-mode-btn active" : "view-mode-btn"
-            }
-            onClick={() => setDashboardMode("map")}
-          >
-            Map
-          </button>
+          />
         </div>
 
-        {dashboardMode === "initiations" ? (
-          <>
-            <div
-              className={
-                isMobileLayout
-                  ? "dashboard layout layout-mobile-inline"
-                  : "dashboard layout"
+        <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
+          {dashboardMode === "initiations" ? (
+            <InitiationsView
+              isMobileLayout={isMobileLayout}
+              loading={loading}
+              apiDashboard={apiDashboard}
+              feedScope={feedScope}
+              viewerLocationShared={viewerLocationShared}
+              initiationItems={initiationItems}
+              selectedKey={selectedKey}
+              coordinatorView={coordinatorView}
+              session={session}
+              selected={selected}
+              selectedMealNeed={selectedMealNeed}
+              opsSaving={opsSaving}
+              onSelect={setSelectedKey}
+              onMarkPaymentDone={requestMarkPaymentDone}
+              onMarkDelivered={requestMarkDelivered}
+              onMarkMealNeedDelivered={requestMarkMealNeedDelivered}
+            />
+          ) : dashboardMode === "actions" ? (
+            <DemandBoardPanel
+              session={session}
+              refreshKey={demandRefreshKey}
+              scopeQuery={coordinatorDemandQuery}
+              connectionOrderCode={connectionOrderCode}
+              onSessionInvalid={handleSessionInvalid}
+              onBoundariesChange={handleDemandBoundariesChange}
+              onOpenInitiation={handleOpenInitiationFromConnection}
+            />
+          ) : (
+            <OrderIntentsMap
+              intents={intents}
+              seekerDemands={seekerDemands}
+              selectedId={selectedIntentId}
+              onSelect={(orderIntentId) =>
+                setSelectedKey(`vendor_order:${orderIntentId}`)
               }
-            >
-              <section className="panel list-panel" aria-labelledby="list-heading">
-                <div className="panel-head">
-                  <h2 id="list-heading">Initiations</h2>
-                  {loading ? <span className="badge">Syncing…</span> : null}
-                </div>
-                <p className="panel-lede">
-                  Direct orders you pay yourself, and eco kitchen initiations —
-                  use the Actions tab to pledge or record a kitchen commit.
-                </p>
-                {initiationItems.length === 0 && !loading ? (
-                  <p className="empty">
-                    {apiDashboard === "limited"
-                      ? donorEmptyListMessage(feedScope, viewerLocationShared)
-                      : "No initiations yet."}
-                  </p>
-                ) : (
-                  <InitiationsList
-                    items={initiationItems}
-                    selectedKey={selectedKey}
-                    showDonorInList={coordinatorView}
-                    coordinatorView={coordinatorView}
-                    showInlineDetail={isMobileLayout}
-                    viewerUserId={session.userId}
-                    opsSaving={opsSaving}
-                    onSelect={setSelectedKey}
-                    onMarkPaymentDone={requestMarkPaymentDone}
-                    onMarkDelivered={requestMarkDelivered}
-                  />
-                )}
-              </section>
-
-              <section
-                className="panel detail-panel detail-panel-desktop"
-                aria-labelledby="detail-heading"
-              >
-                <h2 id="detail-heading">Initiation detail</h2>
-                {selected ? (
-                  <OrderIntentDetail
-                    intent={selected}
-                    coordinatorView={coordinatorView}
-                    canMarkPaymentDone={
-                      !coordinatorView &&
-                      selected.user_id === session.userId &&
-                      selected.payment_status !== "paid_externally"
-                    }
-                    markingPayment={opsSaving}
-                    onMarkPaymentDone={() =>
-                      requestMarkPaymentDone(selected.order_intent_id)
-                    }
-                    canMarkDelivered={
-                      coordinatorView && selected.delivery_status !== "delivered"
-                    }
-                    markingDelivered={opsSaving}
-                    onMarkDelivered={() =>
-                      requestMarkDelivered(selected.order_intent_id)
-                    }
-                  />
-                ) : selectedMealNeed ? (
-                  <div className="intent-inline-detail">
-                    <p>
-                      <span className="initiation-kind-chip">
-                        {initiationApiRouteLabel(
-                          selectedMealNeed.initiation_route
-                        )}
-                      </span>
-                    </p>
-                    <p>
-                      <strong>
-                        {selectedMealNeed.menu_label ??
-                          selectedMealNeed.need_description}
-                      </strong>
-                      {selectedMealNeed.price_inr != null
-                        ? ` · ₹${selectedMealNeed.price_inr}`
-                        : ""}
-                    </p>
-                    <p className="intent-metrics">
-                      {selectedMealNeed.meal_units} meal unit
-                      {selectedMealNeed.meal_units === 1 ? "" : "s"}
-                      {selectedMealNeed.locality_key
-                        ? ` · ${selectedMealNeed.locality_key}`
-                        : ""}
-                      {selectedMealNeed.order_code
-                        ? ` · ${selectedMealNeed.order_code}`
-                        : ""}
-                    </p>
-                    <p>
-                      {selectedMealNeed.initiation_route ===
-                      "eco_kitchen_self_pay"
-                        ? "Eco kitchen · I pay — coordinators commit on Actions. Use Order contacts with the order code after commitment."
-                        : "Open for pledging — use the Actions tab for pledges and kitchen commits, not direct checkout here."}
-                    </p>
-                    {selectedMealNeed.verbal_notes?.trim() ? (
-                      <p className="intent-meta">
-                        {selectedMealNeed.verbal_notes}
-                      </p>
-                    ) : null}
-                    {coordinatorView &&
-                    isConnectionOrderInProgress(selectedMealNeed) ? (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        disabled={opsSaving}
-                        onClick={() =>
-                          requestMarkMealNeedDelivered(
-                            selectedMealNeed.seeker_demand_id
-                          )
-                        }
-                      >
-                        {opsSaving ? "Saving…" : "Mark delivered"}
-                      </button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="empty">
-                    Select an initiation to review handover context.
-                  </p>
-                )}
-              </section>
-            </div>
-          </>
-        ) : dashboardMode === "actions" ? (
-          <DemandBoardPanel
-            session={session}
-            refreshKey={demandRefreshKey}
-            scopeQuery={coordinatorDemandQuery}
-            connectionOrderCode={connectionOrderCode}
-            onSessionInvalid={handleSessionInvalid}
-            onBoundariesChange={handleDemandBoundariesChange}
-            onOpenInitiation={handleOpenInitiationFromConnection}
-          />
-        ) : (
-          <OrderIntentsMap
-            intents={intents}
-            seekerDemands={seekerDemands}
-            selectedId={selectedIntentId}
-            onSelect={(orderIntentId) =>
-              setSelectedKey(`vendor_order:${orderIntentId}`)
-            }
-            coordinatorView={coordinatorView}
-            viewerUserId={session.userId}
-          />
-        )}
+              coordinatorView={coordinatorView}
+              viewerUserId={session.userId}
+            />
+          )}
+        </div>
       </main>
 
       <footer className="footer">

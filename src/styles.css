@@ -156,6 +156,66 @@ body {
   padding: 24px;
 }
 
+.main-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding-top: 16px;
+  padding-bottom: 24px;
+}
+
+.dashboard-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: var(--header-h);
+  z-index: 8;
+  background: var(--bg);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-nav {
+  margin-bottom: 0;
+}
+
+.view-page-head {
+  padding: 8px 4px 4px;
+}
+
+.view-page-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.view-page-lede {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.dashboard-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-view--initiations .dashboard.layout {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-view--actions .supply-lines-panel,
+.dashboard-view--map .map-panel {
+  flex: 1;
+  min-height: 0;
+}
+
 .hero {
   display: flex;
   flex-direction: column;

@@ -10,7 +10,7 @@ import { OrderIntentDetail } from "./OrderIntentDetail";
 type Props = {
   items: InitiationFeedItem[];
   selectedKey: string | null;
-  showDonorInList: boolean;
+  showInitiatorInList: boolean;
   coordinatorView: boolean;
   showInlineDetail: boolean;
   viewerUserId: string;
@@ -39,7 +39,7 @@ function vendorOrderTitle(intent: OrderInitiation): string {
 export function InitiationsList({
   items,
   selectedKey,
-  showDonorInList,
+  showInitiatorInList,
   coordinatorView,
   showInlineDetail,
   viewerUserId,
@@ -71,7 +71,7 @@ export function InitiationsList({
                 </span>
                 <strong>{vendorOrderTitle(intent)}</strong>
                 <span className="intent-meta">
-                  {showDonorInList && intent.initiator_email
+                  {showInitiatorInList && intent.initiator_email
                     ? `${intent.initiator_email} · `
                     : ""}
                   {intent.payment_status === "paid_externally"
