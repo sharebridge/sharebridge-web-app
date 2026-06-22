@@ -1,4 +1,6 @@
 import type { AuthSession } from "../authSession";
+import type { CoordinatorScopeFilters } from "../coordinatorScope";
+import { coordinatorScopedEmptyListMessage } from "../coordinatorScope";
 import type { FeedScope } from "../feedScope";
 import { initiatorEmptyListMessage } from "../feedScope";
 import type { InitiationFeedItem } from "../initiationFeed";
@@ -18,6 +20,7 @@ type Props = {
   initiationItems: InitiationFeedItem[];
   selectedKey: string | null;
   coordinatorView: boolean;
+  scopeApplied: CoordinatorScopeFilters;
   session: AuthSession;
   selected: OrderInitiation | null;
   selectedMealNeed: SeekerDemandRow | null;
@@ -37,6 +40,7 @@ export function InitiationsView({
   initiationItems,
   selectedKey,
   coordinatorView,
+  scopeApplied,
   session,
   selected,
   selectedMealNeed,
@@ -65,9 +69,11 @@ export function InitiationsView({
         </p>
         {initiationItems.length === 0 && !loading ? (
           <p className="empty">
-            {apiDashboard === "limited"
+            {apiDashboard === "limited" &&
+            scopeApplied.since === "" &&
+            scopeApplied.areaMode === "all"
               ? initiatorEmptyListMessage(feedScope, viewerLocationShared)
-              : "No initiations yet."}
+              : coordinatorScopedEmptyListMessage(scopeApplied)}
           </p>
         ) : (
           <InitiationsList

@@ -53,6 +53,7 @@ import {
   DEFAULT_COORDINATOR_SCOPE,
   demandBoardQueryFromScope,
   EMPTY_ORDER_LIST_QUERY,
+  isValidLocalityKey,
   normalizeLocalityKey,
   type CoordinatorScopeFilters,
   type OrderListQuery
@@ -272,16 +273,23 @@ function AppShell() {
     try {
       if (coordinatorScopeDraft.areaMode === "locality") {
         const key = normalizeLocalityKey(coordinatorScopeDraft.localityKey);
-        if (!key) {
+        if (!key || !isValidLocalityKey(key)) {
           setLocationDialogMessage(
-            "Enter a postal area key (e.g. IN:TN:600001) before applying scope."
+            "Enter a valid postal area key (e.g. IN:TN:600001) before applying scope."
           );
           return;
         }
       }
+      const scopeToApply =
+        coordinatorScopeDraft.areaMode === "locality"
+          ? {
+              ...coordinatorScopeDraft,
+              localityKey: normalizeLocalityKey(coordinatorScopeDraft.localityKey)
+            }
+          : coordinatorScopeDraft;
       let nearCoords: { near_lat: number; near_lng: number } | null = null;
-      let query = coordinatorScopeToQuery(coordinatorScopeDraft, null);
-      if (coordinatorScopeDraft.areaMode === "near") {
+      let query = coordinatorScopeToQuery(scopeToApply, null);
+      if (scopeToApply.areaMode === "near") {
         const location = await readViewerLocation();
         if (location.status !== "granted") {
           setLocationDialogMessage(
@@ -293,10 +301,11 @@ function AppShell() {
           near_lat: location.coords.lat,
           near_lng: location.coords.lng
         };
-        query = coordinatorScopeToQuery(coordinatorScopeDraft, nearCoords);
+        query = coordinatorScopeToQuery(scopeToApply, nearCoords);
       }
       setCoordinatorNearCoords(nearCoords);
-      setCoordinatorScopeApplied({ ...coordinatorScopeDraft });
+      setCoordinatorScopeDraft(scopeToApply);
+      setCoordinatorScopeApplied({ ...scopeToApply });
       await loadHistory(session, query);
       setDemandRefreshKey((key) => key + 1);
     } finally {
@@ -799,6 +808,7 @@ function AppShell() {
               initiationItems={initiationItems}
               selectedKey={selectedKey}
               coordinatorView={coordinatorView}
+              scopeApplied={coordinatorScopeApplied}
               session={session}
               selected={selected}
               selectedMealNeed={selectedMealNeed}
