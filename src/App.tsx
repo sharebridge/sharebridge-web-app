@@ -620,6 +620,58 @@ function AppShell() {
         ? "Actions"
         : "Map";
 
+  const dashboardStatusBanners = (
+    <>
+      {error ? (
+        <div className="banner banner-error" role="alert">
+          {error}
+        </div>
+      ) : null}
+
+      {opsSuccess ? (
+        <div className="banner banner-success" role="status">
+          {opsSuccess}
+          <button
+            type="button"
+            className="banner-dismiss"
+            onClick={() => setOpsSuccess(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {locationNotice ? (
+        <div className="banner" role="status">
+          {locationNotice}
+        </div>
+      ) : null}
+
+      {apiDashboard === "limited" &&
+      dashboardMode === "initiations" &&
+      viewerLocationShared &&
+      intents.some(
+        (row) => row.distance_m == null && row.user_id !== session.userId
+      ) ? (
+        <div className="banner banner-info" role="status">
+          {initiatorNoHandoverLocationNotice()}
+        </div>
+      ) : null}
+
+      {coordinatorView &&
+      dashboardMode === "initiations" &&
+      intents.length > 0 &&
+      !intents.some((row) => (row.initiator_email ?? row.donor_email)?.trim()) ? (
+        <div className="banner" role="status">
+          No initiator emails on these rows yet — usually because those
+          initiators never signed in with Google (only user ids in the
+          database), or integration-service needs the latest deploy with
+          email lookup.
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <div className="site site--app">
       <SiteHeader
@@ -671,6 +723,7 @@ function AppShell() {
         </div>
 
         <div className="dashboard-body">
+          {dashboardMode !== "initiations" ? (
           <div className="dashboard-meta">
           <DashboardNotificationsBanner
             notifications={dashboardNotifications}
@@ -678,59 +731,9 @@ function AppShell() {
             defaultExpanded={false}
           />
 
-          {error ? (
-            <div className="banner banner-error" role="alert">
-              {error}
-            </div>
-          ) : null}
+          {dashboardStatusBanners}
 
-          {opsSuccess ? (
-            <div className="banner banner-success" role="status">
-              {opsSuccess}
-              <button
-                type="button"
-                className="banner-dismiss"
-                onClick={() => setOpsSuccess(null)}
-              >
-                Dismiss
-              </button>
-            </div>
-          ) : null}
-
-          {locationNotice ? (
-            <div className="banner" role="status">
-              {locationNotice}
-            </div>
-          ) : null}
-
-          {apiDashboard === "limited" &&
-          dashboardMode === "initiations" &&
-          viewerLocationShared &&
-          intents.some(
-            (row) =>
-              row.distance_m == null && row.user_id !== session.userId
-          ) ? (
-            <div className="banner banner-info" role="status">
-              {initiatorNoHandoverLocationNotice()}
-            </div>
-          ) : null}
-
-          {coordinatorView &&
-          dashboardMode === "initiations" &&
-          intents.length > 0 &&
-          !intents.some(
-            (row) => (row.initiator_email ?? row.donor_email)?.trim()
-          ) ? (
-            <div className="banner" role="status">
-              No initiator emails on these rows yet — usually because those
-              initiators never signed in with Google (only user ids in the
-              database), or integration-service needs the latest deploy with
-              email lookup.
-            </div>
-          ) : null}
-
-          {dashboardMode !== "initiations" &&
-          (coordinatorView || apiDashboard === "limited") ? (
+          {(coordinatorView || apiDashboard === "limited") ? (
             <DashboardScopePanel
               variant={coordinatorView ? "coordinator" : "initiator"}
               draft={coordinatorScopeDraft}
@@ -743,11 +746,21 @@ function AppShell() {
             />
           ) : null}
           </div>
+          ) : null}
 
           <div className={`dashboard-view dashboard-view--${dashboardMode}`}>
           {dashboardMode === "initiations" ? (
             <>
-              <div className="dashboard-view-tools">
+              <div
+                className="dashboard-view-tools"
+                aria-label="Initiations overview and filters"
+              >
+                <DashboardNotificationsBanner
+                  notifications={dashboardNotifications}
+                  onOpenConnection={handleOpenConnectionFromNotification}
+                  defaultExpanded={false}
+                />
+                {dashboardStatusBanners}
                 <DashboardHeroPanel
                   kind={coordinatorView ? "coordinator" : "initiator"}
                   session={session}

@@ -186,30 +186,38 @@ body {
 .dashboard-body {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding-top: 8px;
   overflow: hidden;
 }
 
 .dashboard-meta {
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  max-height: min(28dvh, 12rem);
+  max-height: min(42dvh, 24rem);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
 }
 
-.dashboard-meta .collapsible-panel.is-expanded .collapsible-panel-body {
-  max-height: min(24dvh, 14rem);
-  overflow-y: auto;
+.dashboard-meta .collapsible-panel,
+.dashboard-view-tools .collapsible-panel {
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.dashboard-meta .banner,
+.dashboard-view-tools .banner {
+  flex-shrink: 0;
 }
 
 .dashboard-view {
+  flex: 1 1 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -217,25 +225,27 @@ body {
 }
 
 .dashboard-view-tools {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: min(26dvh, 11.5rem);
+  gap: 8px;
+  max-height: min(50dvh, 30rem);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   margin-bottom: 6px;
+  padding-right: 2px;
 }
 
-.dashboard-view-tools .collapsible-panel.is-expanded .collapsible-panel-body {
-  max-height: min(22dvh, 12rem);
-  overflow-y: auto;
+.dashboard-view-tools .collapsible-panel.is-expanded .collapsible-panel-body,
+.dashboard-meta .collapsible-panel.is-expanded .collapsible-panel-body {
+  max-height: none;
+  overflow: visible;
 }
 
 .dashboard-workspace {
   flex: 1 1 0;
-  min-height: 0;
+  min-height: min(42dvh, 26rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -282,9 +292,14 @@ body {
   overflow-x: hidden;
 }
 
-.dashboard-hero-panel.collapsible-panel,
-.dashboard-group-panel.collapsible-panel {
-  margin: 0;
+.dashboard-hero-panel.collapsible-panel.is-expanded .collapsible-panel-body,
+.dashboard-scope-panel.collapsible-panel.is-expanded .collapsible-panel-body,
+.dashboard-group-panel.collapsible-panel.is-expanded .collapsible-panel-body,
+.dashboard-view-tools .collapsible-panel.dashboard-notifications.is-expanded .collapsible-panel-body,
+.dashboard-meta .collapsible-panel.dashboard-notifications.is-expanded .collapsible-panel-body {
+  --panel-body-max-height: none;
+  max-height: none;
+  overflow: visible;
 }
 
 .dashboard-group-panel .feed-toolbar {
@@ -1445,7 +1460,7 @@ a {
 
 .collapsible-panel.dashboard-notifications.is-expanded .collapsible-panel-body,
 .collapsible-panel.connection-consent.is-expanded .collapsible-panel-body {
-  --panel-body-max-height: var(--panel-scroll-sm);
+  --panel-body-max-height: var(--panel-scroll-md);
 }
 
 .collapsible-panel.connection-panel.is-expanded .collapsible-panel-body {
