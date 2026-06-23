@@ -327,6 +327,28 @@ body {
   overflow: hidden;
 }
 
+.dashboard-view--actions .supply-workspace-chrome {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(42dvh, 22rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  margin-bottom: 6px;
+  padding-right: 2px;
+}
+
+.dashboard-view--actions .supply-workspace-chrome .supply-filter-bar {
+  margin-bottom: 0;
+}
+
+.dashboard-view--actions .supply-workspace-chrome .connection-panel,
+.dashboard-view--actions .supply-workspace-chrome .connection-consent {
+  margin-bottom: 0;
+}
+
 .dashboard-view--actions .supply-workspace {
   margin-top: 0;
   flex: 1 1 0;
@@ -336,20 +358,24 @@ body {
   overflow: hidden;
 }
 
-.dashboard-view--actions .supply-workspace > :not(.supply-split) {
-  flex-shrink: 0;
+.dashboard-view--actions .demand-bulk-bar-sticky {
+  position: static;
+  top: auto;
+  margin: 0;
 }
 
 .dashboard-view--actions .supply-split {
   flex: 1 1 0;
-  min-height: 0;
+  min-height: min(36dvh, 20rem);
   align-items: stretch;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .dashboard-view--actions .supply-lines-panel,
 .dashboard-view--actions .supply-ledger-panel {
   min-height: 0;
   height: 100%;
+  max-height: none;
 }
 
 .dashboard-view--actions .supply-lines-panel .demand-bucket-list,

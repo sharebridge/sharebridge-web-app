@@ -309,6 +309,7 @@ export function DemandBoardPanel({
       className="supply-workspace"
       aria-label="Actions — pledge and kitchen commit"
     >
+      <div className="supply-workspace-chrome">
       <div
         className="supply-filter-bar"
         role="toolbar"
@@ -447,6 +448,7 @@ export function DemandBoardPanel({
         >
           Clear
         </button>
+      </div>
       </div>
 
       <div

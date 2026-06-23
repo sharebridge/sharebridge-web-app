@@ -723,7 +723,7 @@ function AppShell() {
         </div>
 
         <div className="dashboard-body">
-          {dashboardMode !== "initiations" ? (
+          {dashboardMode !== "initiations" && dashboardMode !== "actions" ? (
           <div className="dashboard-meta">
           <DashboardNotificationsBanner
             notifications={dashboardNotifications}
@@ -812,17 +812,43 @@ function AppShell() {
               </div>
             </>
           ) : dashboardMode === "actions" ? (
-            <div className="dashboard-workspace">
-            <DemandBoardPanel
-              session={session}
-              refreshKey={demandRefreshKey}
-              scopeQuery={coordinatorDemandQuery}
-              connectionOrderCode={connectionOrderCode}
-              onSessionInvalid={handleSessionInvalid}
-              onBoundariesChange={handleDemandBoundariesChange}
-              onOpenInitiation={handleOpenInitiationFromConnection}
-            />
-            </div>
+            <>
+              <div
+                className="dashboard-view-tools"
+                aria-label="Actions overview and scope"
+              >
+                <DashboardNotificationsBanner
+                  notifications={dashboardNotifications}
+                  onOpenConnection={handleOpenConnectionFromNotification}
+                  defaultExpanded={false}
+                />
+                {dashboardStatusBanners}
+                {coordinatorView || apiDashboard === "limited" ? (
+                  <DashboardScopePanel
+                    variant={coordinatorView ? "coordinator" : "initiator"}
+                    draft={coordinatorScopeDraft}
+                    applied={coordinatorScopeApplied}
+                    onDraftChange={setCoordinatorScopeDraft}
+                    onApply={() => void handleApplyCoordinatorScope()}
+                    applying={scopeApplying}
+                    boundaries={dashboardBoundaries}
+                    viewLabel={viewLabel}
+                    defaultExpanded={false}
+                  />
+                ) : null}
+              </div>
+              <div className="dashboard-workspace">
+                <DemandBoardPanel
+                  session={session}
+                  refreshKey={demandRefreshKey}
+                  scopeQuery={coordinatorDemandQuery}
+                  connectionOrderCode={connectionOrderCode}
+                  onSessionInvalid={handleSessionInvalid}
+                  onBoundariesChange={handleDemandBoundariesChange}
+                  onOpenInitiation={handleOpenInitiationFromConnection}
+                />
+              </div>
+            </>
           ) : (
             <div className="dashboard-workspace">
             <OrderIntentsMap
