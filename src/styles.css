@@ -593,7 +593,8 @@ body {
   min-width: 0;
 }
 
-.layout-mobile-inline .detail-panel-desktop {
+.layout-mobile-inline .detail-panel.detail-panel-desktop,
+.dashboard-view--initiations.layout-mobile-inline .detail-panel.detail-panel-desktop {
   display: none;
 }
 
@@ -733,6 +734,33 @@ body {
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-view--actions .supply-split.layout-mobile-inline {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 0;
+    min-height: 0;
+    gap: 12px;
+    grid-template-rows: unset;
+    align-items: stretch;
+  }
+
+  .dashboard-view--actions .supply-split.layout-mobile-inline .supply-lines-panel,
+  .dashboard-view--actions .supply-split.layout-mobile-inline .supply-ledger-panel {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: min(32dvh, 18rem);
+    max-height: min(42dvh, 24rem);
+  }
+
+  .dashboard-view--actions .supply-split.layout-mobile-inline .supply-lines-panel .demand-bucket-list,
+  .dashboard-view--actions .supply-split.layout-mobile-inline .supply-ledger-panel .supply-ledger-list {
+    flex: 1 1 auto;
+    max-height: min(28dvh, 14rem);
   }
 
   .hero {
