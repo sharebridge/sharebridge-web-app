@@ -91,6 +91,7 @@ export function InitiationsView({
         )}
       </section>
 
+      {!isMobileLayout ? (
       <section
         className="panel detail-panel detail-panel-desktop"
         aria-labelledby="detail-heading"
@@ -163,6 +164,7 @@ export function InitiationsView({
           <p className="empty">Select an initiation to review handover context.</p>
         )}
       </section>
+      ) : null}
     </div>
   );
 }

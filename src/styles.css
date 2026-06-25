@@ -594,8 +594,12 @@ body {
 }
 
 .layout-mobile-inline .detail-panel.detail-panel-desktop,
-.dashboard-view--initiations.layout-mobile-inline .detail-panel.detail-panel-desktop {
+.dashboard-view--initiations .dashboard.layout.layout-mobile-inline .detail-panel.detail-panel-desktop {
   display: none;
+}
+
+.dashboard-view--initiations .dashboard.layout.layout-mobile-inline {
+  grid-template-columns: 1fr;
 }
 
 .intent-row-wrap {
