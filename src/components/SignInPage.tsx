@@ -9,7 +9,9 @@ import { signInWithGoogleAccessToken } from "../api/auth";
 import { ApiError } from "../api/orderIntents";
 import { sessionFromSignIn, type AuthSession } from "../authSession";
 import type { AppConfig } from "../config";
+import { GITHUB_README_URL } from "../docsLinks";
 import { formatSignInError } from "./signInErrors";
+import { HelpDialog } from "./HelpDialog";
 
 type Props = {
   config: AppConfig;
@@ -147,16 +149,46 @@ function SignInCard({ config, onSignedIn }: Props) {
           {error}
         </div>
       ) : null}
+
+      <p className="sign-in-docs">
+        New here or curious how it is built?{" "}
+        <a
+          href={GITHUB_README_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Read the GitHub README
+        </a>
+        .
+      </p>
     </section>
   );
 }
 
 export function SignInPage({ config, onSignedIn }: Props) {
+  const [helpOpen, setHelpOpen] = useState(false);
+
   return (
     <div className="site sign-in-site">
+      <header className="sign-in-topbar">
+        <div className="sign-in-topbar-brand">
+          <span className="brand-mark" aria-hidden>
+            SB
+          </span>
+          <span className="brand-name">SharingBridge</span>
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setHelpOpen(true)}
+        >
+          Help
+        </button>
+      </header>
       <main className="sign-in-main">
         <SignInCard config={config} onSignedIn={onSignedIn} />
       </main>
+      {helpOpen ? <HelpDialog onClose={() => setHelpOpen(false)} /> : null}
     </div>
   );
 }
