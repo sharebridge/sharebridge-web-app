@@ -35,13 +35,13 @@ describe("SignInPage", () => {
     cleanup();
   });
 
-  it("shows title, Google sign-in, README link, and Help", async () => {
+  it("shows Google sign-in, README link, and Help", async () => {
     render(<SignInPage config={baseConfig} onSignedIn={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { name: /^sign in$/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /sign in with google/i })).toBeTruthy();
-    expect(screen.queryByText(/last signed in as/i)).toBeNull();
-    expect(screen.queryByText(/coordinator role/i)).toBeNull();
+    expect(screen.queryByRole("heading", { name: /^sign in$/i })).toBeNull();
+    expect(screen.queryByText(/coordinator/i)).toBeNull();
+    expect(screen.getByText(/new here\?/i)).toBeTruthy();
 
     const readme = screen.getByRole("link", { name: /read the github readme/i });
     expect(readme.getAttribute("href")).toBe(GITHUB_README_URL);

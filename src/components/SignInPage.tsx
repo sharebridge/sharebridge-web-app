@@ -98,23 +98,18 @@ function GoogleSignInButton({
   }
 
   return (
-    <div className="sign-in-google">
-      <button
-        type="button"
-        className="btn btn-secondary btn-block sign-in-google-btn"
-        disabled={submitting || !scriptLoadedSuccessfully}
-        onClick={handleGoogleSignIn}
-      >
-        {submitting
-          ? "Signing in…"
-          : scriptLoadedSuccessfully
-            ? "Sign in with Google"
-            : "Loading Google sign-in…"}
-      </button>
-      <p className="hint sign-in-google-hint">
-        Opens Google&apos;s account picker (not the browser default account only).
-      </p>
-    </div>
+    <button
+      type="button"
+      className="btn btn-secondary btn-block sign-in-google-btn"
+      disabled={submitting || !scriptLoadedSuccessfully}
+      onClick={handleGoogleSignIn}
+    >
+      {submitting
+        ? "Signing in…"
+        : scriptLoadedSuccessfully
+          ? "Sign in with Google"
+          : "Loading Google sign-in…"}
+    </button>
   );
 }
 
@@ -124,13 +119,6 @@ function SignInCard({ config, onSignedIn }: Props) {
 
   return (
     <section className="sign-in-card panel">
-      <h1>Sign in</h1>
-      <p className="sign-in-lede">
-        Coordinators see full order details. Initiators see a limited neighbourhood
-        feed (time window and distance are set on the server and shown after
-        sign-in).
-      </p>
-
       {hasGoogle ? (
         <GoogleSignInButton
           config={config}
@@ -151,7 +139,7 @@ function SignInCard({ config, onSignedIn }: Props) {
       ) : null}
 
       <p className="sign-in-docs">
-        New here or curious how it is built?{" "}
+        New here?{" "}
         <a
           href={GITHUB_README_URL}
           target="_blank"

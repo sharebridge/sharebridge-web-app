@@ -26,7 +26,7 @@ export function HelpDialog({ onClose }: Props) {
           </li>
           <li>
             <strong>Actions</strong> — demand board, pledges, and eco-kitchen
-            commitments (coordinator).
+            commitments.
           </li>
           <li>
             <strong>Map</strong> — geo view of initiations and seeker demands
