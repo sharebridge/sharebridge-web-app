@@ -27,7 +27,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      - key: VITE_API_BASE_URL
+      - key: VITE_INTG_SRVC_BASE_URL
         value: https://sharingbridge-integration-service.onrender.com
       - key: VITE_USER_SERVICE_BASE_URL
         value: https://sharingbridge-user-service.onrender.com

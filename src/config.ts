@@ -14,7 +14,7 @@ const DEFAULT_USER_SERVICE =
 export function getAppConfig(): AppConfig {
   return {
     apiBaseUrl: (
-      import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_INTEGRATION
+      import.meta.env.VITE_INTG_SRVC_BASE_URL?.trim() || DEFAULT_INTEGRATION
     ).replace(/\/$/, ""),
     userServiceBaseUrl: (
       import.meta.env.VITE_USER_SERVICE_BASE_URL?.trim() ||
